@@ -1,0 +1,53 @@
+The aim of the project is to experiment with video and other stimulus methods to change nervous system activity (*brainwave entraintment*). The idea is to try to steer nervous system into target state by collecting large database of (stimulus, nervous system response) pairs and use machine learning to find a mathematical model (initially basic artificial neural networks ANNs) that will be used to solve for optimal stimulus sequences to steer nervous system into a target state as well as possible. The software tries to change stress-levels, increase relaxation, mood, sleep etc similarly music or video can change your mood but hopefully more effectively if you match stimulus exactly to what is happening in your brain.
+
+Related keywords: *neuromarketing*, *affective computing* etc.
+
+Unlike typical brainwave entraintment codes, the project tries to be more scientific and stimulation will be based on measurements and machine learning feedback. Possible devices are [http://www.choosemuse.com/ Muse] or [http://www.emotiv.co/ Emotiv Insight] (delayed) BCI device or something similar.
+
+
+*CompilationInstructions*
+
+== LICENSE ==
+
+Resonanz is GPL project. It uses *[https://sourceforge.net/p/dinrhiw2/wiki/ Dinrhiw2]* library initially for machine learning which will be LGPL. 
+
+== TODO ==
+
+  * try to use words, **pictures** and sounds (samples) initially as stimulation methods, using text to speech might make sense too to increase the impact. [Word-based stimulus]
+  * collect large database of (stimulus, initial state, response state) triplets
+  * implement code to search for and find optimal stimulus sequences using the found ANN-model 
+  * [Another stimulus methods]
+  * implement sound synthesis code ([FM synthesis] initially thought it has very BAD parameterization of sounds but small number of parameters - only 4) - look for already available free brainwave entraintment and sound synthesizer codes
+  * instead of trying to find and use single stimulation to push brain toward target state, one should try to "tell a story" with words or pictures as the results should be much more effective. How to do this is very complex but one could try to classify (state, response state) pairs into different state change patterns and then try to learn Markov chains to jump from different type of state changes to another one's and then try to find a "dramatic" changes. (First increase feelings of safety and security, then show something that causes fear etc.)
+  * animation to stimulate CNS instead of series of still pictures might make sense too
+
+== CURRENT STATUS OF THE PROJECT ==
+
+_Currently the program just cycles through "random" pictures and keywords as there is no Emotiv device to learn changes caused by stimulus and the database of neural networks is generated from random pseudo-measurements but the code should work after the stub data source is replaced with real Emotiv measurements._
+
+  * *waiting for Emotiv Insight headset release* (2015)
+  * research: developers need to experiment with different stimulation methods and how well they can be used for brainwave stimulation. small number of parameters and good sounds can be important (study naturally occuring linear filters (ICA-solutions) for natural sounds (similarly to picture response patterns have gabor filters)), use real measurements to analyze changes of sounds to brain activity
+  * needs more developers and people collecting database of stimulus, response) pairs
+
+== PLAN ==
+
+  * collect large database of (input, response) pairs
+  * create synthesis code with small number of parameters
+  * create semi-random stimuli to and measure response (sound synthesis parameters, eeg-meta-response)
+  * use machine learning to find a mathematical model f(input) = response
+  * use the mathematical model to keep looking for inputs that lead to user selected response
+  * use the best input found and keep measuring the actual response/current state, store this extra information into database for further model optimization and learning
+  * find input sequences that lead and keep nervous system in a target state as well as possible
+  * SWT (Eclipse) + SDL will be used for user interface
+
+== USE CASE ==
+
+  * end-user decides (s)he wants to reduce stress or otherwise change his mood
+  * (s)he selects the target state
+  * the software uses BCI device if possible to measure current state or blindly starts to create stimulus that should push brain into the target state as well as possible.
+
+Initially use Emotiv Affectiv signals. Later the use of raw EEG measurements could be interesting.
+
+== CONTACT ==
+
+Tomas Ukkonen [mailto:tomas.ukkonen@iki.fi]
