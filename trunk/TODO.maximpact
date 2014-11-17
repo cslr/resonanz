@@ -1,0 +1,36 @@
+TODO
+
+* CODE IS BROKEN: FIX THE CODE TO WORK AGAIN (WITH GABOR-FILTER)
+
+
+- click maximizer
+- cause minor mods to stimulus (picture) [initially 32x32 FIR filter]
+  and measure changes in responses, use optimization (genetic algorithms)
+  to find optimal image with maximum response pattern in meta-EEG
+
+- how to anayze EEG meaningfully?? I have no idea. 
+
+  * alpha/beta/theta/gamma bands
+  * entropy of signals (wakefullness??) [bullshit?]
+    - difficult to measure
+  * "spatial" linear ICA (also find independent source locations WITHIN head)
+    - very difficult to implement, I did some research and there are some
+      good research about this out there but the problem is DIFFICULT
+
+
+For testing without GUI:
+http://aa-project.sourceforge.net/
+
+This does not really work.
+
+ - add color (palette) mode?
+
+
+
+
+
+
+
+
+
+

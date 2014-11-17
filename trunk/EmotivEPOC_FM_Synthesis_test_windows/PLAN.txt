@@ -1,0 +1,55 @@
+PLAN
+
+- complete real time meta signal gathering code for EEG data using 1 Hz sampling [DONE - TEST ME]
+
+- implement sound synthesis code for brainwave stimulation [DONE]
+  [use SDL library to generate sound]
+  (idea: build minimum system to use vst instruments for sound synthesis)
+
+- note: rand()/(double)RAND_MAX seem to have some problems (strange bugs?)
+  
+- create algos library for windows [statically linkable?]: 
+
+- create learning mode [nnetwork] for parameters q of sound synthesis => EEG meta-state response
+  * generate random sound synthesis states and measure EEG responses
+  
+  * the inverse, f(EEG) = sound synthesis parameters q is NOT a function which causes problems and
+    more proper approach should calculate distributions p(q|EEG) and p(EEG|q), another approach is to
+    try to estimate p(w) of network and then sample from p(w) in order to estimate 
+    p(q|EEG) = Integral(p(q|EEG, w)p(w)dw) and in practice to estimate this integral 
+    one samples w:s from p(w) and calculates qs: from q = f(EEG|w) and use resulting {q} to estimate p(q|EEG).
+    In practice, a good p(w) is some kind of multi-peak distribution like distributions of gaussians but
+    neural network parameterization of function space might not be very good or elegant to use.
+  
+    - figure out how to solve inverse of nnetwork: p(q|EEG) ~ p(EEG|q)*p(q)
+    - in theory proper neural network always has inverse, in practice 
+      it don't have [due to non-linearities that are near constants 
+                     with large positive/negative values]
+    - you can maybe solve or generate p(q|EEG) semi-analytically by adding
+      random noise to inverses [of non-linearities] and sampling of different
+      q:s for the same EEG that results
+  
+- after learning, user can set target EEG readings and be stimulated accordingly
+
+
+LEARNING METHODS:
+
+- multistart neural network. generate w:s randomly, with 4-X-10 there are ~15x parameters where x = 20 leading to
+  300 parameters. now searching this space is complicated but multistart gradient descent can make sense 
+  for searching good solutions. After having something like 1000 solutions use all of them to estimate p(q) for
+  given input. Here use bottom up, merge clustering, first divide data to n=100 sets and connect the nearest ones
+  until n<50 in each cluster or no clusters merge. then merge sets so that n=100 and again merge the nearest 
+  groups. Continue until difference between clusters is too large or the number of clusters < 50.
+
+  how to define too large difference? calculate mean and variance of original distances and then use some
+  value like mean + 3*sqrt(variance) [3 standard deviations] which  
+
+==================================================
+ 
+Another plan (another signal source):
+ 
+ - develop Wild Divine IOM signal collecting [wild divine developers support site]
+ - collect Wild Diving signals s and EPOC EEG meta-signals m
+ - try to create model that fits f(s) = m, also try to create model for f(m) = s
+
+ 

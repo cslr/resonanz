@@ -1,0 +1,33 @@
+Maximum response stimulus   
+
+Authors:  T.U.
+
+Maximization of impact caused by stimulus (neuromarketing) probably makes sense (preprocessing step for resonanz objects). You cause slight modifications to pictures, words and sounds in order to maximize effects caused by the stimuli. You then only use maximum response stimulus objects in resonanz.
+
+pictures: FIR FFT filtering (parameterized gabor, GA-found FIR for the image that causes the largest response), color histogram modifications (parameterized) etc.
+
+sounds: EQ filtering (parameterized, GA-selected/found EQs for the sound that maximizes response)
+
+words: choose font, mispelling, adding or deleting of extra letters, color of letters, uppercasing or lowercasing the letters etc.
+
+sentences: synonums, NLP and reorder and restructure the sentence without
+           changing meaning significantly, add extra words that do not change meaning that much
+
+So the program cycles through the variations of a single target object and finds the modifications that maximizes the response. Show blank screen and then the picture, and again blank screen and the another picture.
+
+For sounds and pictures you can directly store and use the maximum response object. 
+For words you store also the new keyword and its font.
+
+TODO: do this later. I think this will only cause MINOR changes to responses in 90% of the cases.
+
+NOTE: linear mixture of pictures might make sense too. (50% negative, 50% target pic)
+
+HOW TO MEASURE RESPONSE?
+========================
+
+* calculate PROD(i=1..N) [ max(reponse_state_i/initial_state_i, initial_state_i/response_state_i) ]^(1/N)
+  this is geometric mean of the maximum relative change in the state caused by the stimuli.
+
+
+
+
