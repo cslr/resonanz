@@ -1,0 +1,7 @@
+Another interesting ones to look at:
+
+  * computer-controlled electroacupuncture
+  * computer-controlled tens/ems is more non-invasive
+  * software synths: ladspa plugins (linux), vst plugins are not that easily "remotely controllable" from another software
+
+Also non-EEG based feedback methods might make sense.
