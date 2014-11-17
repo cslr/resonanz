@@ -9,7 +9,7 @@ Unlike typical brainwave entraintment codes, the project tries to be more scient
 
 == LICENSE ==
 
-Resonanz is GPL project. It uses *[https://sourceforge.net/p/dinrhiw2/wiki/ Dinrhiw2]* library initially for machine learning which will be LGPL. 
+Resonanz is GPL project. It uses *[https://code.google.com/p/dinrhiw2/  Dinrhiw2]* library initially for machine learning which will be LGPL. 
 
 A good source of pictures could be: http://healingphotoart.org
 
