@@ -1,4 +1,8 @@
-Compilation can be a bit tricky. Currently, the code depends on SDL2 libraries and the dinrhiw library (sourceforge). The code has been tested to compile under **Debian/Linux**. Currently, MinGW/GCC environment builds fail but it should not be too hard to get it working in MinGW/Windows with some extra work.
+Fetch the source code:
+
+svn checkout http://resonanz.googlecode.com/svn/trunk/ resonanz-read-only
+
+After this compilation can be a bit tricky. Currently, the code depends on SDL2 libraries and the dinrhiw2 library. The code has been tested to compile under **Debian/Linux**. Currently, MinGW/GCC environment builds fail but it should not be too hard to get it working in MinGW/Windows with some extra work.
 
 SDL2 dependencies: SDL2, SDL2_ttf, SDL2_image, SDL2_gfx (sourceforge), SDL2_mixer.
 
