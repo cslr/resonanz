@@ -1,0 +1,6 @@
+Current library dependencies in Resonanz:
+
+  * SDL2 (graphics) (BSD-style license) http://www.libsdl.org/
+  * dinrhiw2 (machine learning tools) (LGPL) http://dinrhiw2.sourceforge.net/
+  * FFTW (spectral_analysis.cpp) (GPL) http://www.fftw.org/
+  * liblo (OSC-messages) (LGPL) http://liblo.sourceforge.net/
