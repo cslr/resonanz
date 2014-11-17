@@ -1,0 +1,60 @@
+TODO
+
+- refactor main.cpp more to make code more readable and clear, 
+  there are also small bugs and assumptions as code is not 100% perfect
+
+- add better support for "themes" stimulation mechanisms are divided into themes
+  (subdirectories) that can be activated by copying stimulation files that are used
+  into main directory
+
+- once Emotiv Insight is available write real EmotivInsightDataSource class instead
+  of using EmotivInsightStub and random data
+
+- once Muse is available,
+  sample at 200 Hz to get 0-100 hz band for EEG for analysis 
+  to get: gamma/alpha/beta/theta bands for target analysis
+
+- gradually replace strict-licensed material and create database of pictures 
+  that are in public domain or under VERY liberal licenses 
+  (non-restrictive Creative Commons license).
+  this will then make it easy to use resulting movies in anyway.
+
+- testing
+
+- user interface: write Java SWT (eclipse) user interface for 
+  those that cannot used command-line [much later as you need lots of experimentation]
+
+STIMULATION: 
+
+- (picture-based) stimulation needs more high-quality pictures
+  [pictures causing calmness]
+
+  *YOU NEED *STRONG* PICTURES* IF YOU ARE GOING TO GET ANY REAL EFFECT*
+
+- licensing mess: REMOVE media files that require 
+  ShareAlike (same license as the original) instead of just Attribution
+
+  [This means that you can distribute the resulting movie commercially]
+
+- study available sound instrument software codes for Linux (and Windows),
+  VST host/instruments afaik do not support easy setting/fetching of patch
+  parameters so it is not good solution but other sound synthesizer 
+  architechtures might actually do this
+
+- study psycle and use (or implement) some better sound synthesizers,
+  more advanced post processing (filter cutoff [low/highpass filtering 
+  using fftw])
+
+- look at LADSPA plugins, VST plugins are not very good because 
+  you cannot easily manipulate and fetch synthesizer plugin parameters 
+  from the host (use as the simulator)
+
+- word stimulation needs to be rapid and needs 
+  something extra to maximize the impact, try to get text2speech working?
+
+- later: algorithmic music might make sense
+
+
+
+
+

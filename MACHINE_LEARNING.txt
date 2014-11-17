@@ -1,0 +1,49 @@
+The machine learning approach used in Resonanz.
+
+- user is fed with stimulus, the program uses Emotiv Insight
+  to measure the state before and after the stimulus
+
+- (initial state, response state) pairs are stored for each
+  stimulus (keyword, picture, sound etc). The data is stored
+  in dinrhiw dataset<> class and fileformat into 
+  the "datasets/" directory.
+
+- scripts are used to calculate artificial neural network (ANN) 
+  models (dinrhiw nnetwork<> class) and weights to predict 
+  f(initial state) = response state for each case and results are 
+  stored in the "nnetworks/" directory.
+  
+  The script uses nntool and dstool.
+  
+  ./learn-datasets.sh
+
+- program choses random stimulus (./resonanz --video --target="") or 
+  if Emotiv Insight is connected it measures current states and goes through
+  neural network models to find the best stimulus which minimizes distance 
+  from the user selected target emotiv state
+
+  You can also use "--simulate" this will work without any hardware device and 
+  will use neural network predicted states as the next state to generate
+  stimulus sequences without any measurements. This will only work if initial
+  state makes some kind of sense (randomly selelected) and neural network
+  state change predictions are accurate (unrealistic). Still it should work
+  *in theory* to find and generate stimulus paths which should push brain
+  towards the target state as well as possible.
+
+- user selects emotiv meta-state (initially from the command-line)
+  and also sets variance for each variable (error bounds).
+
+  distance from the target state is:
+
+  SUM(i) (current_state_i - target_state_i)^2 / variance_i^2
+
+  This means that by setting variance to infinity (large) 
+  we can effectively eliminate that variable from the equation
+  (variable can take any value when we go towards target state).
+
+  As a default --target-error="" is set to be "1.0,1.0,1.0...". 
+  This will mean that variance_i = 1.0 for all variables.
+
+
+
+

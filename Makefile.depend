@@ -1,0 +1,262 @@
+FMSoundSynthesis.o: FMSoundSynthesis.cpp FMSoundSynthesis.h \
+ SDLSoundSynthesis.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h
+SDLSoundSynthesis.o: SDLSoundSynthesis.cpp SDLSoundSynthesis.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h
+ResonanzShow.o: ResonanzShow.cpp ResonanzShow.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
+ /usr/local/include/SDL2/SDL2_rotozoom.h \
+ /usr/local/include/SDL2/SDL_mixer.h
+EmotivInsightStub.o: EmotivInsightStub.cpp EmotivInsightStub.h \
+ DataSource.h
+main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
+ /usr/local/include/dinrhiw/BFGS.h \
+ /usr/local/include/dinrhiw/optimized_function.h \
+ /usr/local/include/dinrhiw/function.h \
+ /usr/local/include/dinrhiw/vertex.h /usr/local/include/dinrhiw/atlas.h \
+ /usr/local/include/dinrhiw/atlas_primitives.h \
+ /usr/local/include/dinrhiw/ownexception.h \
+ /usr/local/include/dinrhiw/number.h \
+ /usr/local/include/dinrhiw/compressable.h \
+ /usr/local/include/dinrhiw/MemoryCompressor.h \
+ /usr/local/include/dinrhiw/backpropagation.h \
+ /usr/local/include/dinrhiw/nn_iterative_correction.h \
+ /usr/local/include/dinrhiw/neuralnetwork.h \
+ /usr/local/include/dinrhiw/neuronlayer.h \
+ /usr/local/include/dinrhiw/matrix.h \
+ /usr/local/include/dinrhiw/linear_algebra.h \
+ /usr/local/include/dinrhiw/correlation.h \
+ /usr/local/include/dinrhiw/dynamic_bitset.h \
+ /usr/local/include/dinrhiw/integer.h \
+ /usr/local/include/dinrhiw/blade_math.h \
+ /usr/local/include/dinrhiw/gvertex.h \
+ /usr/local/include/dinrhiw/gmatrix.h \
+ /usr/local/include/dinrhiw/gmatrix.cpp /usr/local/include/dinrhiw/real.h \
+ /usr/local/include/dinrhiw/quaternion.h \
+ /usr/local/include/dinrhiw/gvertex.cpp \
+ /usr/local/include/dinrhiw/matrix_rotations.h \
+ /usr/local/include/dinrhiw/activation_function.h \
+ /usr/local/include/dinrhiw/array.h \
+ /usr/local/include/dinrhiw/container.h \
+ /usr/local/include/dinrhiw/static_array.h \
+ /usr/local/include/dinrhiw/static_array.cpp \
+ /usr/local/include/dinrhiw/dynamic_array.h \
+ /usr/local/include/dinrhiw/stack.h /usr/local/include/dinrhiw/queue.h \
+ /usr/local/include/dinrhiw/dynamic_array.cpp \
+ /usr/local/include/dinrhiw/search_array.h \
+ /usr/local/include/dinrhiw/printable.h \
+ /usr/local/include/dinrhiw/data_source.h \
+ /usr/local/include/dinrhiw/chainhash.h \
+ /usr/local/include/dinrhiw/hash_table.h \
+ /usr/local/include/dinrhiw/chainhash.cpp \
+ /usr/local/include/dinrhiw/dummystack.h \
+ /usr/local/include/dinrhiw/priority_queue.h \
+ /usr/local/include/dinrhiw/point.h /usr/local/include/dinrhiw/point.cpp \
+ /usr/local/include/dinrhiw/function_access_control.h \
+ /usr/local/include/dinrhiw/unique_id.h \
+ /usr/local/include/dinrhiw/function_access_control.cpp \
+ /usr/local/include/dinrhiw/dynamic_ctor_protection.h \
+ /usr/local/include/dinrhiw/singleton.h \
+ /usr/local/include/dinrhiw/singleton_list.h \
+ /usr/local/include/dinrhiw/singleton.cpp \
+ /usr/local/include/dinrhiw/augmented_data.h \
+ /usr/local/include/dinrhiw/tree.h /usr/local/include/dinrhiw/avltree.h \
+ /usr/local/include/dinrhiw/avlnode.h \
+ /usr/local/include/dinrhiw/avlnode.cpp \
+ /usr/local/include/dinrhiw/avltree.cpp \
+ /usr/local/include/dinrhiw/rbtree.h /usr/local/include/dinrhiw/rbnode.h \
+ /usr/local/include/dinrhiw/rbnode.cpp \
+ /usr/local/include/dinrhiw/rbtree.cpp \
+ /usr/local/include/dinrhiw/binary_tree.h \
+ /usr/local/include/dinrhiw/btree_node.h \
+ /usr/local/include/dinrhiw/binary_tree.cpp \
+ /usr/local/include/dinrhiw/fast_radix.h \
+ /usr/local/include/dinrhiw/fast_gradix.h \
+ /usr/local/include/dinrhiw/fast_radixv.h \
+ /usr/local/include/dinrhiw/radix_sort.h \
+ /usr/local/include/dinrhiw/radix_sortv.h \
+ /usr/local/include/dinrhiw/insertion.h /usr/local/include/dinrhiw/ETA.h \
+ /usr/local/include/dinrhiw/linear_ETA.h \
+ /usr/local/include/dinrhiw/linear_ETA.cpp \
+ /usr/local/include/dinrhiw/conffile.h \
+ /usr/local/include/dinrhiw/modular.h /usr/local/include/dinrhiw/gcd.h \
+ /usr/local/include/dinrhiw/gcd.cpp \
+ /usr/local/include/dinrhiw/primality_test.h \
+ /usr/local/include/dinrhiw/primality_test.cpp \
+ /usr/local/include/dinrhiw/norms.h \
+ /usr/local/include/dinrhiw/linear_equations.h \
+ /usr/local/include/dinrhiw/eig.h /usr/local/include/dinrhiw/conversion.h \
+ /usr/local/include/dinrhiw/bezier.h \
+ /usr/local/include/dinrhiw/bezier.cpp \
+ /usr/local/include/dinrhiw/bezier_density.h \
+ /usr/local/include/dinrhiw/bezier_surface.h \
+ /usr/local/include/dinrhiw/bezier_surface.cpp \
+ /usr/local/include/dinrhiw/hermite.h \
+ /usr/local/include/dinrhiw/hermite.cpp /usr/local/include/dinrhiw/PSO.h \
+ /usr/local/include/dinrhiw/GeneticAlgorithm.h \
+ /usr/local/include/dinrhiw/GeneticAlgorithm.cpp \
+ /usr/local/include/dinrhiw/GeneticAlgorithm2.h \
+ /usr/local/include/dinrhiw/GeneticAlgorithm2.cpp \
+ /usr/local/include/dinrhiw/Cryptosystem.h \
+ /usr/local/include/dinrhiw/DataConversion.h \
+ /usr/local/include/dinrhiw/DataConversion.cpp \
+ /usr/local/include/dinrhiw/AES.h /usr/local/include/dinrhiw/DES.h \
+ /usr/local/include/dinrhiw/DSA.h /usr/local/include/dinrhiw/PAD.h \
+ /usr/local/include/dinrhiw/RSA.h /usr/local/include/dinrhiw/SHA.h \
+ /usr/local/include/dinrhiw/global.h /usr/local/include/dinrhiw/config.h \
+ /usr/local/include/dinrhiw/dataset.h /usr/local/include/dinrhiw/neuron.h \
+ /usr/local/include/dinrhiw/odd_sigmoid.h \
+ /usr/local/include/dinrhiw/nnPSO.h /usr/local/include/dinrhiw/dnnPSO.h \
+ /usr/local/include/dinrhiw/nnetwork.h \
+ /usr/local/include/dinrhiw/backprop.h \
+ /usr/local/include/dinrhiw/KMeans.h /usr/local/include/dinrhiw/SOM2D.h \
+ /usr/local/include/dinrhiw/optimized_nnetwork_function.h \
+ /usr/local/include/dinrhiw/negative_function.h \
+ /usr/local/include/dinrhiw/stretched_function.h \
+ /usr/local/include/dinrhiw/identity_activation.h \
+ /usr/local/include/dinrhiw/threshold.h \
+ /usr/local/include/dinrhiw/treshold.h \
+ /usr/local/include/dinrhiw/multidimensional_gaussian.h \
+ /usr/local/include/dinrhiw/gaussian.h /usr/local/include/dinrhiw/rbf.h \
+ /usr/local/include/dinrhiw/rbf.cpp \
+ /usr/local/include/dinrhiw/hypervolume.h \
+ /usr/local/include/dinrhiw/hypervolume.cpp \
+ /usr/local/include/dinrhiw/pdftree.h \
+ /usr/local/include/dinrhiw/simplex.h \
+ /usr/local/include/dinrhiw/timed_boolean.h \
+ /usr/local/include/dinrhiw/superresolution.h \
+ /usr/local/include/dinrhiw/superresolution.cpp \
+ /usr/local/include/dinrhiw/memory_access_timing.h \
+ /usr/local/include/dinrhiw/list_source.h \
+ /usr/local/include/dinrhiw/list_source.cpp \
+ /usr/local/include/dinrhiw/test_function.h \
+ /usr/local/include/dinrhiw/test_function2.h ResonanzShow.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
+ /usr/local/include/SDL2/SDL2_rotozoom.h \
+ /usr/local/include/SDL2/SDL_mixer.h FMSoundSynthesis.h \
+ SDLSoundSynthesis.h

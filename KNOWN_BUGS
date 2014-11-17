@@ -1,0 +1,15 @@
+Code is only tested to compile and work in Debian/Linux.
+
+SDL2_mixer ogg-playback fails when the playback frequency is not
+the sampling frequency.
+
+EmotivInsightStub code is now just STUB. It does not do real measurements.
+
+Currenctly the media files contain files that are distributed 
+under Creative Commons ShareAlike license. REMOVE those files so that
+you resulting video is under Creative Commons Attribution license. This means
+that you just need to name the persons or creators of the images that are 
+in movie but can sell the video commercially. 
+[In practice you also distribute source images together with info txt file (attribution)].
+
+
