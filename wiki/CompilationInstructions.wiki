@@ -1,0 +1,36 @@
+Compilation can be a bit tricky. Currently, the code depends on SDL2 libraries and the dinrhiw library (sourceforge). The code has been tested to compile under **Debian/Linux**. Currently, MinGW/GCC environment builds fail but it should not be too hard to get it working in MinGW/Windows with some extra work.
+
+SDL2 dependencies: SDL2, SDL2_ttf, SDL2_image, SDL2_gfx (sourceforge), SDL2_mixer.
+
+The source code for SDL2 and related sublibraries can be found from *libs* subdirectory. Extract the source code and compile the libraries. Also install pkg-config. It also now depends on *dinrhiw2* and its *tools* (_dstool_, _nntool_).
+
+After this compile and start it using commands like:
+
+make
+
+./resonanz --measure-pictures
+
+./learn-datasets.sh
+
+./resonanz --video --target=0.4,0.0,0.0,1.0,0.1 --target-error=1.0,1.0,1.0,1.0,1.0 [--simulate]
+
+
+And you can get what the basic current graphical output looks like. Currently the code just processes randomly generated data as there is no Emotiv Insight to provide the meta-signals but when it is available the code to replace random data source (stub) should be rather simple.
+
+The first resonanz command shows pictures (there must be pictures in **pics** directory, copy pictures to there from its subdirectories) and measures the response patterns for those pics and stores them as dataset files in _datasets_ directory.
+
+The second command actives script that uses dinrhiw-tools and learns neural network weights from the datasets and stores the neural network weight files to _nnetworks_ directory.
+
+The third command loads the neural network models for each stimulus and keeps measuring and looking for stimulus that pushes brain into target state as well as possible (as predicted by neural network output).
+
+The media files used for stimulus are stored in *pics* , *keywords.txt* and *music* directories.
+
+NOTE: measurements for sounds, pictures and keywords should be done separatedly.
+
+== TODO ==
+
+Each part of code has been tested separatedly but the overall functionality of the code is currently untested as it depends on real EEG metadata (affectiv signals). It SHOULD work but probably requires lots of small fixing and changes.
+
+Collecting of large database of (initial state, response state) pairs. This will be rather slow and in my calculation will take a week or something to get enough data points so you can do meaningful learning of neural network weights predicting how stimulus is likely to cause (small!) changes to nervous system activity.
+
+Also having high-quality sounds, pictures and properly selected keywords is important too. License is here also somewhat important as you might want to distribute resulting video streams.
