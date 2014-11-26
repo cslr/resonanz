@@ -36,7 +36,7 @@ _Currently the program just cycles through "random" pictures and keywords as the
   * collect large database of (input, response) pairs
   * create synthesis code with small number of parameters
   * create semi-random stimuli to and measure response (sound synthesis parameters, eeg-meta-response)
-  * use machine learning to find a mathematical model f(input) = response
+  * use machine learning (neural networks) to find a mathematical model f(input) = response
   * use the mathematical model to keep looking for inputs that lead to user selected response
   * use the best input found and keep measuring the actual response/current state, store this extra information into database for further model optimization and learning
   * find input sequences that lead and keep nervous system in a target state as well as possible
