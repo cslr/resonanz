@@ -282,7 +282,7 @@ int main(int argc, char** argv)
   ResonanzShow* sdl = new ResonanzShow(1024, 768);
   
   
-  if(measure_eeg_responses == false){
+  if(measure_eeg_responses == true){
     std::cout << std::endl;
     std::cout << "target    = " << target << std::endl;
     std::cout << "var_error = " << var_error << std::endl;
