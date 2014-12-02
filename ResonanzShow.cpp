@@ -22,7 +22,7 @@ ResonanzShow::ResonanzShow(int WIDTH, int HEIGHT)
     throw std::runtime_error("IMG_Init() failed.");
   }
   
-  flags = MIX_INIT_MP3 | MIX_INIT_OGG;
+  flags = MIX_INIT_OGG;
   
   if(Mix_Init(flags) != flags){
     printf("Mix_Init failed: %s\n", Mix_GetError());
@@ -36,7 +36,7 @@ ResonanzShow::ResonanzShow(int WIDTH, int HEIGHT)
   if(fs <= 0) fs = 10;
   
   font = 0;
-  font = TTF_OpenFont("FreeSans.ttf", fs);
+  font = TTF_OpenFont("Vera.ttf", fs);
   if(font == 0){
     printf("TTF_OpenFont failure: %s\n", TTF_GetError());
     IMG_Quit();
@@ -48,7 +48,7 @@ ResonanzShow::ResonanzShow(int WIDTH, int HEIGHT)
   if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1){
     IMG_Quit();
     Mix_Quit();
-    printf("ERROR: Cannot open SDL mixer.\n");
+    printf("ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
     
     throw std::runtime_error("Mix_OpenAudio() failed.");
   }
