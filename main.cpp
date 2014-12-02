@@ -355,7 +355,7 @@ int main(int argc, char** argv)
       keywordPredict[i] = new prediction;
       
       if(keywordPredict[i]->ds.load(ds_filename) == false || 
-	 keywordPredict[i]->nn.load2(nn_filename) == false){
+	 keywordPredict[i]->nn.load(nn_filename) == false){
 	delete keywordPredict[i];
 	keywordPredict[i] = NULL;
       }
@@ -376,7 +376,7 @@ int main(int argc, char** argv)
       picturePredict[i] = new prediction;
       
       if(picturePredict[i]->ds.load(ds_filename) == false || 
-	 picturePredict[i]->nn.load2(nn_filename) == false){
+	 picturePredict[i]->nn.load(nn_filename) == false){
 	delete picturePredict[i];
 	picturePredict[i] = NULL;
       }
@@ -397,7 +397,7 @@ int main(int argc, char** argv)
       soundPredict[i] = new prediction;
       
       if(soundPredict[i]->ds.load(ds_filename) == false || 
-	 soundPredict[i]->nn.load2(nn_filename) == false){
+	 soundPredict[i]->nn.load(nn_filename) == false){
 	delete soundPredict[i];
 	soundPredict[i] = NULL;
       }
@@ -451,7 +451,7 @@ int main(int argc, char** argv)
 	  }
 	  
 	  if(soundAfter.size() > 0 && soundPrev.size() > 0){
-	    std::vector< whiteice::math::atlas_real<float> > t;
+	    std::vector< whiteice::math::blas_real<float> > t;
 	    t.resize(soundPrev.size());
 	    for(unsigned int i=0;i<t.size();i++)
 	      t[i] = soundPrev[i];
@@ -494,7 +494,7 @@ int main(int argc, char** argv)
 	  }
 	}
 
-	std::vector< whiteice::math::atlas_real<float> > t;
+	std::vector< whiteice::math::blas_real<float> > t;
 	t.resize(prev.size());
 	for(unsigned int i=0;i<t.size();i++)
 	  t[i] = prev[i];
@@ -524,7 +524,7 @@ int main(int argc, char** argv)
 	  }
 	}
 	
-	std::vector< whiteice::math::atlas_real<float> > t;
+	std::vector< whiteice::math::blas_real<float> > t;
 	t.resize(prev.size());
 	for(unsigned int i=0;i<t.size();i++)
 	  t[i] = prev[i];
