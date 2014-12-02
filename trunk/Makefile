@@ -15,12 +15,14 @@ CP = cp
 CFLAGS = -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
 CXXFLAGS = -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
 
-OBJECTS = FMSoundSynthesis.o SDLSoundSynthesis.o ResonanzShow.o EmotivInsightStub.o MuseOSCSampler.o spectral_analysis.o main.o
-SOURCES = FMSoundSynthesis.cpp SDLSoundSynthesis.cpp ResonanzShow.cpp EmotivInsightStub.cpp MuseOSCSampler.cpp spectral_analysis.cpp main.cpp tst/spectral_test.cpp
+OBJECTS = FMSoundSynthesis.o SDLSoundSynthesis.o ResonanzShow.o EmotivInsightStub.o spectral_analysis.o main.o
+SOURCES = FMSoundSynthesis.cpp SDLSoundSynthesis.cpp ResonanzShow.cpp EmotivInsightStub.cpp spectral_analysis.cpp main.cpp tst/spectral_test.cpp
+
+# MuseOSCSampler.o
 
 TARGET = resonanz
 
-LIBS = `sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -llo -lfftw3 -lm
+LIBS = `sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -lfftw3 -lm
 
 SPECTRAL_TEST_OBJECTS=spectral_analysis.o tst/spectral_test.o
 SPECTRAL_TEST_TARGET=spectral_test

@@ -102,12 +102,14 @@ ResonanzShow.o: ResonanzShow.cpp ResonanzShow.h \
  /usr/local/include/SDL2/SDL_mixer.h
 EmotivInsightStub.o: EmotivInsightStub.cpp EmotivInsightStub.h \
  DataSource.h
+spectral_analysis.o: spectral_analysis.cpp spectral_analysis.h
 main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/dinrhiw/BFGS.h \
  /usr/local/include/dinrhiw/optimized_function.h \
  /usr/local/include/dinrhiw/function.h \
- /usr/local/include/dinrhiw/vertex.h /usr/local/include/dinrhiw/atlas.h \
- /usr/local/include/dinrhiw/atlas_primitives.h \
+ /usr/local/include/dinrhiw/vertex.h \
+ /usr/local/include/dinrhiw/dinrhiw_blas.h \
+ /usr/local/include/dinrhiw/blas_primitives.h \
  /usr/local/include/dinrhiw/ownexception.h \
  /usr/local/include/dinrhiw/number.h \
  /usr/local/include/dinrhiw/compressable.h \
@@ -129,6 +131,14 @@ main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/dinrhiw/gvertex.cpp \
  /usr/local/include/dinrhiw/matrix_rotations.h \
  /usr/local/include/dinrhiw/activation_function.h \
+ /usr/local/include/dinrhiw/BFGS_nnetwork.h \
+ /usr/local/include/dinrhiw/nnetwork.h \
+ /usr/local/include/dinrhiw/conffile.h \
+ /usr/local/include/dinrhiw/dataset.h /usr/local/include/dinrhiw/ica.h \
+ /usr/local/include/dinrhiw/pBFGS_nnetwork.h \
+ /usr/local/include/dinrhiw/LBFGS.h \
+ /usr/local/include/dinrhiw/LBFGS_nnetwork.h \
+ /usr/local/include/dinrhiw/pLBFGS_nnetwork.h \
  /usr/local/include/dinrhiw/array.h \
  /usr/local/include/dinrhiw/container.h \
  /usr/local/include/dinrhiw/static_array.h \
@@ -171,7 +181,6 @@ main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/dinrhiw/insertion.h /usr/local/include/dinrhiw/ETA.h \
  /usr/local/include/dinrhiw/linear_ETA.h \
  /usr/local/include/dinrhiw/linear_ETA.cpp \
- /usr/local/include/dinrhiw/conffile.h \
  /usr/local/include/dinrhiw/modular.h /usr/local/include/dinrhiw/gcd.h \
  /usr/local/include/dinrhiw/gcd.cpp \
  /usr/local/include/dinrhiw/primality_test.h \
@@ -197,11 +206,13 @@ main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/dinrhiw/DSA.h /usr/local/include/dinrhiw/PAD.h \
  /usr/local/include/dinrhiw/RSA.h /usr/local/include/dinrhiw/SHA.h \
  /usr/local/include/dinrhiw/global.h /usr/local/include/dinrhiw/config.h \
- /usr/local/include/dinrhiw/dataset.h /usr/local/include/dinrhiw/neuron.h \
+ /usr/local/include/dinrhiw/neuron.h \
  /usr/local/include/dinrhiw/odd_sigmoid.h \
  /usr/local/include/dinrhiw/nnPSO.h /usr/local/include/dinrhiw/dnnPSO.h \
- /usr/local/include/dinrhiw/nnetwork.h \
- /usr/local/include/dinrhiw/backprop.h \
+ /usr/local/include/dinrhiw/NNGradDescent.h \
+ /usr/local/include/dinrhiw/dinrhiw.h \
+ /usr/local/include/dinrhiw/NNRandomSearch.h \
+ /usr/local/include/dinrhiw/deep_ica_network_priming.h \
  /usr/local/include/dinrhiw/KMeans.h /usr/local/include/dinrhiw/SOM2D.h \
  /usr/local/include/dinrhiw/optimized_nnetwork_function.h \
  /usr/local/include/dinrhiw/negative_function.h \
@@ -210,7 +221,9 @@ main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/dinrhiw/threshold.h \
  /usr/local/include/dinrhiw/treshold.h \
  /usr/local/include/dinrhiw/multidimensional_gaussian.h \
- /usr/local/include/dinrhiw/gaussian.h /usr/local/include/dinrhiw/rbf.h \
+ /usr/local/include/dinrhiw/gaussian.h /usr/local/include/dinrhiw/HMC.h \
+ /usr/local/include/dinrhiw/bayesian_nnetwork.h \
+ /usr/local/include/dinrhiw/GA3.h /usr/local/include/dinrhiw/rbf.h \
  /usr/local/include/dinrhiw/rbf.cpp \
  /usr/local/include/dinrhiw/hypervolume.h \
  /usr/local/include/dinrhiw/hypervolume.cpp \
@@ -259,4 +272,5 @@ main.o: main.cpp /usr/local/include/dinrhiw/dinrhiw.h \
  /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
  /usr/local/include/SDL2/SDL2_rotozoom.h \
  /usr/local/include/SDL2/SDL_mixer.h FMSoundSynthesis.h \
- SDLSoundSynthesis.h
+ SDLSoundSynthesis.h EmotivInsightStub.h DataSource.h
+spectral_test.o: tst/spectral_test.cpp spectral_analysis.h
