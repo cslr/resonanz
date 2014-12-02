@@ -221,7 +221,7 @@ int main(int argc, char** argv)
   }
   
   
-  if(target.size() > 0 && var_error.size() == 0){
+  if(target.size() > 0 && var_error.size() < target.size()){
     var_error.resize(target.size());
     for(unsigned int i=0;i<var_error.size();i++){
       var_error[i] = 1.0f;
@@ -282,7 +282,7 @@ int main(int argc, char** argv)
   ResonanzShow* sdl = new ResonanzShow(1024, 768);
   
   
-  if(measure_eeg_responses == true){
+  if(measure_eeg_responses == false && randomStim == false){
     std::cout << std::endl;
     std::cout << "target    = " << target << std::endl;
     std::cout << "var_error = " << var_error << std::endl;
