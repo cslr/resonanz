@@ -10,10 +10,6 @@ TODO
 - once Emotiv Insight is available write real EmotivInsightDataSource class instead
   of using EmotivInsightStub and random data
 
-- once Muse is available,
-  sample at 200 Hz to get 0-100 hz band for EEG for analysis 
-  to get: gamma/alpha/beta/theta bands for target analysis
-
 - gradually replace strict-licensed material and create database of pictures 
   that are in public domain or under VERY liberal licenses 
   (non-restrictive Creative Commons license).
