@@ -408,7 +408,13 @@ int main(int argc, char** argv)
     }
     
   }
+
   
+  // loads all pictures into memory
+  {
+    for(unsigned int i=0;i<pictures.size();i++)
+      sdl->showScreen(0, i);
+  }
   
   while(!sdl->keypress())
   {
@@ -475,7 +481,7 @@ int main(int argc, char** argv)
 	eeg->data(soundPrev);
       }
       
-      sdl->delay(2000); // 2 seconds is maybe ok when measuring responses
+      sdl->delay(1000); // 2 seconds is maybe ok when measuring responses
       
       eeg->data(after);
 
@@ -650,7 +656,7 @@ int main(int argc, char** argv)
       // 250ms might be good
       // TODO we measure time spend in a loop wait only needed msecs in order to keep
       //      framerate constant
-      sdl->delay(250);
+      sdl->delay(100);
     }
         
   }
