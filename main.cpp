@@ -278,8 +278,8 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////////////////
   
   DataSource* eeg = new EmotivInsightStub();
-  // ResonanzShow* sdl = new ResonanzShow(640, 480);
-  ResonanzShow* sdl = new ResonanzShow(1024, 768);
+  ResonanzShow* sdl = new ResonanzShow(640, 480);
+  // ResonanzShow* sdl = new ResonanzShow(1024, 768);
   
   
   if(measure_eeg_responses == false && randomStim == false){

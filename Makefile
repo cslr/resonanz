@@ -12,8 +12,8 @@ RM = rm -f
 MV = mv
 CP = cp
 
-CFLAGS = -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
-CXXFLAGS = -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
+CFLAGS = -std=c++11 -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
+CXXFLAGS = -std=c++11 -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
 
 OBJECTS = FMSoundSynthesis.o SDLSoundSynthesis.o ResonanzShow.o EmotivInsightStub.o spectral_analysis.o main.o
 SOURCES = FMSoundSynthesis.cpp SDLSoundSynthesis.cpp ResonanzShow.cpp EmotivInsightStub.cpp spectral_analysis.cpp main.cpp tst/spectral_test.cpp
