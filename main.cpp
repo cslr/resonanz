@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include <dinrhiw.h>
+#include <dinrhiw/dinrhiw.h>
 
 #include "ResonanzShow.h"
 #include "FMSoundSynthesis.h"

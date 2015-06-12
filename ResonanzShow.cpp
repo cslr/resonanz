@@ -3,6 +3,12 @@
 
 #include <exception>
 #include <stdexcept>
+#include <math.h>
+
+#define SMOOTHING_ON  1
+#define SMOOTHING_OFF 0
+
+SDL_Surface* zoomSurface(SDL_Surface* image, double xscale, double yscale, int flag);
 
 
 ResonanzShow::ResonanzShow(int WIDTH, int HEIGHT)
@@ -348,3 +354,13 @@ bool ResonanzShow::measureColor(SDL_Surface* image, SDL_Color& averageColor)
   
 }
 
+
+
+SDL_Surface* zoomSurface(SDL_Surface* image, double xscale, double yscale, int flag)
+{
+	// currently just copies surface and does nothing (TODO: do proper scaling)
+	SDL_Surface* result = SDL_CreateRGBSurface(0, (int)(image->w*xscale), (int)(image->h*yscale), 32,
+												0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+	return result;
+}
