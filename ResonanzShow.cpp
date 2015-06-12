@@ -362,5 +362,9 @@ SDL_Surface* zoomSurface(SDL_Surface* image, double xscale, double yscale, int f
 	SDL_Surface* result = SDL_CreateRGBSurface(0, (int)(image->w*xscale), (int)(image->h*yscale), 32,
 												0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
+	SDL_BlitScaled(image, NULL, result, NULL);
+
+
+
 	return result;
 }

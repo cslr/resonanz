@@ -481,7 +481,7 @@ int main(int argc, char** argv)
 	eeg->data(soundPrev);
       }
       
-      sdl->delay(1000); // 2 seconds is maybe ok when measuring responses
+      sdl->delay(1000); // 1 seconds is maybe ok when measuring responses
       
       eeg->data(after);
 
@@ -656,7 +656,7 @@ int main(int argc, char** argv)
       // 250ms might be good
       // TODO we measure time spend in a loop wait only needed msecs in order to keep
       //      framerate constant
-      sdl->delay(100);
+      sdl->delay(100); // [we keep updating image as fast as we can?]
     }
         
   }
@@ -770,7 +770,9 @@ bool loadPictures(std::string directory, std::vector<std::string>& pictures)
     std::string name = ep->d_name;
     
     if(name.find(".jpg") == (name.size() - 4) || 
-       name.find(".png") == (name.size() - 4))
+       name.find(".png") == (name.size() - 4) ||
+	   name.find(".JPG") == (name.size() - 4) ||
+	   name.find(".PNG") == (name.size() - 4))
     {
       std::string fullname = directory.c_str();
       fullname = fullname + "/";
