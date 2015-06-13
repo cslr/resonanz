@@ -11,6 +11,25 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <vector>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <vector>
+#include <stdio.h>
+#include <stdint.h>
+#include <time.h>
+#include <math.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
+
 
 
 namespace whiteice {
@@ -64,6 +83,9 @@ public:
 	bool cmdStopOptimizeModel() throw();
 
 private:
+	const std::string windowTitle = "Neuromancer NeuroStim";
+	const std::string iconFile = "brain.png";
+
 	volatile bool thread_is_running;
 	std::thread* workerThread;
 	std::mutex   thread_mutex;
@@ -77,12 +99,36 @@ private:
 	std::mutex status_mutex;
 
 	// main worker thread loop to execute commands
-	void updateLoop();
+	void engine_loop();
 
 	// functions used by updateLoop():
 
-	void engine_sleep(int msecs); // sleeps for given number of milliseconds, updates engineState
+	void engine_sleep(int msecs, const std::string& state); // sleeps for given number of milliseconds, updates engineState
 	bool engine_checkIncomingCommand();
+
+	bool engine_SDL_init(const std::string& fontname);
+	bool engine_SDL_deinit();
+
+	bool measureColor(SDL_Surface* image, SDL_Color& averageColor);
+
+	bool engine_loadMedia(const std::string& picdir, const std::string& keyfile);
+	bool engine_showScreen(const std::string& message, unsigned int picture);
+
+	void engine_pollEvents();
+
+	void engine_updateScreen();
+
+	SDL_Window* window = nullptr;
+	int SCREEN_WIDTH, SCREEN_HEIGHT;
+	TTF_Font* font = nullptr;
+
+	// media resources
+	std::vector<std::string> keywords;
+	std::vector<std::string> pictures;
+	std::vector<SDL_Surface*> images;
+
+	bool loadWords(const std::string filename, std::vector<std::string>& words);
+	bool loadPictures(const std::string directory, std::vector<std::string>& pictures);
 
 };
 

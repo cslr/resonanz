@@ -267,7 +267,7 @@ int main(int argc, char** argv)
   
   for(unsigned int i=0;i<musicDirs.size();i++){
     if(!loadMusic(musicDirs[i], sounds)){
-      printf("Couldn't find any pictures from directory: %s.\n", musicDirs[i].c_str());
+      printf("Couldn't find any music from directory: %s.\n", musicDirs[i].c_str());
       return -1;
     }
   }
