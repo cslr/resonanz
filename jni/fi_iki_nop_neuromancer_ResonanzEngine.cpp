@@ -8,6 +8,11 @@
  */
 
 #include "fi_iki_nop_neuromancer_ResonanzEngine.h"
+#include "ResonanzEngine.h"
+#include <jni.h>
+
+// starts new engine (note: if thread creation fails we are in trouble)
+static whiteice::resonanz::ResonanzEngine engine;
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
@@ -17,9 +22,18 @@
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startRandomStimulation
   (JNIEnv * env, jobject obj, jstring pictureDir, jstring keywordsFile){
 
-	// FIXME implement me
+	if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
+	if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
 
-	return (jboolean)false;
+	const char *pic = env->GetStringUTFChars(pictureDir, 0);
+	const char *key = env->GetStringUTFChars(keywordsFile, 0);
+
+	bool result = engine.cmdRandom(std::string(pic), std::string(key));
+
+	env->ReleaseStringUTFChars(pictureDir, pic);
+	env->ReleaseStringUTFChars(keywordsFile, key);
+
+	return (jboolean)result;
 }
 
 /*
@@ -30,9 +44,21 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startRando
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startMeasureStimulation
   (JNIEnv * env, jobject obj, jstring pictureDir, jstring keywordsFile, jstring measurementsDir){
 
-	// FIXME implement me
+	if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
+	if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
+	if(env->IsSameObject(measurementsDir, NULL)) return (jboolean)false;
 
-	return (jboolean)false;
+	const char *pic = env->GetStringUTFChars(pictureDir, 0);
+	const char *key = env->GetStringUTFChars(keywordsFile, 0);
+	const char *mod = env->GetStringUTFChars(measurementsDir, 0);
+
+	bool result = engine.cmdMeasure(std::string(pic), std::string(key), std::string(mod));
+
+	env->ReleaseStringUTFChars(pictureDir, pic);
+	env->ReleaseStringUTFChars(keywordsFile, key);
+	env->ReleaseStringUTFChars(measurementsDir, mod);
+
+	return (jboolean)result;
 }
 
 /*
@@ -41,11 +67,17 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startMeasu
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptimizeModel
-  (JNIEnv * env, jobject obj, jstring modelDir){
+  (JNIEnv * env, jobject obj, jstring modelDir)
+{
+	if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
 
-	// FIXME implement me
+	const char *mod = env->GetStringUTFChars(modelDir, 0);
 
-	return (jboolean)false;
+	bool result = engine.cmdOptimizeModel(std::string(mod));
+
+	env->ReleaseStringUTFChars(modelDir, mod);
+
+	return (jboolean)result;
 }
 
 /*
@@ -56,9 +88,11 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getOptimizeModelStatus
   (JNIEnv * env, jobject obj)
 {
-	// FIXME implement me
+	std::string line = engine.getEngineStatus();
 
-	return (jboolean)false;
+	jstring result = env->NewStringUTF(line.c_str());
+
+	return result;
 }
 
 /*
@@ -67,11 +101,9 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getOptimize
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_stopOptimizeModel
-  (JNIEnv *, jobject obj){
-
-	// FIXME implement me
-
-	return (jboolean)false;
+  (JNIEnv * env, jobject obj)
+{
+	return (jboolean)engine.cmdStopOptimizeModel();
 }
 
 

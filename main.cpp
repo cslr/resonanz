@@ -278,8 +278,8 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////////////////
   
   DataSource* eeg = new EmotivInsightStub();
-  ResonanzShow* sdl = new ResonanzShow(640, 480);
-  // ResonanzShow* sdl = new ResonanzShow(1024, 768);
+  // ResonanzShow* sdl = new ResonanzShow(640, 480);
+  ResonanzShow* sdl = new ResonanzShow(800, 600);
   
   
   if(measure_eeg_responses == false && randomStim == false){
@@ -656,7 +656,7 @@ int main(int argc, char** argv)
       // 250ms might be good
       // TODO we measure time spend in a loop wait only needed msecs in order to keep
       //      framerate constant
-      sdl->delay(100); // [we keep updating image as fast as we can?]
+      sdl->delay(500); // [we keep updating image as fast as we can?]
     }
         
   }

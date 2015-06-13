@@ -1,5 +1,13 @@
 TODO
 
+- implement ResonanzEngine worker thread class that does all the heavy work and which is started by
+  commandline or Java JNI interface
+  
+  
+  
+  
+  
+
 - refactor main.cpp more to make code more readable and clear, 
   there are also small bugs and assumptions as code is not 100% perfect
 
