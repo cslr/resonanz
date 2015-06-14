@@ -30,7 +30,8 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
-
+#include <dinrhiw/dinrhiw.h>
+#include "DataSource.h"
 
 namespace whiteice {
 namespace resonanz {
@@ -103,7 +104,9 @@ private:
 
 	// functions used by updateLoop():
 
-	void engine_sleep(int msecs, const std::string& state); // sleeps for given number of milliseconds, updates engineState
+	void engine_setStatus(const std::string& msg) throw();
+
+	void engine_sleep(int msecs); // sleeps for given number of milliseconds, updates engineState
 	bool engine_checkIncomingCommand();
 
 	bool engine_SDL_init(const std::string& fontname);
@@ -129,6 +132,19 @@ private:
 
 	bool loadWords(const std::string filename, std::vector<std::string>& words);
 	bool loadPictures(const std::string directory, std::vector<std::string>& pictures);
+
+
+	bool engine_loadDatabase(const std::string& modelDir);
+	bool engine_storeMeasurement(unsigned int pic, unsigned int key, const std::vector<float>& eegBefore, const std::vector<float>& eegAfter);
+	bool engine_saveDatabase(const std::string& modelDir);
+	std::string calculateHashName(std::string& filename);
+
+	std::vector< whiteice::dataset<> > keywordData;
+	std::vector< whiteice::dataset<> > pictureData;
+
+	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown
+
+	DataSource* eeg = nullptr;
 
 };
 

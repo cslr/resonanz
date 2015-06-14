@@ -10,6 +10,8 @@
 #include <exception>
 #include <math.h>
 
+#include "EmotivInsightStub.h"
+
 namespace whiteice {
 namespace resonanz {
 
@@ -18,10 +20,7 @@ ResonanzEngine::ResonanzEngine()
 {
 	std::lock_guard<std::mutex> lock(thread_mutex);
 
-	{
-		std::lock_guard<std::mutex> lock(status_mutex);
-		engineState = "resonanz-engine: starting...";
-	}
+	engine_setStatus("resonanz-engine: starting..");
 
 	workerThread = nullptr;
 	thread_is_running = true;
@@ -33,7 +32,7 @@ ResonanzEngine::ResonanzEngine()
 		currentCommand.showScreen = false;
 	}
 
-
+	eeg = nullptr;
 
 	// starts updater thread thread
 	workerThread = new std::thread(std::bind(ResonanzEngine::engine_loop, this));
@@ -44,10 +43,7 @@ ResonanzEngine::~ResonanzEngine()
 {
 	std::lock_guard<std::mutex> lock(thread_mutex);
 
-	{
-		std::lock_guard<std::mutex> lock(status_mutex);
-		engineState = "resonanz-engine: stopping...";
-	}
+	engine_setStatus("resonanz-engine: shutdown..");
 
 	thread_is_running = false;
 	if(workerThread == nullptr)
@@ -61,10 +57,12 @@ ResonanzEngine::~ResonanzEngine()
 	delete workerThread;
 	workerThread = nullptr;
 
-	{
-		std::lock_guard<std::mutex> lock(status_mutex);
-		engineState = "resonanz-engine: not running";
+	if(eeg != nullptr){
+		delete eeg;
+		eeg = nullptr;
 	}
+
+	engine_setStatus("resonanz-engine: halted");
 }
 
 
@@ -81,10 +79,7 @@ bool ResonanzEngine::reset() throw()
 	try{
 		std::lock_guard<std::mutex> lock(thread_mutex);
 
-		{
-			std::lock_guard<std::mutex> lock(status_mutex);
-			engineState = "resonanz-engine: restarting...";
-		}
+		engine_setStatus("resonanz-engine: restarting..");
 
 		if(thread_is_running || workerThread != nullptr){ // thread appears to be running
 			thread_is_running = false;
@@ -213,14 +208,18 @@ bool ResonanzEngine::cmdStopOptimizeModel() throw()
 }
 
 
-
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // main worker thread loop to execute commands
+
 void ResonanzEngine::engine_loop()
 {
 	// TODO autodetect good values based on windows screen resolution
 	SCREEN_WIDTH  = 800;
 	SCREEN_HEIGHT = 600;
 	const std::string fontname = "Vera.ttf";
+
+	eeg = new EmotivInsightStub();
 
 
 	// tries to initialize SDL library functionality - and load the font
@@ -236,7 +235,8 @@ void ResonanzEngine::engine_loop()
 			}
 			catch(std::exception& e){ }
 
-			engine_sleep(1000, "resonanz-engine: re-trying to initialize graphics..");
+			engine_setStatus("resonanz-engine: re-trying to initialize graphics..");
+			engine_sleep(1000);
 		}
 
 		if(thread_is_running == false){
@@ -249,11 +249,25 @@ void ResonanzEngine::engine_loop()
 	while(thread_is_running){
 		ResonanzCommand prevCommand = currentCommand;
 		if(engine_checkIncomingCommand() == true){
-			printf("RESONANZ-ENGINE: NEW COMMAND\n");
-			fflush(stdout);
 			// we must make engine state transitions, state transfer from the previous command to the new command
 
-			// first checks if we want to have open graphics window and opens one if needed
+			// state exit actions:
+			if(prevCommand.command == ResonanzCommand::CMD_DO_MEASURE){
+				engine_setStatus("resonanz-engine: saving database..");
+				engine_saveDatabase(prevCommand.modelDir);
+
+				keywordData.clear();
+				pictureData.clear();
+			}
+			else if(prevCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+				// removes unnecessarily data structures from memory (measurements database) [no need to save it because it was not changed]
+				keywordData.clear();
+				pictureData.clear();
+			}
+
+			// state exit/entry actions:
+
+			// checks if we want to have open graphics window and opens one if needed
 			if(currentCommand.showScreen == true && prevCommand.showScreen == false){
 				if(window != nullptr) SDL_DestroyWindow(window);
 
@@ -306,49 +320,109 @@ void ResonanzEngine::engine_loop()
 				window = nullptr;
 			}
 
+			// state entry actions:
+
 			// (re)loads media resources (pictures, keywords) if we want to do stimulation
 			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE){
+				engine_setStatus("resonanz-engine: loading media files..");
 				engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile);
+			}
+
+			// (re)-setups and initializes data structures used for measurements
+			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE || currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+				engine_setStatus("resonanz-engine: loading database..");
+				engine_loadDatabase(currentCommand.modelDir);
 			}
 
 		}
 
 		// executes current command
 		if(currentCommand.command == ResonanzCommand::CMD_DO_NOTHING){
-			engine_sleep(100, "resonanz-engine: sleeping.."); // 100ms
+			engine_setStatus("resonanz-engine: sleeping..");
+			engine_sleep(100); // 100ms
+
+			engine_pollEvents(); // polls for events
+			engine_updateScreen(); // always updates window if it exists
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM){
-			// FIXME current just shows keywords without pictures
+			engine_setStatus("resonanz-engine: showing random examples..");
 
-			if(keywords.size() > 0){
+			if(keywords.size() > 0 && pictures.size() > 0){
 				unsigned int key = rand() % keywords.size();
 				unsigned int pic = rand() % pictures.size();
 
-				if(engine_showScreen(keywords[key], pic) == false){
+				engine_showScreen(keywords[key], pic);
+			}
 
-				}
+			engine_pollEvents(); // polls for events
+			engine_updateScreen(); // always updates window if it exists
+		}
+		else if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE){
+			engine_setStatus("resonanz-engine: measuring eeg-responses..");
+
+			if(keywords.size() > 0 && pictures.size() > 0){
+				unsigned int key = rand() % keywords.size();
+				unsigned int pic = rand() % pictures.size();
+
+				engine_showScreen(keywords[key], pic);
+
+
+				engine_pollEvents(); // polls for events
+				engine_updateScreen(); // always updates window if it exists
+
+				std::vector<float> eegBefore;
+				std::vector<float> eegAfter;
+
+				eeg->data(eegBefore);
+				engine_sleep(MEASUREMODE_DELAY_MS);
+				eeg->data(eegAfter);
+
+				engine_pollEvents();
+
+				engine_storeMeasurement(pic, key, eegBefore, eegAfter);
+			}
+			else{
+				engine_pollEvents(); // polls for events
+				engine_updateScreen(); // always updates window if it exists
 			}
 		}
+		else if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+			engine_setStatus("resonanz-engine: optimizing prediction model..");
+		}
 
-
-		engine_pollEvents(); // polls for events
-		engine_updateScreen(); // always updates window if it exists
 	}
 
 	if(window != nullptr)
 		SDL_DestroyWindow(window);
+
+	if(eeg != nullptr){
+		delete eeg;
+		eeg = nullptr;
+	}
 
 	engine_SDL_deinit();
 
 }
 
 
-void ResonanzEngine::engine_sleep(int msecs, const std::string& state)
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+void ResonanzEngine::engine_setStatus(const std::string& msg) throw()
 {
-	// sleeps for given number of milliseconds, updates engineState
-	status_mutex.lock();
-	engineState = state;
-	status_mutex.unlock();
+	try{
+		std::lock_guard<std::mutex> lock(status_mutex);
+		engineState = msg;
+	}
+	catch(std::exception& e){ }
+}
+
+
+void ResonanzEngine::engine_sleep(int msecs)
+{
+	// sleeps for given number of milliseconds
 
 	// currently just sleeps()
 	std::chrono::milliseconds duration(msecs);
@@ -404,6 +478,120 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 	}
 
 	return true;
+}
+
+
+bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
+{
+	keywordData.resize(keywords.size());
+	pictureData.resize(pictures.size());
+
+	std::string name1 = "input";
+	std::string name2 = "output";
+
+	// loads databases into memory or initializes new ones
+	for(unsigned int i=0;i<keywords.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i]) + ".ds";
+
+		if(keywordData[i].load(dbFilename) == false){
+			keywordData[i].createCluster(name1, eeg->getNumberOfSignals());
+			keywordData[i].createCluster(name2, eeg->getNumberOfSignals());
+		}
+	}
+
+
+	for(unsigned int i=0;i<pictures.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i]) + ".ds";
+
+		if(pictureData[i].load(dbFilename) == false){
+			pictureData[i].createCluster(name1, eeg->getNumberOfSignals());
+			pictureData[i].createCluster(name2, eeg->getNumberOfSignals());
+		}
+	}
+
+	return true;
+}
+
+
+bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key, const std::vector<float>& eegBefore, const std::vector<float>& eegAfter)
+{
+	std::vector< whiteice::math::blas_real<float> > t1, t2;
+	t1.resize(eegBefore.size());
+	t2.resize(eegAfter.size());
+
+	for(unsigned int i=0;i<t1.size();i++){
+		t1[i] = eegBefore[i];
+		t2[i] = eegAfter[i];
+	}
+
+	keywordData[key].add(0, t1);
+	keywordData[key].add(1, t2);
+
+	pictureData[pic].add(0, t1);
+	pictureData[pic].add(1, t2);
+
+	return true;
+}
+
+
+bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
+{
+	// saves databases from memory
+	for(unsigned int i=0;i<keywordData.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i]) + ".ds";
+
+		if(keywordData[i].save(dbFilename) == false)
+			return false;
+	}
+
+
+	for(unsigned int i=0;i<pictureData.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i]) + ".ds";
+
+		if(pictureData[i].save(dbFilename) == false)
+			return false;
+	}
+
+	return true;
+}
+
+
+std::string ResonanzEngine::calculateHashName(std::string& filename)
+{
+	try{
+		unsigned int N = strlen(filename.c_str()) + 1;
+		unsigned char* data = (unsigned char*)malloc(sizeof(unsigned char)*N);
+		unsigned char* hash160 = (unsigned char*)malloc(sizeof(unsigned char)*20);
+
+		whiteice::crypto::SHA sha(160);
+
+		memcpy(data, filename.c_str(), N);
+
+		if(sha.hash(&data, N, hash160)){
+			std::string result = "";
+			for(unsigned int i=0;i<20;i++){
+				char buffer[10];
+				sprintf(buffer, "%.2x", hash160[i]);
+				result += buffer;
+			}
+
+			if(data) free(data);
+			if(hash160) free(hash160);
+
+			// printf("%s => %s\n", filename.c_str(), result.c_str());
+
+			return result; // returns hex hash of the name
+		}
+		else{
+			if(data) free(data);
+			if(hash160) free(hash160);
+
+			return "";
+		}
+	}
+	catch(std::exception& e){
+		return "";
+	}
 }
 
 
