@@ -1,19 +1,11 @@
 TODO
 
-- implement ResonanzEngine worker thread class that does all the heavy work and which is started by
-  commandline or Java JNI interface
+- make resonaz-bin use ResonanzEngine and do totally debug of model optimization which 
+  fails to internal errors in LBFGS code (vertex size mismatch some error when datasize is small or something???)
   
-  
-  
-  
-  
+- once resonanz-bin uses ResonanzEngine and model optimization just works, 
+  rewrite targetted stimulation using constantly changing targets (*.nmc files from NeuromancerUI)
 
-- refactor main.cpp more to make code more readable and clear, 
-  there are also small bugs and assumptions as code is not 100% perfect
-
-- add better support for "themes" stimulation mechanisms are divided into themes
-  (subdirectories) that can be activated by copying stimulation files that are used
-  into main directory
 
 - once Emotiv Insight is available write real EmotivInsightDataSource class instead
   of using EmotivInsightStub and random data
@@ -24,9 +16,6 @@ TODO
   this will then make it easy to use resulting movies in anyway.
 
 - testing
-
-- user interface: write Java SWT (eclipse) user interface for 
-  those that cannot used command-line [much later as you need lots of experimentation]
 
 STIMULATION: 
 
