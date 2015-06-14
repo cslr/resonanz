@@ -9,8 +9,10 @@
 
 #include "fi_iki_nop_neuromancer_ResonanzEngine.h"
 #include "ResonanzEngine.h"
+#include "Log.h"
 #include <jni.h>
 #include <exception>
+
 
 // starts new engine (note: if thread creation fails we are in trouble)
 static whiteice::resonanz::ResonanzEngine engine;
@@ -119,6 +121,37 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_stopOptimi
 	try{
 		return (jboolean)engine.cmdStopOptimizeModel();
 	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getStatusLine
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getStatusLine
+  (JNIEnv * env, jobject obj)
+{
+	try{
+		std::string line = engine.getEngineStatus();
+
+		jstring result = env->NewStringUTF(line.c_str());
+
+		return result;
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    stopCommand
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_stopCommand
+  (JNIEnv * env, jobject obj)
+{
+	try{ return (jboolean)engine.cmdStopCommand(); }
 	catch(std::exception& e){ return (jboolean)false; }
 }
 

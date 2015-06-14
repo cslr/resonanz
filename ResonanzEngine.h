@@ -83,6 +83,8 @@ public:
 
 	bool cmdStopOptimizeModel() throw();
 
+	bool cmdStopCommand() throw();
+
 private:
 	const std::string windowTitle = "Neuromancer NeuroStim";
 	const std::string iconFile = "brain.png";

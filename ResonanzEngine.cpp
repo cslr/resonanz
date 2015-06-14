@@ -8,7 +8,12 @@
 #include "ResonanzEngine.h"
 #include <chrono>
 #include <exception>
+#include <iostream>
+
 #include <math.h>
+
+#include <dinrhiw/dinrhiw.h>
+#include "Log.h"
 
 #include "EmotivInsightStub.h"
 
@@ -208,12 +213,30 @@ bool ResonanzEngine::cmdStopOptimizeModel() throw()
 }
 
 
+bool ResonanzEngine::cmdStopCommand() throw()
+{
+	std::lock_guard<std::mutex> lock(command_mutex);
+	if(incomingCommand != nullptr) delete incomingCommand;
+	incomingCommand = new ResonanzCommand();
+
+	incomingCommand->command = ResonanzCommand::CMD_DO_NOTHING;
+	incomingCommand->showScreen = false;
+	incomingCommand->pictureDir = "";
+	incomingCommand->keywordsFile = "";
+	incomingCommand->modelDir = "";
+
+	return true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 // main worker thread loop to execute commands
 
 void ResonanzEngine::engine_loop()
 {
+	logging.info("engine_loop() started");
+
 	// TODO autodetect good values based on windows screen resolution
 	SCREEN_WIDTH  = 800;
 	SCREEN_HEIGHT = 600;
@@ -221,6 +244,18 @@ void ResonanzEngine::engine_loop()
 
 	eeg = new EmotivInsightStub();
 
+	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
+	whiteice::nnetwork<>* nn = nullptr;
+
+	std::vector<unsigned int> nnArchitecture;
+	nnArchitecture.push_back(eeg->getNumberOfSignals());
+	nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+	nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+	nnArchitecture.push_back(eeg->getNumberOfSignals());
+
+	nn = new whiteice::nnetwork<>(nnArchitecture);
+	unsigned int currentPictureModel = 0;
+	unsigned int currentKeywordModel = 0;
 
 	// tries to initialize SDL library functionality - and load the font
 	{
@@ -249,6 +284,7 @@ void ResonanzEngine::engine_loop()
 	while(thread_is_running){
 		ResonanzCommand prevCommand = currentCommand;
 		if(engine_checkIncomingCommand() == true){
+			logging.info("new engine command received");
 			// we must make engine state transitions, state transfer from the previous command to the new command
 
 			// state exit actions:
@@ -263,6 +299,15 @@ void ResonanzEngine::engine_loop()
 				// removes unnecessarily data structures from memory (measurements database) [no need to save it because it was not changed]
 				keywordData.clear();
 				pictureData.clear();
+
+				// also stops computation if needed
+				if(optimizer != nullptr){
+					if(optimizer->isRunning())
+						optimizer->stopComputation();
+					delete optimizer;
+					optimizer = nullptr;
+				}
+
 			}
 
 			// state exit/entry actions:
@@ -323,15 +368,24 @@ void ResonanzEngine::engine_loop()
 			// state entry actions:
 
 			// (re)loads media resources (pictures, keywords) if we want to do stimulation
-			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE){
+			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
+					currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 				engine_setStatus("resonanz-engine: loading media files..");
-				engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile);
+				if(engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile) == false)
+					logging.error("loading media files failed");
 			}
 
 			// (re)-setups and initializes data structures used for measurements
 			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE || currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 				engine_setStatus("resonanz-engine: loading database..");
-				engine_loadDatabase(currentCommand.modelDir);
+				if(engine_loadDatabase(currentCommand.modelDir) == false)
+					logging.error("loading database files failed");
+			}
+
+			if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+				engine_setStatus("resonanz-engine: initializing prediction model optimization..");
+				currentPictureModel = 0;
+				currentKeywordModel = 0;
 			}
 
 		}
@@ -366,7 +420,6 @@ void ResonanzEngine::engine_loop()
 
 				engine_showScreen(keywords[key], pic);
 
-
 				engine_pollEvents(); // polls for events
 				engine_updateScreen(); // always updates window if it exists
 
@@ -387,7 +440,150 @@ void ResonanzEngine::engine_loop()
 			}
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
-			engine_setStatus("resonanz-engine: optimizing prediction model..");
+			const float percentage = (currentPictureModel + currentKeywordModel)/((float)(pictures.size()+keywords.size()));
+			{
+				char buffer[80];
+				sprintf(buffer, "resonanz-engine: optimizing prediction model (%.2f%%)..", 100.0f*percentage);
+
+				engine_setStatus(buffer);
+			}
+
+			if(currentPictureModel < pictures.size()){
+				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+					whiteice::math::vertex<> w;
+
+					nn->randomize();
+					nn->exportdata(w);
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+								currentPictureModel, pictureData[currentPictureModel].size(0));
+						logging.info(buffer);
+					}
+
+					optimizer->minimize(w);
+				}
+				else{
+					whiteice::math::blas_real<float> error = 1000.0f;
+					whiteice::math::vertex<> w;
+					unsigned int iterations = 0;
+
+					optimizer->getSolution(w, error, iterations);
+
+					if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+						// gets finished solution
+
+						optimizer->stopComputation();
+						optimizer->getSolution(w, error, iterations);
+
+						{
+							char buffer[1024];
+							sprintf(buffer, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
+									currentPictureModel, iterations, error.c[0]);
+							logging.info(buffer);
+						}
+
+						// saves optimization results to a file
+						std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(pictures[currentPictureModel]) + ".model";
+						nn->importdata(w);
+						if(nn->save(dbFilename) == false)
+							logging.error("saving nn configuration file failed");
+
+						delete optimizer;
+						optimizer = nullptr;
+
+						// starts new computation
+						currentPictureModel++;
+						if(currentPictureModel < pictures.size()){
+							nn->randomize();
+							nn->exportdata(w);
+
+							{
+								char buffer[1024];
+								sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+										currentPictureModel, pictureData[currentPictureModel].size(0));
+								logging.info(buffer);
+							}
+
+							optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+							optimizer->minimize(w);
+						}
+					}
+				}
+			}
+			else if(currentKeywordModel < keywords.size()){
+				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+					whiteice::math::vertex<> w;
+
+					nn->randomize();
+					nn->exportdata(w);
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					optimizer->minimize(w);
+
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+								currentKeywordModel, keywordData[currentKeywordModel].size(0));
+						logging.info(buffer);
+					}
+
+				}
+				else{
+					whiteice::math::blas_real<float> error = 1000.0f;
+					whiteice::math::vertex<> w;
+					unsigned int iterations = 0;
+
+					optimizer->getSolution(w, error, iterations);
+
+					if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+						// gets finished solution
+
+						optimizer->stopComputation();
+						optimizer->getSolution(w, error, iterations);
+
+						{
+							char buffer[1024];
+							sprintf(buffer, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
+									currentKeywordModel, iterations, error.c[0]);
+							logging.info(buffer);
+						}
+
+						// saves optimization results to a file
+						std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(keywords[currentKeywordModel]) + ".model";
+						nn->importdata(w);
+						if(nn->save(dbFilename) == false)
+							logging.error("saving nn configuration file failed");
+
+						delete optimizer;
+						optimizer = nullptr;
+
+						// starts new computation
+						currentKeywordModel++;
+						if(currentKeywordModel < keywords.size()){
+							nn->randomize();
+							nn->exportdata(w);
+
+							{
+								char buffer[1024];
+								sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+										currentPictureModel, pictureData[currentPictureModel].size(0));
+								logging.info(buffer);
+							}
+
+							optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+							optimizer->minimize(w);
+						}
+					}
+				}
+			}
+			else{ // both picture and keyword models has been computed
+				cmdStopOptimizeModel();
+			}
+
 		}
 
 	}
@@ -398,6 +594,11 @@ void ResonanzEngine::engine_loop()
 	if(eeg != nullptr){
 		delete eeg;
 		eeg = nullptr;
+	}
+
+	if(nn != nullptr){
+		delete nn;
+		nn = nullptr;
 	}
 
 	engine_SDL_deinit();
@@ -415,6 +616,7 @@ void ResonanzEngine::engine_setStatus(const std::string& msg) throw()
 	try{
 		std::lock_guard<std::mutex> lock(status_mutex);
 		engineState = msg;
+		logging.info(msg);
 	}
 	catch(std::exception& e){ }
 }
@@ -432,6 +634,8 @@ void ResonanzEngine::engine_sleep(int msecs)
 
 bool ResonanzEngine::engine_checkIncomingCommand()
 {
+	logging.info("checking command");
+
 	if(incomingCommand == nullptr) return false;
 
 	std::lock_guard<std::mutex> lock(command_mutex);
