@@ -79,11 +79,14 @@ public:
 
 	bool cmdMeasure(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
-	bool cmdOptimizeModel(const std::string& modelDir) throw();
-
-	bool cmdStopOptimizeModel() throw();
+	bool cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
 	bool cmdStopCommand() throw();
+
+	// returns true if resonaz-engine is executing some other command than do-nothing
+	bool isBusy() throw();
+
+	bool keypress(); // detects keypress from GUI
 
 private:
 	const std::string windowTitle = "Neuromancer NeuroStim";
@@ -116,7 +119,7 @@ private:
 
 	bool measureColor(SDL_Surface* image, SDL_Color& averageColor);
 
-	bool engine_loadMedia(const std::string& picdir, const std::string& keyfile);
+	bool engine_loadMedia(const std::string& picdir, const std::string& keyfile, bool loadData);
 	bool engine_showScreen(const std::string& message, unsigned int picture);
 
 	void engine_pollEvents();
@@ -126,6 +129,9 @@ private:
 	SDL_Window* window = nullptr;
 	int SCREEN_WIDTH, SCREEN_HEIGHT;
 	TTF_Font* font = nullptr;
+
+	bool keypressed = false;
+	std::mutex keypress_mutex;
 
 	// media resources
 	std::vector<std::string> keywords;

@@ -20,10 +20,14 @@
 
 #include <dinrhiw/dinrhiw.h>
 
+#if 0
 #include "ResonanzShow.h"
 #include "FMSoundSynthesis.h"
 #include "EmotivInsightStub.h"
 #include "DataSource.h"
+#endif
+
+#include "ResonanzEngine.h"
 
 #if 0
 #include "EmotivAffectivEEG.h"
@@ -38,13 +42,17 @@
 #include "timing.h"
 #endif
 
+bool parse_float_vector(std::vector<float>& v, const char* str);
+
+bool keypress();
+
+
+#if 0
 bool loadWords(std::string filename, std::vector<std::string>& words);
 bool loadPictures(std::string directory, std::vector<std::string>& pictures);
 bool loadMusic(std::string directory, std::vector<std::string>& tracks);
 
 std::string calculateHashName(std::string& filename);
-
-bool parse_float_vector(std::vector<float>& v, const char* str);
 
 
 struct prediction
@@ -62,10 +70,171 @@ unsigned int findBestStimulus(const unsigned int initialStimulationIndex,
 			      const whiteice::math::vertex<>& target,
 			      const whiteice::math::vertex<>& var_error,
 			      whiteice::math::vertex<>& predictedNewState);
-
+#endif
 
 void print_usage()
 {
+	printf("Usage: resonanz <mode> [options]\n");
+	printf("Resonanz engine v0.5 Learn and activate brainwave entraintment stimulus.");
+	printf("\n");
+	printf("--random         display random stimulation\n");
+	printf("--measure        measure brainwave responses to pictures/keywords\n");
+	printf("--optimize       optimize prediction model for targeted stimulation\n");
+	printf("--program        programmed stimulation sequences towards target values\n");
+	printf("--help           shows command line help\n");
+	printf("\n");
+	printf("--picture-dir=   use picture source directory\n");
+	printf("--keyword-file=  source keywords file\n");
+	printf("--model-dir=     model directory for measurements and prediction models\n");
+	printf("--target=        sets target for emotiv insight values\n");
+	printf("--target-var=    sets target variances for emotiv insight values\n");
+	printf("--program-file=  sets NMC program file for emotiv insight values\n");
+	printf("-v               verbose mode\n");
+	printf("\n");
+	printf("This is alpha version version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
+}
+
+
+int main(int argc, char** argv){
+	srand(time(0));
+
+	if(argc > 1){
+		printf("Resonanz engine v0.5 <http://resonanz.sourceforge.net>\n");
+	}
+	else{
+		print_usage();
+		return -1;
+	}
+
+	// process command line
+	bool hasCommand = false;
+	whiteice::resonanz::ResonanzCommand cmd;
+	std::string programFile;
+	std::vector<float> targets;
+	std::vector<float> targetsVar;
+	bool verbose = false;
+
+	for(int i=1;i<argc;i++){
+		if(strcmp(argv[i], "--random") == 0){
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_RANDOM;
+			hasCommand = true;
+		}
+		else if(strcmp(argv[i], "--measure") == 0){
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_MEASURE;
+			hasCommand = true;
+		}
+		else if(strcmp(argv[i], "--optimize") == 0){
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_OPTIMIZE;
+			hasCommand = true;
+		}
+		else if(strcmp(argv[i], "--program") == 0){
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_EXECUTE;
+			hasCommand = true;
+		}
+		else if(strcmp(argv[i], "--help") == 0){
+			print_usage();
+
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_NOTHING;
+			hasCommand = true;
+
+			return 0;
+		}
+	    else if(strncmp(argv[i], "--picture-dir=", 14) == 0){
+	    	char* p = &(argv[i][14]);
+	    	if(strlen(p) > 0) cmd.pictureDir = p;
+	    }
+	    else if(strncmp(argv[i], "--model-dir=", 12) == 0){
+	    	char* p = &(argv[i][12]);
+	    	if(strlen(p) > 0) cmd.modelDir = p;
+	    }
+	    else if(strncmp(argv[i], "--keyword-file=", 15) == 0){
+	    	char* p = &(argv[i][15]);
+	    	if(strlen(p) > 0) cmd.keywordsFile = p;
+	    }
+	    else if(strncmp(argv[i], "--program-file=", 15) == 0){
+	    	char* p = &(argv[i][15]);
+	    	if(strlen(p) > 0) programFile = p;
+	    }
+	    else if(strncmp(argv[i], "--target=", 9) == 0){
+	    	char* p = &(argv[i][9]);
+	    	if(strlen(p) > 0){
+	    		std::vector<float> f;
+	    		if(parse_float_vector(f, p)){
+	    			targets.resize(f.size());
+	    			for(unsigned int i=0;i<targets.size();i++)
+	    				targets[i] = f[i];
+	    		}
+	    	}
+	    }
+	    else if(strncmp(argv[i], "--target-var=", 9) == 0){
+	    	char* p = &(argv[i][9]);
+	    	if(strlen(p) > 0){
+	    		std::vector<float> f;
+	    		if(parse_float_vector(f, p)){
+	    			targetsVar.resize(f.size());
+	    			for(unsigned int i=0;i<targetsVar.size();i++)
+	    				targetsVar[i] = f[i];
+	    		}
+	    	}
+	    }
+	    else if(strcmp(argv[i],"-v") == 0){
+	    	verbose = true;
+	    }
+	    else{
+	    	print_usage();
+	    	printf("ERROR: bad parameters.\n");
+	    	return -1;
+	    }
+	}
+
+	if(hasCommand == false){
+		print_usage();
+		printf("ERROR: bad command line\n");
+		return -1;
+	}
+
+	// starts resonanz engine
+	whiteice::resonanz::ResonanzEngine engine;
+
+	if(cmd.command == cmd.CMD_DO_RANDOM){
+		if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile) == false){
+			printf("ERROR: bad parameters\n");
+			return -1;
+		}
+	}
+	else if(cmd.command == cmd.CMD_DO_MEASURE){
+		if(engine.cmdMeasure(cmd.pictureDir, cmd.keywordsFile, cmd.modelDir) == false){
+			printf("ERROR: bad parameters\n");
+			return -1;
+		}
+	}
+	else if(cmd.command == cmd.CMD_DO_OPTIMIZE){
+		if(engine.cmdOptimizeModel(cmd.pictureDir, cmd.keywordsFile, cmd.modelDir) == false){
+			printf("ERROR: bad parameters\n");
+			return -1;
+		}
+	}
+	else if(cmd.command == cmd.CMD_DO_EXECUTE){
+		printf("ERROR: programmed stimulus is not currently supported\n");
+		return -1;
+	}
+
+
+	while(!engine.keypress() && engine.isBusy()){
+		sleep(1); // resonanz-engine thread is doing all the heavy work
+		fflush(stdout);
+	}
+
+	engine.cmdStopCommand();
+	sleep(1);
+
+
+	return 0;
+}
+
+
+
+#if 0
   printf("Usage: resonanz <mode> [options]\n");
   printf("Resonanz v0.421. Learn and activate brainwave entraintment stimulus.\n\n");
   
@@ -88,10 +257,10 @@ void print_usage()
   printf("\n");
   
   printf("This is pre-alpha version. Report bugs to <nop@iki.fi>\n");
-}
+#endif
 
 
-
+#if 0
 int main(int argc, char** argv)
 {
   srand(time(0));
@@ -105,7 +274,6 @@ int main(int argc, char** argv)
   }
       
   // process command line
-  bool measure_eeg_responses = false;
   bool showPictures = false;
   bool showKeywords = false;
   bool playAudio    = false;
@@ -114,6 +282,7 @@ int main(int argc, char** argv)
   bool hasCommand   = false;
   bool simulation   = false;
   bool randomStim   = false;
+  bool measure_eeg_responses = false;
   
   std::vector<std::string> keywordFiles;
   std::vector<std::string> pictureDirs;
@@ -819,6 +988,7 @@ bool loadMusic(std::string directory, std::vector<std::string>& tracks)
   return true;
 }
 
+#endif
 
 bool parse_float_vector(std::vector<float>& v, const char* str)
 {
@@ -854,6 +1024,7 @@ bool parse_float_vector(std::vector<float>& v, const char* str)
   return true;
 }
 
+#if 0
 
 std::string calculateHashName(std::string& filename)
 {
@@ -965,4 +1136,4 @@ unsigned int findBestStimulus(const unsigned int initialStimulationIndex,
   return index;
 }
 
-
+#endif

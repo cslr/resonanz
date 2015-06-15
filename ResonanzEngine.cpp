@@ -175,7 +175,7 @@ bool ResonanzEngine::cmdMeasure(const std::string& pictureDir, const std::string
 }
 
 
-bool ResonanzEngine::cmdOptimizeModel(const std::string& modelDir) throw()
+bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw()
 {
 	if(modelDir.length() <= 0)
 		return false;
@@ -188,29 +188,13 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& modelDir) throw()
 
 	incomingCommand->command = ResonanzCommand::CMD_DO_OPTIMIZE;
 	incomingCommand->showScreen = false;
-	incomingCommand->pictureDir = "";
-	incomingCommand->keywordsFile = "";
+	incomingCommand->pictureDir = pictureDir;
+	incomingCommand->keywordsFile = keywordsFile;
 	incomingCommand->modelDir = modelDir;
 
 	return true;
 }
 
-
-bool ResonanzEngine::cmdStopOptimizeModel() throw()
-{
-	// just sets CMD_DO_NOTHING state
-	std::lock_guard<std::mutex> lock(command_mutex);
-	if(incomingCommand != nullptr) delete incomingCommand;
-	incomingCommand = new ResonanzCommand();
-
-	incomingCommand->command = ResonanzCommand::CMD_DO_NOTHING;
-	incomingCommand->showScreen = false;
-	incomingCommand->pictureDir = "";
-	incomingCommand->keywordsFile = "";
-	incomingCommand->modelDir = "";
-
-	return true;
-}
 
 
 bool ResonanzEngine::cmdStopCommand() throw()
@@ -227,6 +211,35 @@ bool ResonanzEngine::cmdStopCommand() throw()
 
 	return true;
 }
+
+
+bool ResonanzEngine::isBusy() throw()
+{
+	if(currentCommand.command == ResonanzCommand::CMD_DO_NOTHING){
+		if(incomingCommand != nullptr)
+			return true; // there is incoming work to be processed
+		else
+			return false;
+	}
+	else{
+		return true;
+	}
+}
+
+
+/**
+ * has a key been pressed since the latest check?
+ *
+ */
+bool ResonanzEngine::keypress(){
+	std::lock_guard<std::mutex> lock(keypress_mutex);
+	if(keypressed){
+		keypressed = false;
+		return true;
+	}
+	else return false;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -282,6 +295,7 @@ void ResonanzEngine::engine_loop()
 
 
 	while(thread_is_running){
+
 		ResonanzCommand prevCommand = currentCommand;
 		if(engine_checkIncomingCommand() == true){
 			logging.info("new engine command received");
@@ -290,7 +304,12 @@ void ResonanzEngine::engine_loop()
 			// state exit actions:
 			if(prevCommand.command == ResonanzCommand::CMD_DO_MEASURE){
 				engine_setStatus("resonanz-engine: saving database..");
-				engine_saveDatabase(prevCommand.modelDir);
+				if(engine_saveDatabase(prevCommand.modelDir) == false){
+					logging.error("saving database failed");
+				}
+				else{
+					logging.error("saving database successful");
+				}
 
 				keywordData.clear();
 				pictureData.clear();
@@ -371,8 +390,13 @@ void ResonanzEngine::engine_loop()
 			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
 					currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 				engine_setStatus("resonanz-engine: loading media files..");
-				if(engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile) == false)
+
+				bool loadData = (currentCommand.command != ResonanzCommand::CMD_DO_OPTIMIZE);
+
+				if(engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile, loadData) == false)
 					logging.error("loading media files failed");
+				else
+					logging.info("loading media files successful");
 			}
 
 			// (re)-setups and initializes data structures used for measurements
@@ -380,12 +404,41 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus("resonanz-engine: loading database..");
 				if(engine_loadDatabase(currentCommand.modelDir) == false)
 					logging.error("loading database files failed");
+				else
+					logging.info("loading database files successful");
 			}
 
 			if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 				engine_setStatus("resonanz-engine: initializing prediction model optimization..");
 				currentPictureModel = 0;
 				currentKeywordModel = 0;
+
+				// checks there is enough data to do meaningful optimization
+				bool aborted = false;
+
+				for(unsigned int i=0;i<pictureData.size() && !aborted;i++){
+					if(pictureData[i].size() < 10){
+						engine_setStatus("resonanz-engine: less than 10 data points per picture/keyword => aborting optimization");
+						logging.warn("aborting model optimization command because of too little data (less than 10 samples per case)");
+						cmdDoNothing(false);
+						aborted = true;
+						break;
+					}
+				}
+
+				for(unsigned int i=0;i<keywordData.size() && !aborted;i++){
+					if(keywordData[i].size() < 10){
+						engine_setStatus("resonanz-engine: less than 10 data points per picture/keyword => aborting optimization");
+						logging.warn("aborting model optimization command because of too little data (less than 10 samples per case)");
+						cmdDoNothing(false);
+						aborted = true;
+						break;
+					}
+				}
+
+				if(aborted)
+					continue; // do not start executing any commands [recheck command input buffer and move back to do nothing command]
+
 			}
 
 		}
@@ -440,7 +493,7 @@ void ResonanzEngine::engine_loop()
 			}
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
-			const float percentage = (currentPictureModel + currentKeywordModel)/((float)(pictures.size()+keywords.size()));
+			const float percentage = (currentPictureModel + currentKeywordModel)/((float)(pictureData.size()+keywordData.size()));
 			{
 				char buffer[80];
 				sprintf(buffer, "resonanz-engine: optimizing prediction model (%.2f%%)..", 100.0f*percentage);
@@ -448,7 +501,8 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus(buffer);
 			}
 
-			if(currentPictureModel < pictures.size()){
+			if(currentPictureModel < pictureData.size()){
+
 				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
 					whiteice::math::vertex<> w;
 
@@ -515,6 +569,7 @@ void ResonanzEngine::engine_loop()
 				}
 			}
 			else if(currentKeywordModel < keywords.size()){
+
 				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
 					whiteice::math::vertex<> w;
 
@@ -543,7 +598,9 @@ void ResonanzEngine::engine_loop()
 						// gets finished solution
 
 						optimizer->stopComputation();
+
 						optimizer->getSolution(w, error, iterations);
+
 
 						{
 							char buffer[1024];
@@ -569,8 +626,8 @@ void ResonanzEngine::engine_loop()
 
 							{
 								char buffer[1024];
-								sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
-										currentPictureModel, pictureData[currentPictureModel].size(0));
+								sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+										currentKeywordModel, keywordData[currentKeywordModel].size(0));
 								logging.info(buffer);
 							}
 
@@ -581,11 +638,12 @@ void ResonanzEngine::engine_loop()
 				}
 			}
 			else{ // both picture and keyword models has been computed
-				cmdStopOptimizeModel();
+				cmdStopCommand();
 			}
 
 		}
 
+		fflush(stdout); // updates eclipse etc console windows properly
 	}
 
 	if(window != nullptr)
@@ -651,7 +709,7 @@ bool ResonanzEngine::engine_checkIncomingCommand()
 }
 
 
-bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::string& keyfile)
+bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::string& keyfile, bool loadData)
 {
 	std::vector<std::string> tempKeywords;
 
@@ -672,13 +730,18 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 			SDL_FreeSurface(images[i]);
 	}
 
-	images.resize(pictures.size());
+	if(loadData){
+		images.resize(pictures.size());
 
-	for(unsigned int i=0;i<images.size();i++){
-	    images[i] = nullptr;
-	    engine_showScreen("Loading..", i);
-	    engine_pollEvents();
-	    engine_updateScreen();
+		for(unsigned int i=0;i<images.size();i++){
+			images[i] = nullptr;
+			engine_showScreen("Loading..", i);
+			engine_pollEvents();
+			engine_updateScreen();
+		}
+	}
+	else{
+		images.clear();
 	}
 
 	return true;
@@ -917,6 +980,11 @@ void ResonanzEngine::engine_pollEvents()
 	while(SDL_PollEvent(&event)){
 		// currently ignores all incoming events
 		// (should handle window close event somehow)
+
+		if(event.type == SDL_KEYDOWN || event.type == SDL_KEYUP){
+			std::lock_guard<std::mutex> lock(keypress_mutex);
+			keypressed = true;
+		}
 	}
 }
 

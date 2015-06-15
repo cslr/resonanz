@@ -26,26 +26,10 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startMeasu
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    startOptimizeModel
- * Signature: (Ljava/lang/String;)Z
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptimizeModel
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     fi_iki_nop_neuromancer_ResonanzEngine
- * Method:    getOptimizeModelStatus
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getOptimizeModelStatus
-  (JNIEnv *, jobject);
-
-/*
- * Class:     fi_iki_nop_neuromancer_ResonanzEngine
- * Method:    stopOptimizeModel
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_stopOptimizeModel
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jstring, jstring, jstring);
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
