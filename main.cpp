@@ -20,25 +20,11 @@
 
 #include <dinrhiw/dinrhiw.h>
 
-#if 0
-#include "ResonanzShow.h"
-#include "FMSoundSynthesis.h"
-#include "EmotivInsightStub.h"
-#include "DataSource.h"
-#endif
-
 #include "ResonanzEngine.h"
-
-#if 0
-#include "EmotivAffectivEEG.h"
-#endif
-
+#include "NMCFile.h"
 
 #ifdef WINNT
 #include <windows.h>
-
-#include "MIDIController.h"
-#include "SinusoidGenerator.h"
 #include "timing.h"
 #endif
 
@@ -80,15 +66,13 @@ void print_usage()
 	printf("--random         display random stimulation\n");
 	printf("--measure        measure brainwave responses to pictures/keywords\n");
 	printf("--optimize       optimize prediction model for targeted stimulation\n");
-	printf("--analyze        measurement database statistics and model performance analysis");
+	printf("--analyze        measurement database statistics and model performance analysis\n");
 	printf("--program        programmed stimulation sequences towards target values\n");
 	printf("--help           shows command line help\n");
 	printf("\n");
 	printf("--picture-dir=   use picture source directory\n");
 	printf("--keyword-file=  source keywords file\n");
 	printf("--model-dir=     model directory for measurements and prediction models\n");
-	printf("--target=        sets target for emotiv insight values\n");
-	printf("--target-var=    sets target variances for emotiv insight values\n");
 	printf("--program-file=  sets NMC program file for emotiv insight values\n");
 	printf("-v               verbose mode\n");
 	printf("\n");
@@ -100,7 +84,7 @@ int main(int argc, char** argv){
 	srand(time(0));
 
 	if(argc > 1){
-		printf("Resonanz engine v0.5 <http://resonanz.sourceforge.net>\n");
+		printf("Resonanz engine v0.51 <http://resonanz.sourceforge.net>\n");
 	}
 	else{
 		print_usage();
@@ -112,8 +96,6 @@ int main(int argc, char** argv){
 	bool analyzeCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;
 	std::string programFile;
-	std::vector<float> targets;
-	std::vector<float> targetsVar;
 	bool verbose = false;
 
 	for(int i=1;i<argc;i++){
@@ -162,28 +144,6 @@ int main(int argc, char** argv){
 	    	char* p = &(argv[i][15]);
 	    	if(strlen(p) > 0) programFile = p;
 	    }
-	    else if(strncmp(argv[i], "--target=", 9) == 0){
-	    	char* p = &(argv[i][9]);
-	    	if(strlen(p) > 0){
-	    		std::vector<float> f;
-	    		if(parse_float_vector(f, p)){
-	    			targets.resize(f.size());
-	    			for(unsigned int i=0;i<targets.size();i++)
-	    				targets[i] = f[i];
-	    		}
-	    	}
-	    }
-	    else if(strncmp(argv[i], "--target-var=", 9) == 0){
-	    	char* p = &(argv[i][9]);
-	    	if(strlen(p) > 0){
-	    		std::vector<float> f;
-	    		if(parse_float_vector(f, p)){
-	    			targetsVar.resize(f.size());
-	    			for(unsigned int i=0;i<targetsVar.size();i++)
-	    				targetsVar[i] = f[i];
-	    		}
-	    	}
-	    }
 	    else if(strcmp(argv[i],"-v") == 0){
 	    	verbose = true;
 	    }
@@ -222,6 +182,14 @@ int main(int argc, char** argv){
 		}
 	}
 	else if(cmd.command == cmd.CMD_DO_EXECUTE){
+		whiteice::resonanz::NMCFile file;
+		if(file.loadFile(programFile) == false){
+			std::cout << "Loading program file: " << programFile << " failed." << std::endl;
+			return -1;
+		}
+
+		// FIXME TODO IMPLEMENT TARGETED/PROGRAMMED SHOWING OF PICTURES (STIMULI)
+
 		printf("ERROR: programmed stimulus is not currently supported\n");
 		return -1;
 	}

@@ -13,9 +13,9 @@
 namespace whiteice {
 namespace resonanz {
 
-NMCFile::NMCFile() { }
+NMCFile::NMCFile() {  }
 
-NMCFile::~NMCFile() { }
+NMCFile::~NMCFile() {  }
 
 
 bool NMCFile::loadFile(const std::string& filename)
@@ -71,6 +71,10 @@ bool NMCFile::loadFile(const std::string& filename)
 		// all data has been successfully read, stores values to internal class variables
 		signalName[0] = std::string(name1.get());
 		signalName[1] = std::string(name2.get());
+
+		// trimming
+		signalName[0].erase(signalName[0].find_last_not_of(" ")+1);
+		signalName[1].erase(signalName[1].find_last_not_of(" ")+1);
 
 		program[0].resize(len);
 		program[1].resize(len);
@@ -140,7 +144,7 @@ bool NMCFile::getInterpolatedProgram(unsigned int index, std::vector<float>& pro
 		program[i] = program[prevPoint];
 
 	// once we have processed the first positive point, looks for the next one
-	while(prevPoint < program.size()){
+	while(prevPoint+1 < program.size()){
 		for(unsigned int p=prevPoint+1;p<program.size();p++){
 			if(program[p] > 0.0f){
 				const float ratio = (program[p] - program[prevPoint])/(p - prevPoint);
