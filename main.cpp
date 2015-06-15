@@ -80,6 +80,7 @@ void print_usage()
 	printf("--random         display random stimulation\n");
 	printf("--measure        measure brainwave responses to pictures/keywords\n");
 	printf("--optimize       optimize prediction model for targeted stimulation\n");
+	printf("--analyze        measurement database statistics and model performance analysis");
 	printf("--program        programmed stimulation sequences towards target values\n");
 	printf("--help           shows command line help\n");
 	printf("\n");
@@ -108,6 +109,7 @@ int main(int argc, char** argv){
 
 	// process command line
 	bool hasCommand = false;
+	bool analyzeCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;
 	std::string programFile;
 	std::vector<float> targets;
@@ -130,6 +132,11 @@ int main(int argc, char** argv){
 		else if(strcmp(argv[i], "--program") == 0){
 			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_EXECUTE;
 			hasCommand = true;
+		}
+		else if(strcmp(argv[i], "--analyze") == 0){
+			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_NOTHING;
+			hasCommand = true;
+			analyzeCommand = true;
 		}
 		else if(strcmp(argv[i], "--help") == 0){
 			print_usage();
@@ -217,6 +224,12 @@ int main(int argc, char** argv){
 	else if(cmd.command == cmd.CMD_DO_EXECUTE){
 		printf("ERROR: programmed stimulus is not currently supported\n");
 		return -1;
+	}
+	else if(analyzeCommand == true){
+		std::string msg = engine.analyzeModel(cmd.modelDir);
+		std::cout << msg << std::endl;
+
+		return 0;
 	}
 
 

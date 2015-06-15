@@ -98,6 +98,18 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    isBusy
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_isBusy
+  (JNIEnv * env, jobject jobj)
+{
+	return (jboolean)engine.isBusy();
+}
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    getStatusLine
  * Signature: ()Ljava/lang/String;
  */
@@ -127,4 +139,27 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_stopComman
 }
 
 
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getAnalyzeModel
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeModel
+  (JNIEnv * env, jobject obj, jstring modelDir)
+{
+	try{
+		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+
+		const char *mod = env->GetStringUTFChars(modelDir, 0);
+
+		std::string line = engine.analyzeModel(std::string(mod));
+
+		env->ReleaseStringUTFChars(modelDir, mod);
+
+		jstring result = env->NewStringUTF(line.c_str());
+
+		return result;
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
 

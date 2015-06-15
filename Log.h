@@ -29,6 +29,7 @@ public:
 	void error(std::string msg);
 	void fatal(std::string msg);
 
+
 protected:
 	typedef std::chrono::high_resolution_clock clock;
 	typedef std::chrono::milliseconds milliseconds;

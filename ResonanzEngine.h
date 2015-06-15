@@ -88,6 +88,9 @@ public:
 
 	bool keypress(); // detects keypress from GUI
 
+	// analyzes given measurements database and model performance
+	std::string analyzeModel(const std::string& modelDir);
+
 private:
 	const std::string windowTitle = "Neuromancer NeuroStim";
 	const std::string iconFile = "brain.png";
@@ -133,6 +136,8 @@ private:
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
+	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown
+
 	// media resources
 	std::vector<std::string> keywords;
 	std::vector<std::string> pictures;
@@ -149,10 +154,15 @@ private:
 
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
-
-	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown
+	std::mutex database_mutex; // mutex to synchronize I/O access to dataset files
 
 	DataSource* eeg = nullptr;
+
+
+	bool engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel);
+
+	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
+	whiteice::nnetwork<>* nn = nullptr;
 
 };
 

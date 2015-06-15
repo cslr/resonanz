@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include <math.h>
+#include <dirent.h>
 
 #include <dinrhiw/dinrhiw.h>
 #include "Log.h"
@@ -257,9 +258,6 @@ void ResonanzEngine::engine_loop()
 
 	eeg = new EmotivInsightStub();
 
-	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
-	whiteice::nnetwork<>* nn = nullptr;
-
 	std::vector<unsigned int> nnArchitecture;
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
 	nnArchitecture.push_back(4*eeg->getNumberOfSignals());
@@ -501,145 +499,8 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus(buffer);
 			}
 
-			if(currentPictureModel < pictureData.size()){
-
-				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
-					whiteice::math::vertex<> w;
-
-					nn->randomize();
-					nn->exportdata(w);
-
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-
-					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
-								currentPictureModel, pictureData[currentPictureModel].size(0));
-						logging.info(buffer);
-					}
-
-					optimizer->minimize(w);
-				}
-				else{
-					whiteice::math::blas_real<float> error = 1000.0f;
-					whiteice::math::vertex<> w;
-					unsigned int iterations = 0;
-
-					optimizer->getSolution(w, error, iterations);
-
-					if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
-						// gets finished solution
-
-						optimizer->stopComputation();
-						optimizer->getSolution(w, error, iterations);
-
-						{
-							char buffer[1024];
-							sprintf(buffer, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
-									currentPictureModel, iterations, error.c[0]);
-							logging.info(buffer);
-						}
-
-						// saves optimization results to a file
-						std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(pictures[currentPictureModel]) + ".model";
-						nn->importdata(w);
-						if(nn->save(dbFilename) == false)
-							logging.error("saving nn configuration file failed");
-
-						delete optimizer;
-						optimizer = nullptr;
-
-						// starts new computation
-						currentPictureModel++;
-						if(currentPictureModel < pictures.size()){
-							nn->randomize();
-							nn->exportdata(w);
-
-							{
-								char buffer[1024];
-								sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
-										currentPictureModel, pictureData[currentPictureModel].size(0));
-								logging.info(buffer);
-							}
-
-							optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-							optimizer->minimize(w);
-						}
-					}
-				}
-			}
-			else if(currentKeywordModel < keywords.size()){
-
-				if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
-					whiteice::math::vertex<> w;
-
-					nn->randomize();
-					nn->exportdata(w);
-
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-					optimizer->minimize(w);
-
-					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
-								currentKeywordModel, keywordData[currentKeywordModel].size(0));
-						logging.info(buffer);
-					}
-
-				}
-				else{
-					whiteice::math::blas_real<float> error = 1000.0f;
-					whiteice::math::vertex<> w;
-					unsigned int iterations = 0;
-
-					optimizer->getSolution(w, error, iterations);
-
-					if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
-						// gets finished solution
-
-						optimizer->stopComputation();
-
-						optimizer->getSolution(w, error, iterations);
-
-
-						{
-							char buffer[1024];
-							sprintf(buffer, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
-									currentKeywordModel, iterations, error.c[0]);
-							logging.info(buffer);
-						}
-
-						// saves optimization results to a file
-						std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(keywords[currentKeywordModel]) + ".model";
-						nn->importdata(w);
-						if(nn->save(dbFilename) == false)
-							logging.error("saving nn configuration file failed");
-
-						delete optimizer;
-						optimizer = nullptr;
-
-						// starts new computation
-						currentKeywordModel++;
-						if(currentKeywordModel < keywords.size()){
-							nn->randomize();
-							nn->exportdata(w);
-
-							{
-								char buffer[1024];
-								sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
-										currentKeywordModel, keywordData[currentKeywordModel].size(0));
-								logging.info(buffer);
-							}
-
-							optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-							optimizer->minimize(w);
-						}
-					}
-				}
-			}
-			else{ // both picture and keyword models has been computed
-				cmdStopCommand();
-			}
+			if(engine_optimizeModels(currentPictureModel, currentKeywordModel) == false)
+				logging.warn("model optimization failure");
 
 		}
 
@@ -666,6 +527,152 @@ void ResonanzEngine::engine_loop()
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+
+
+bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel)
+{
+	if(currentPictureModel < pictureData.size()){
+
+		if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+			whiteice::math::vertex<> w;
+
+			nn->randomize();
+			nn->exportdata(w);
+
+			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+
+			{
+				char buffer[1024];
+				sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+						currentPictureModel, pictureData[currentPictureModel].size(0));
+				logging.info(buffer);
+			}
+
+			optimizer->minimize(w);
+		}
+		else{
+			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::math::vertex<> w;
+			unsigned int iterations = 0;
+
+			optimizer->getSolution(w, error, iterations);
+
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+				// gets finished solution
+
+				optimizer->stopComputation();
+				optimizer->getSolution(w, error, iterations);
+
+				{
+					char buffer[1024];
+					sprintf(buffer, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
+							currentPictureModel, iterations, error.c[0]);
+					logging.info(buffer);
+				}
+
+				// saves optimization results to a file
+				std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(pictures[currentPictureModel]) + ".model";
+				nn->importdata(w);
+				if(nn->save(dbFilename) == false)
+					logging.error("saving nn configuration file failed");
+
+				delete optimizer;
+				optimizer = nullptr;
+
+				// starts new computation
+				currentPictureModel++;
+				if(currentPictureModel < pictures.size()){
+					nn->randomize();
+					nn->exportdata(w);
+
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+								currentPictureModel, pictureData[currentPictureModel].size(0));
+						logging.info(buffer);
+					}
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					optimizer->minimize(w);
+				}
+			}
+		}
+	}
+	else if(currentKeywordModel < keywords.size()){
+
+		if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+			whiteice::math::vertex<> w;
+
+			nn->randomize();
+			nn->exportdata(w);
+
+			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+			optimizer->minimize(w);
+
+			{
+				char buffer[1024];
+				sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+						currentKeywordModel, keywordData[currentKeywordModel].size(0));
+				logging.info(buffer);
+			}
+
+		}
+		else{
+			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::math::vertex<> w;
+			unsigned int iterations = 0;
+
+			optimizer->getSolution(w, error, iterations);
+
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+				// gets finished solution
+
+				optimizer->stopComputation();
+
+				optimizer->getSolution(w, error, iterations);
+
+
+				{
+					char buffer[1024];
+					sprintf(buffer, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
+							currentKeywordModel, iterations, error.c[0]);
+					logging.info(buffer);
+				}
+
+				// saves optimization results to a file
+				std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(keywords[currentKeywordModel]) + ".model";
+				nn->importdata(w);
+				if(nn->save(dbFilename) == false)
+					logging.error("saving nn configuration file failed");
+
+				delete optimizer;
+				optimizer = nullptr;
+
+				// starts new computation
+				currentKeywordModel++;
+				if(currentKeywordModel < keywords.size()){
+					nn->randomize();
+					nn->exportdata(w);
+
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+								currentKeywordModel, keywordData[currentKeywordModel].size(0));
+						logging.info(buffer);
+					}
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					optimizer->minimize(w);
+				}
+			}
+		}
+	}
+	else{ // both picture and keyword models has been computed
+		cmdStopCommand();
+	}
+
+	return true;
+}
 
 
 
@@ -750,6 +757,8 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 
 bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 {
+	std::lock_guard<std::mutex> lock(database_mutex);
+
 	keywordData.resize(keywords.size());
 	pictureData.resize(pictures.size());
 
@@ -803,6 +812,8 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 
 bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 {
+	std::lock_guard<std::mutex> lock(database_mutex);
+
 	// saves databases from memory
 	for(unsigned int i=0;i<keywordData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i]) + ".ds";
@@ -1191,6 +1202,78 @@ bool ResonanzEngine::loadPictures(const std::string directory, std::vector<std::
 	return true;
 }
 
+
+std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
+{
+	// we go through database directory and load all *.ds files
+	std::vector<std::string> databaseFiles;
+
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir (modelDir.c_str())) != NULL) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir (dir)) != NULL) {
+			const char* filename = ent->d_name;
+
+			if(strlen(filename) > 3)
+				if(strcmp(&(filename[strlen(filename)-3]),".ds") == 0)
+					databaseFiles.push_back(filename);
+		}
+		closedir (dir);
+	}
+	else { /* could not open directory */
+		return "Cannot read directory";
+	}
+
+	unsigned int minDSSamples = (unsigned int)(-1);
+	double avgDSSamples = 0;
+	unsigned int N = 0;
+	unsigned int failed = 0;
+	unsigned int models = 0;
+
+	std::lock_guard<std::mutex> lock(database_mutex);
+
+	for(auto filename : databaseFiles){
+		// calculate statistics
+		whiteice::dataset<> ds;
+		std::string fullname = modelDir + "/" + filename;
+		if(ds.load(fullname) == false){
+			failed++;
+			continue; // couldn't load this dataset
+		}
+
+		if(ds.size() < minDSSamples) minDSSamples = ds.size();
+		avgDSSamples += ds.size();
+		N++;
+
+		std::string modelFilename = fullname.substr(0, fullname.length()-3) + ".model";
+
+		// check if there is a model file and load it into memory and calculate average error
+		whiteice::nnetwork<> nnet;
+		if(nnet.load(modelFilename))
+			models++;
+
+	}
+
+
+	if(N > 0){
+		avgDSSamples /= N;
+		double modelPercentage = 100*models/((double)N);
+
+		char buffer[1024];
+		sprintf(buffer, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d",
+				N, modelPercentage, avgDSSamples, minDSSamples);
+
+		return buffer;
+	}
+	else{
+		char buffer[1024];
+		sprintf(buffer, "%d entries (0%% has a model). samples(avg): %.2f, samples(min): %d",
+				0, 0.0, 0);
+
+		return buffer;
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
