@@ -58,7 +58,8 @@ public:
 	std::string keywordsFile;
 	std::string modelDir;
 
-	// TODO implement execute stimulus program parameters [float arrays for each signal + signal name and variance (target error) of the signal]
+	std::vector<std::string> signalName;
+	std::vector< std::vector<float> > programValues;
 };
 
 
@@ -80,6 +81,9 @@ public:
 	bool cmdMeasure(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
 	bool cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
+
+	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
+			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program);
 
 	bool cmdStopCommand() throw();
 
@@ -163,6 +167,13 @@ private:
 
 	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
 	whiteice::nnetwork<>* nn = nullptr;
+
+	bool engine_loadModels(const std::string& modelDir); // loads prediction models for program execution, returns false in case of failure
+	bool engine_executeProgram(const std::vector<float>& eegCurrent,
+			const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance);
+
+	std::vector< whiteice::nnetwork<> > keywordModels;
+	std::vector< whiteice::nnetwork<> > pictureModels;
 
 };
 

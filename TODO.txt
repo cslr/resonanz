@@ -1,10 +1,9 @@
 TODO
 
-- make resonaz-bin use ResonanzEngine and do totally debug of model optimization which 
-  fails to internal errors in LBFGS code (vertex size mismatch some error when datasize is small or something???)
-  
-- once resonanz-bin uses ResonanzEngine and model optimization just works, 
-  rewrite targetted stimulation using constantly changing targets (*.nmc files from NeuromancerUI)
+- write targeted/programmed stimulation using .NMC files code into ResonanzEngine
+
+
+
 
 
 - once Emotiv Insight is available write real EmotivInsightDataSource class instead

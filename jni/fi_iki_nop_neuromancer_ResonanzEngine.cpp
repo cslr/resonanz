@@ -98,6 +98,70 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    startExecuteProgram
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[[F)Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecuteProgram
+  (JNIEnv * env, jobject jobj,
+		  jstring pictureDir, jstring keywordsFile, jstring modelDir,
+		  jobjectArray targetNames, jobjectArray programs)
+{
+	try{
+		bool result = true;
+
+		if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
+		if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
+		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+
+		if(env->GetArrayLength(targetNames) != env->GetArrayLength(programs))
+			return (jboolean)false;
+
+		const char *pic = env->GetStringUTFChars(pictureDir, 0);
+		const char *key = env->GetStringUTFChars(keywordsFile, 0);
+		const char *mod = env->GetStringUTFChars(modelDir, 0);
+
+		// load arrays
+		const jsize length = env->GetArrayLength(targetNames);
+
+		std::vector<std::string> targets;
+		std::vector< std::vector<float> > progs;
+
+		targets.resize((unsigned int)length);
+		progs.resize((unsigned int)length);
+
+		for(unsigned int i=0;i<(unsigned int)length;i++){
+			jstring name = (jstring) env->GetObjectArrayElement(targetNames, i);
+			const char* n = env->GetStringUTFChars(name, 0);
+			targets[i] = n;
+			env->ReleaseStringUTFChars(name, n);
+
+			jfloatArray arr = (jfloatArray) env->GetObjectArrayElement(programs, i);
+			progs[i].resize((unsigned int)env->GetArrayLength(arr));
+
+			jfloat *body = env->GetFloatArrayElements(arr, 0);
+
+			for(unsigned int j=0;j<progs[i].size();j++){
+				progs[i][j] = (float)body[j];
+			}
+
+			env->ReleaseFloatArrayElements(arr, body, 0);
+		}
+
+
+		result = engine.cmdExecuteProgram(std::string(pic), std::string(key), std::string(mod), targets, progs);
+
+		env->ReleaseStringUTFChars(pictureDir, pic);
+		env->ReleaseStringUTFChars(keywordsFile, key);
+		env->ReleaseStringUTFChars(modelDir, mod);
+
+		return (jboolean)result;
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    isBusy
  * Signature: ()Z
  */

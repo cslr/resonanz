@@ -18,7 +18,7 @@
 namespace whiteice {
 namespace resonanz {
 
-Log logging("renaissance-engine.log");
+Log logging("resonanz-engine.log");
 
 
 Log::Log(std::string logFilename)

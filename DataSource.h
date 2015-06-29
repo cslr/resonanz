@@ -9,6 +9,7 @@
 #define DATASOURCE_H_
 
 #include <vector>
+#include <string>
 
 class DataSource {
 public:
@@ -19,6 +20,8 @@ public:
    */
   virtual bool data(std::vector<float>& x) const = 0;
   
+  virtual bool getSignalNames(std::vector<std::string>& names) const = 0;
+
   virtual unsigned int getNumberOfSignals() const = 0;
 };
 

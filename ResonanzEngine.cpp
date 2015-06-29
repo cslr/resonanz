@@ -9,13 +9,15 @@
 #include <chrono>
 #include <exception>
 #include <iostream>
+#include <limits>
 
 #include <math.h>
 #include <dirent.h>
 
 #include <dinrhiw/dinrhiw.h>
-#include "Log.h"
 
+#include "Log.h"
+#include "NMCFile.h"
 #include "EmotivInsightStub.h"
 
 namespace whiteice {
@@ -197,6 +199,48 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::
 }
 
 
+bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
+		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program)
+{
+	if(targetSignal.size() != program.size())
+		return false;
+
+	if(targetSignal.size() <= 0)
+		return false;
+
+	for(unsigned int i=0;i<targetSignal.size();i++){
+		if(targetSignal[i].size() <= 0)
+			return false;
+
+		if(program[i].size() <= 0)
+			return false;
+
+		if(program[i].size() != program[0].size())
+			return false;
+	}
+
+	std::lock_guard<std::mutex> lock(command_mutex);
+	if(incomingCommand != nullptr) delete incomingCommand;
+	incomingCommand = new ResonanzCommand();
+
+	// interpolation of missing (negative) values between value points:
+	// uses NMCFile functionality for this
+
+	for(auto& p : program)
+		NMCFile::interpolateProgram(p);
+
+	incomingCommand->command = ResonanzCommand::CMD_DO_EXECUTE;
+	incomingCommand->showScreen = true;
+	incomingCommand->pictureDir = pictureDir;
+	incomingCommand->keywordsFile = keywordsFile;
+	incomingCommand->modelDir = modelDir;
+	incomingCommand->signalName = targetSignal;
+	incomingCommand->programValues = program;
+
+	return true;
+}
+
+
 
 bool ResonanzEngine::cmdStopCommand() throw()
 {
@@ -268,6 +312,15 @@ void ResonanzEngine::engine_loop()
 	unsigned int currentPictureModel = 0;
 	unsigned int currentKeywordModel = 0;
 
+	// used to execute program [targetting target values]
+	const float programHz = 1.0; // 1 program step means 1 second
+	std::vector< std::vector<float> > program;
+	std::vector< std::vector<float> > programVar;
+	long long programStarted = 0LL; // program has not been started
+
+
+
+
 	// tries to initialize SDL library functionality - and load the font
 	{
 		bool initialized = false;
@@ -324,7 +377,12 @@ void ResonanzEngine::engine_loop()
 					delete optimizer;
 					optimizer = nullptr;
 				}
-
+			}
+			else if(prevCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
+				keywordData.clear();
+				pictureData.clear();
+				keywordModels.clear();
+				pictureModels.clear();
 			}
 
 			// state exit/entry actions:
@@ -386,7 +444,7 @@ void ResonanzEngine::engine_loop()
 
 			// (re)loads media resources (pictures, keywords) if we want to do stimulation
 			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
-					currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+					currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE || currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
 				engine_setStatus("resonanz-engine: loading media files..");
 
 				bool loadData = (currentCommand.command != ResonanzCommand::CMD_DO_OPTIMIZE);
@@ -398,7 +456,10 @@ void ResonanzEngine::engine_loop()
 			}
 
 			// (re)-setups and initializes data structures used for measurements
-			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE || currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
+			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
+					currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE ||
+					currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE)
+			{
 				engine_setStatus("resonanz-engine: loading database..");
 				if(engine_loadDatabase(currentCommand.modelDir) == false)
 					logging.error("loading database files failed");
@@ -437,6 +498,62 @@ void ResonanzEngine::engine_loop()
 				if(aborted)
 					continue; // do not start executing any commands [recheck command input buffer and move back to do nothing command]
 
+			}
+
+			if(currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
+				try{
+					engine_setStatus("resonanz-engine: loading prediction model..");
+
+					if(engine_loadModels(currentCommand.modelDir) == false){
+						logging.error("Couldn't load models from model dir: " + currentCommand.modelDir);
+						this->cmdStopCommand();
+						continue; // aborts initializing execute command
+					}
+
+					// convert input command parameters into generic targets that are used to select target values
+					std::vector<std::string> names;
+					eeg->getSignalNames(names);
+
+					// inits program values into "no program" values
+					program.resize(names.size());
+					for(auto& p : program){
+						p.resize(currentCommand.programValues[0].size());
+						for(unsigned int i=0;i<p.size();i++)
+							p[i] = 0.5f;
+					}
+
+					programVar.resize(names.size());
+					for(auto& p : programVar){
+						p.resize(currentCommand.programValues[0].size());
+						for(unsigned int i=0;i<p.size();i++)
+							p[i] = 100000.0f; // 100.000 very large value (near infinite) => can take any value
+					}
+
+					for(unsigned int j=0;j<currentCommand.signalName.size();j++){
+						for(unsigned int n=0;n<names.size();n++){
+							if(names[n] == currentCommand.signalName[j]){ // finds a matching signal in a command
+								for(unsigned int i=0;i<program[n].size();i++){
+									if(currentCommand.programValues[j][i] >= 0.0f){
+										program[n][i] = currentCommand.programValues[j][i];
+										programVar[n][i] = 1.0f; // "normal" variance
+									}
+								}
+							}
+						}
+					}
+
+					// starts measuring time for the execution of the program
+
+					auto t0 = std::chrono::system_clock::now().time_since_epoch();
+					auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
+					programStarted = t0ms;
+
+					logging.info("Started executing neurostim program..");
+
+				}
+				catch(std::exception& e){
+
+				}
 			}
 
 		}
@@ -503,6 +620,43 @@ void ResonanzEngine::engine_loop()
 				logging.warn("model optimization failure");
 
 		}
+		else if(currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
+			engine_setStatus("resonanz-engine: executing program..");
+
+			auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+			long long currentSecond = (long long)
+					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
+
+			if(currentSecond < (signed)program[0].size()){
+				// executes program
+				std::vector<float> eegCurrent;
+				std::vector<float> eegTarget;
+				std::vector<float> eegTargetVariance;
+
+				eeg->data(eegCurrent);
+
+				eegTarget.resize(eegCurrent.size());
+				eegTargetVariance.resize(eegCurrent.size());
+
+				for(unsigned int i=0;i<eegTarget.size();i++){
+					eegTarget[i] = program[i][currentSecond];
+					eegTargetVariance[i] = programVar[i][currentSecond];
+				}
+
+				// shows picture/keyword which model predicts to give closest match to target
+				// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
+				engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
+
+				engine_sleep(20); // 20ms [25 fps] accuracy when showing pictures
+			}
+			else{
+				// program has run to the end => stop
+				logging.info("Executing the given program has stopped [program stop time].");
+				cmdStopCommand();
+			}
+		}
 
 		fflush(stdout); // updates eclipse etc console windows properly
 	}
@@ -527,6 +681,169 @@ void ResonanzEngine::engine_loop()
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+
+// loads prediction models for program execution, returns false in case of failure
+bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
+{
+	if(keywords.size() <= 0 || pictures.size() <= 0)
+		return false; // no loaded keywords of pictures
+
+	pictureModels.resize(pictures.size());
+
+	unsigned int pictureModelsLoaded = 0;
+	unsigned int keywordModelsLoaded = 0;
+
+	for(unsigned int i=0;i<pictureModels.size();i++){
+		std::string filename = calculateHashName(pictures[i]) + ".model";
+		filename = modelDir + "/" + filename;
+
+		if(pictureModels[i].load(filename) == false){
+			logging.error("Loading model file failed: " + filename);
+			continue;
+		}
+
+		pictureModelsLoaded++;
+	}
+
+	keywordModels.resize(keywords.size());
+
+	for(unsigned int i=0;i<keywordModels.size();i++){
+		std::string filename = calculateHashName(keywords[i]) + ".model";
+		filename = modelDir + "/" + filename;
+
+		if(keywordModels[i].load(filename) == false){
+			logging.error("Loading model file failed: " + filename);
+			continue;
+		}
+
+		keywordModelsLoaded++;
+	}
+
+	// returns true if could load at least one model for keywords and models
+	return (pictureModelsLoaded > 0 && keywordModelsLoaded > 0);
+}
+
+
+// shows picture/keyword which model predicts to give closest match to target
+// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
+bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
+		const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance)
+{
+	int bestKeyword = -1;
+	int bestPicture = -1;
+	float bestError = std::numeric_limits<double>::infinity();
+
+	math::vertex<> target(eegTarget.size());
+	math::vertex<> targetVariance(eegTargetVariance.size());
+
+	for(unsigned int i=0;i<target.size();i++){
+		target[i] = eegTarget[i];
+		targetVariance[i] = eegTargetVariance[i];
+	}
+
+
+	for(unsigned int index=0;index<keywordModels.size();index++){
+		whiteice::nnetwork<>& model = keywordModels[index];
+
+		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size())
+			continue; // bad model/data => ignore
+
+		math::vertex<> x(eegCurrent.size());
+		for(unsigned int i=0;i<x.size();i++)
+			x[i] = eegCurrent[i];
+
+		if(keywordData[index].preprocess(0, x) == false)
+			continue;
+
+		model.input() = x;
+
+		if(model.calculate(false) == false)
+			continue;
+
+		x = model.output();
+
+		if(keywordData[index].invpreprocess(1, x) == false)
+			continue;
+
+		// now we have prediction x to the response to the given keyword
+		// calculates error (weighted distance to the target state)
+
+		auto delta = target - x;
+
+		for(unsigned int i=0;i<delta.size();i++)
+			delta[i] /= targetVariance[i];
+
+		auto error = delta.norm();
+
+		if(error < bestError){
+			math::convert(bestError, error);
+			bestKeyword = index;
+		}
+
+		engine_pollEvents(); // polls for incoming events in case there are lots of models
+	}
+
+
+	bestError = std::numeric_limits<double>::infinity();
+
+	for(unsigned int index=0;index<pictureModels.size();index++){
+		whiteice::nnetwork<>& model = pictureModels[index];
+
+		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size())
+			continue; // bad model/data => ignore
+
+		math::vertex<> x(eegCurrent.size());
+		for(unsigned int i=0;i<x.size();i++)
+			x[i] = eegCurrent[i];
+
+		if(pictureData[index].preprocess(0, x) == false)
+			continue;
+
+		model.input() = x;
+
+		if(model.calculate(false) == false)
+			continue;
+
+		x = model.output();
+
+		if(pictureData[index].invpreprocess(1, x) == false)
+			continue;
+
+		// now we have prediction x to the response to the given keyword
+		// calculates error (weighted distance to the target state)
+
+		auto delta = target - x;
+
+		for(unsigned int i=0;i<delta.size();i++)
+			delta[i] /= targetVariance[i];
+
+		auto error = delta.norm();
+
+		if(error < bestError){
+			math::convert(bestError, error);
+			bestPicture = index;
+		}
+
+		engine_pollEvents(); // polls for incoming events in case there are lots of models
+	}
+
+	if(bestKeyword < 0 || bestPicture <=0){
+		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
+		engine_pollEvents();
+		return false;
+	}
+
+	// now we have best picture and keyword that is predicted
+	// to change users state to target value: show them
+
+	std::string message = keywords[bestKeyword];
+
+	engine_showScreen(message, bestPicture);
+	engine_updateScreen();
+	engine_pollEvents();
+
+	return true;
+}
 
 
 bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel)
@@ -956,9 +1273,9 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 	{
 		SDL_Color white = { 255, 255, 255 };
-		SDL_Color red   = { 255, 0  , 0   };
-		SDL_Color green = { 0  , 255, 0   };
-		SDL_Color blue  = { 0  , 0  , 255 };
+//		SDL_Color red   = { 255, 0  , 0   };
+//		SDL_Color green = { 0  , 255, 0   };
+//		SDL_Color blue  = { 0  , 0  , 255 };
 		SDL_Color black = { 0  , 0  , 0   };
 		SDL_Color color;
 

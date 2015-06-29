@@ -31,6 +31,20 @@ bool EmotivInsightStub::data(std::vector<float>& x) const
 }
 
 
+bool EmotivInsightStub::getSignalNames(std::vector<std::string>& names) const
+{
+	names.resize(5);
+
+	names[0] = "Insight: Excitement";
+	names[1] = "Insight: Relaxation";
+	names[2] = "Insight: Stress";
+	names[3] = "Insight: Engagement";
+	names[4] = "Insight: Interest";
+
+	return true;
+}
+
+
 unsigned int EmotivInsightStub::getNumberOfSignals() const
 {
   return 5;

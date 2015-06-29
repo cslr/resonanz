@@ -96,17 +96,17 @@ bool NMCFile::loadFile(const std::string& filename)
 }
 
 
-bool NMCFile::saveFile(const std::string& filename)
+bool NMCFile::saveFile(const std::string& filename) const
 {
-	return false; // NOT IMPLEMENTED
+	return false; // FIXME: NOT IMPLEMENTED
 }
 
-unsigned int NMCFile::getNumberOfPrograms()
+unsigned int NMCFile::getNumberOfPrograms() const
 {
 	return NUMBER_OF_PROGRAMS;
 }
 
-bool NMCFile::getProgramSignalName(unsigned int index, std::string& name)
+bool NMCFile::getProgramSignalName(unsigned int index, std::string& name) const
 {
 	if(index > NUMBER_OF_PROGRAMS) return false;
 	name = signalName[index];
@@ -114,7 +114,7 @@ bool NMCFile::getProgramSignalName(unsigned int index, std::string& name)
 }
 
 
-bool NMCFile::getRawProgram(unsigned int index, std::vector<float>& program)
+bool NMCFile::getRawProgram(unsigned int index, std::vector<float>& program) const
 {
 	if(index > NUMBER_OF_PROGRAMS) return false;
 	program = this->program[index];
@@ -122,11 +122,17 @@ bool NMCFile::getRawProgram(unsigned int index, std::vector<float>& program)
 }
 
 
-bool NMCFile::getInterpolatedProgram(unsigned int index, std::vector<float>& program)
+bool NMCFile::getInterpolatedProgram(unsigned int index, std::vector<float>& program) const
 {
 	if(index > NUMBER_OF_PROGRAMS) return false;
 	program = this->program[index];
 
+	return interpolateProgram(program);
+}
+
+
+bool NMCFile::interpolateProgram(std::vector<float> program)
+{
 	// goes through the code program and finds the first positive point
 	unsigned int prevPoint = program.size();
 	for(unsigned int i=0;i<program.size();i++){
@@ -165,6 +171,8 @@ bool NMCFile::getInterpolatedProgram(unsigned int index, std::vector<float>& pro
 
 	return true;
 }
+
+
 
 } /* namespace resonanz */
 } /* namespace whiteice */

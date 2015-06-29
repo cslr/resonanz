@@ -15,6 +15,8 @@ class EmotivInsightStub : public DataSource
    */
   bool data(std::vector<float>& x) const;
   
+  bool getSignalNames(std::vector<std::string>& names) const;
+
   unsigned int getNumberOfSignals() const;
   
   

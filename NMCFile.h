@@ -24,14 +24,16 @@ public:
 	virtual ~NMCFile();
 
 	bool loadFile(const std::string& filename);
-	bool saveFile(const std::string& filename);
+	bool saveFile(const std::string& filename) const;
 
-	unsigned int getNumberOfPrograms();
+	unsigned int getNumberOfPrograms() const;
 
-	bool getProgramSignalName(unsigned int index, std::string& name);
+	bool getProgramSignalName(unsigned int index, std::string& name) const;
 
-	bool getRawProgram(unsigned int index, std::vector<float>& program);
-	bool getInterpolatedProgram(unsigned int index, std::vector<float>& program);
+	bool getRawProgram(unsigned int index, std::vector<float>& program) const;
+	bool getInterpolatedProgram(unsigned int index, std::vector<float>& program) const;
+
+	static bool interpolateProgram(std::vector<float> program);
 
 private:
 	static const unsigned int NUMBER_OF_PROGRAMS = 2;
