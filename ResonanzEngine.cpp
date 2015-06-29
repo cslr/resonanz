@@ -20,6 +20,10 @@
 #include "NMCFile.h"
 #include "EmotivInsightStub.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace whiteice {
 namespace resonanz {
 
@@ -295,9 +299,19 @@ void ResonanzEngine::engine_loop()
 {
 	logging.info("engine_loop() started");
 
-	// TODO autodetect good values based on windows screen resolution
+#ifdef _WIN32
+	{
+		// set process priority
+		logging.info("windows os: setting resonanz thread high priority");
+		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	}
+#endif
+
+	// later autodetected to good values based on display screen resolution
 	SCREEN_WIDTH  = 800;
 	SCREEN_HEIGHT = 600;
+
 	const std::string fontname = "Vera.ttf";
 
 	eeg = new EmotivInsightStub();
@@ -395,9 +409,11 @@ void ResonanzEngine::engine_loop()
 							    SDL_WINDOWPOS_CENTERED,
 							    SDL_WINDOWPOS_CENTERED,
 							    SCREEN_WIDTH, SCREEN_HEIGHT,
-							    SDL_WINDOW_SHOWN);
+							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
 
 				if(window != nullptr){
+					SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+
 					SDL_Surface* icon = IMG_Load(iconFile.c_str());
 					if(icon != nullptr){
 						SDL_SetWindowIcon(window, icon);
@@ -406,10 +422,13 @@ void ResonanzEngine::engine_loop()
 
 					SDL_Surface* surface = SDL_GetWindowSurface(window);
 					SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
+					SDL_RaiseWindow(window);
+					SDL_SetWindowGrab(window, SDL_TRUE);
 					SDL_UpdateWindowSurface(window);
+					SDL_RaiseWindow(window);
+					SDL_SetWindowGrab(window, SDL_FALSE);
 				}
 
-				SDL_RaiseWindow(window);
 			}
 			else if(currentCommand.showScreen == true && prevCommand.showScreen == true){
 				// just empties current window with blank (black) screen
@@ -418,10 +437,12 @@ void ResonanzEngine::engine_loop()
 								    SDL_WINDOWPOS_CENTERED,
 								    SDL_WINDOWPOS_CENTERED,
 								    SCREEN_WIDTH, SCREEN_HEIGHT,
-								    SDL_WINDOW_SHOWN);
+								    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
 				}
 
 				if(window != nullptr){
+					SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+
 					SDL_Surface* icon = IMG_Load(iconFile.c_str());
 					if(icon != nullptr){
 						SDL_SetWindowIcon(window, icon);
@@ -430,10 +451,12 @@ void ResonanzEngine::engine_loop()
 
 					SDL_Surface* surface = SDL_GetWindowSurface(window);
 					SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
+					SDL_RaiseWindow(window);
+					SDL_SetWindowGrab(window, SDL_TRUE);
 					SDL_UpdateWindowSurface(window);
+					SDL_RaiseWindow(window);
+					SDL_SetWindowGrab(window, SDL_FALSE);
 				}
-
-				SDL_RaiseWindow(window);
 			}
 			else if(currentCommand.showScreen == false){
 				if(window != nullptr) SDL_DestroyWindow(window);
@@ -658,7 +681,16 @@ void ResonanzEngine::engine_loop()
 			}
 		}
 
-		fflush(stdout); // updates eclipse etc console windows properly
+
+		engine_pollEvents();
+
+		if(keypress()){
+			if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING){
+				logging.info("Received keypress: stopping command..");
+				cmdStopCommand();
+			}
+		}
+
 	}
 
 	if(window != nullptr)
@@ -745,25 +777,33 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	for(unsigned int index=0;index<keywordModels.size();index++){
 		whiteice::nnetwork<>& model = keywordModels[index];
 
-		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size())
+		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size()){
+			logging.warn("skipping bad keyword prediction model");
 			continue; // bad model/data => ignore
+		}
 
 		math::vertex<> x(eegCurrent.size());
 		for(unsigned int i=0;i<x.size();i++)
 			x[i] = eegCurrent[i];
 
-		if(keywordData[index].preprocess(0, x) == false)
+		if(keywordData[index].preprocess(0, x) == false){
+			logging.warn("skipping bad keyword prediction model");
 			continue;
+		}
 
 		model.input() = x;
 
-		if(model.calculate(false) == false)
+		if(model.calculate(false) == false){
+			logging.warn("skipping bad keyword prediction model");
 			continue;
+		}
 
 		x = model.output();
 
-		if(keywordData[index].invpreprocess(1, x) == false)
+		if(keywordData[index].invpreprocess(1, x) == false){
+			logging.warn("skipping bad keyword prediction model");
 			continue;
+		}
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
@@ -789,25 +829,33 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	for(unsigned int index=0;index<pictureModels.size();index++){
 		whiteice::nnetwork<>& model = pictureModels[index];
 
-		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size())
+		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size()){
+			logging.warn("skipping bad picture prediction model");
 			continue; // bad model/data => ignore
+		}
 
 		math::vertex<> x(eegCurrent.size());
 		for(unsigned int i=0;i<x.size();i++)
 			x[i] = eegCurrent[i];
 
-		if(pictureData[index].preprocess(0, x) == false)
+		if(pictureData[index].preprocess(0, x) == false){
+			logging.warn("skipping bad picture prediction model");
 			continue;
+		}
 
 		model.input() = x;
 
-		if(model.calculate(false) == false)
+		if(model.calculate(false) == false){
+			logging.warn("skipping bad picture prediction model");
 			continue;
+		}
 
 		x = model.output();
 
-		if(pictureData[index].invpreprocess(1, x) == false)
+		if(pictureData[index].invpreprocess(1, x) == false){
+			logging.warn("skipping bad picture prediction model");
 			continue;
+		}
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
@@ -831,6 +879,12 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
 		return false;
+	}
+	else{
+		char buffer[80];
+		sprintf(buffer, "prediction model selected keyword/best picture: %s %s",
+				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
+		logging.info(buffer);
 	}
 
 	// now we have best picture and keyword that is predicted
@@ -1329,6 +1383,16 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
+	SDL_DisplayMode mode;
+
+	if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
+		SCREEN_WIDTH = mode.w;
+		SCREEN_HEIGHT = mode.h;
+	}
+	else{
+		return false; // something went wrong
+	}
+
 	if(TTF_Init() != 0){
 		printf("TTF_Init failed: %s\n", TTF_GetError());
 		fflush(stdout);
@@ -1344,6 +1408,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		throw std::runtime_error("IMG_Init() failed.");
 	}
 
+#if 0
 	flags = MIX_INIT_OGG;
 
 	if(Mix_Init(flags) != flags){
@@ -1353,6 +1418,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		Mix_Quit();
 		throw std::runtime_error("Mix_Init() failed.");
 	}
+#endif
 
 	double fontSize = 100.0*sqrt(((float)(SCREEN_WIDTH*SCREEN_HEIGHT))/(640.0*480.0));
 	unsigned int fs = (unsigned int)fontSize;
@@ -1369,6 +1435,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		throw std::runtime_error("TTF_OpenFont() failed.");
 	}
 
+#if 0
 	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1){
 		IMG_Quit();
 		Mix_Quit();
@@ -1376,6 +1443,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 		throw std::runtime_error("Mix_OpenAudio() failed.");
 	}
+#endif
 
 	return true;
 }
@@ -1383,10 +1451,10 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 bool ResonanzEngine::engine_SDL_deinit()
 {
-  SDL_CloseAudio();
+  // SDL_CloseAudio();
   TTF_CloseFont(font);
   IMG_Quit();
-  Mix_Quit();
+  // Mix_Quit();
   TTF_Quit();
   SDL_Quit();
 

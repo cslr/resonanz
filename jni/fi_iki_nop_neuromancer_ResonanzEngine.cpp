@@ -147,7 +147,6 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 			env->ReleaseFloatArrayElements(arr, body, 0);
 		}
 
-
 		result = engine.cmdExecuteProgram(std::string(pic), std::string(key), std::string(mod), targets, progs);
 
 		env->ReleaseStringUTFChars(pictureDir, pic);

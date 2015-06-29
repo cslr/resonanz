@@ -188,10 +188,22 @@ int main(int argc, char** argv){
 			return -1;
 		}
 
-		// FIXME TODO IMPLEMENT TARGETED/PROGRAMMED SHOWING OF PICTURES (STIMULI)
+		std::vector<std::string> signalNames;
+		std::vector< std::vector<float> > signalPrograms;
 
-		printf("ERROR: programmed stimulus is not currently supported\n");
-		return -1;
+		signalNames.resize(file.getNumberOfPrograms());
+		signalPrograms.resize(file.getNumberOfPrograms());
+
+		for(unsigned int i=0;i<signalNames.size();i++){
+			file.getProgramSignalName(i, signalNames[i]);
+			file.getRawProgram(i, signalPrograms[i]);
+		}
+
+		if(engine.cmdExecuteProgram(cmd.pictureDir, cmd.keywordsFile, cmd.modelDir, signalNames, signalPrograms) == false){
+			printf("ERROR: bad parameters\n");
+			return -1;
+		}
+
 	}
 	else if(analyzeCommand == true){
 		std::string msg = engine.analyzeModel(cmd.modelDir);
@@ -202,8 +214,11 @@ int main(int argc, char** argv){
 
 
 	while(!engine.keypress() && engine.isBusy()){
-		sleep(1); // resonanz-engine thread is doing all the heavy work
+		if(verbose)
+			std::cout << "Resonanz status: " << engine.getEngineStatus() << std::endl;
+
 		fflush(stdout);
+		sleep(1); // resonanz-engine thread is doing all the heavy work
 	}
 
 	engine.cmdStopCommand();

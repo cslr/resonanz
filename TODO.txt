@@ -1,20 +1,11 @@
 TODO
 
-- write targeted/programmed stimulation using .NMC files code into ResonanzEngine
+- TEST/WRITE targeted/programmed stimulation (using .NMC files) code into ResonanzEngine
 
+- WRITE real EmotivInsightDataSource class using Emotiv SDK
 
+- TESTING
 
-
-
-- once Emotiv Insight is available write real EmotivInsightDataSource class instead
-  of using EmotivInsightStub and random data
-
-- gradually replace strict-licensed material and create database of pictures 
-  that are in public domain or under VERY liberal licenses 
-  (non-restrictive Creative Commons license).
-  this will then make it easy to use resulting movies in anyway.
-
-- testing
 
 STIMULATION: 
 
