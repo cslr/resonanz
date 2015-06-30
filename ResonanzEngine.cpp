@@ -20,6 +20,8 @@
 #include "NMCFile.h"
 #include "EmotivInsightStub.h"
 
+#include "SDLTheora.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -204,7 +206,7 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::
 
 
 bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
-		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program)
+		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw()
 {
 	if(targetSignal.size() != program.size())
 		return false;
@@ -308,6 +310,18 @@ void ResonanzEngine::engine_loop()
 	}
 #endif
 
+	long long tickStartTime = 0;
+	{
+		auto t1 = std::chrono::system_clock::now().time_since_epoch();
+		auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+		tickStartTime = t1ms;
+	}
+
+	long long lastTickProcessed = -1;
+	long long tick = 0;
+
+
 	// later autodetected to good values based on display screen resolution
 	SCREEN_WIDTH  = 800;
 	SCREEN_HEIGHT = 600;
@@ -330,8 +344,8 @@ void ResonanzEngine::engine_loop()
 	const float programHz = 1.0; // 1 program step means 1 second
 	std::vector< std::vector<float> > program;
 	std::vector< std::vector<float> > programVar;
-	long long programStarted = 0LL; // program has not been started
-
+	programStarted = 0LL; // program has not been started
+	long long lastProgramSecond = 0LL;
 
 
 
@@ -360,6 +374,23 @@ void ResonanzEngine::engine_loop()
 
 
 	while(thread_is_running){
+
+		// sleeps until there is a new engine tick
+		while(lastTickProcessed >= tick){
+			auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+			auto currentTick = (t1ms - tickStartTime)/TICK_MS;
+
+			if(tick < currentTick)
+			 	tick = currentTick;
+			else
+				engine_sleep(TICK_MS/5);
+		}
+
+		lastTickProcessed = tick;
+
+
 
 		ResonanzCommand prevCommand = currentCommand;
 		if(engine_checkIncomingCommand() == true){
@@ -397,6 +428,17 @@ void ResonanzEngine::engine_loop()
 				pictureData.clear();
 				keywordModels.clear();
 				pictureModels.clear();
+
+				// stops encoding if needed
+				if(video != nullptr){
+					auto t1 = std::chrono::system_clock::now().time_since_epoch();
+					auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+					video->stopEncoding(t1ms - programStarted);
+					delete video;
+					video = nullptr;
+					programStarted = 0;
+				}
 			}
 
 			// state exit/entry actions:
@@ -565,11 +607,25 @@ void ResonanzEngine::engine_loop()
 						}
 					}
 
+
+#if 1
+					// starts video encoder
+					video = new SDLTheora(0.50f); // 50% quality
+
+					if(video->startEncoding("neurostim.ogv", SCREEN_WIDTH, SCREEN_HEIGHT) == false)
+						logging.error("starting theora video encoder failed");
+					else
+						logging.info("started theora video encoder");
+#else
+					video = nullptr;
+#endif
+
 					// starts measuring time for the execution of the program
 
 					auto t0 = std::chrono::system_clock::now().time_since_epoch();
 					auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
 					programStarted = t0ms;
+					lastProgramSecond = -1;
 
 					logging.info("Started executing neurostim program..");
 
@@ -584,7 +640,6 @@ void ResonanzEngine::engine_loop()
 		// executes current command
 		if(currentCommand.command == ResonanzCommand::CMD_DO_NOTHING){
 			engine_setStatus("resonanz-engine: sleeping..");
-			engine_sleep(100); // 100ms
 
 			engine_pollEvents(); // polls for events
 			engine_updateScreen(); // always updates window if it exists
@@ -652,6 +707,12 @@ void ResonanzEngine::engine_loop()
 			long long currentSecond = (long long)
 					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
 
+			if(currentSecond <= lastProgramSecond)
+				continue; // nothing to do
+
+			lastProgramSecond = currentSecond;
+
+
 			if(currentSecond < (signed)program[0].size()){
 				// executes program
 				std::vector<float> eegCurrent;
@@ -668,15 +729,41 @@ void ResonanzEngine::engine_loop()
 					eegTargetVariance[i] = programVar[i][currentSecond];
 				}
 
+				// finds a stimuli which deepens current state further
+				// (moves measured values towards 0 and 1 from 0.5)
+				bool deepenMode = true;
+				if(deepenMode){
+					const float alpha = 4.0f; // proper values 3-5 higher value deepens signal more
+
+					for(unsigned int i=0;i<eegTarget.size();i++){
+						auto t = eegCurrent[i];
+
+						t = (1.0f + whiteice::math::tanh((t-0.5f)*alpha))/2.0f;
+
+						eegTarget[i] = t;
+						eegTargetVariance[i] = 1.0f;
+					}
+				}
+
 				// shows picture/keyword which model predicts to give closest match to target
 				// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
-				engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
 
-				engine_sleep(20); // 20ms [25 fps] accuracy when showing pictures
+				engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
 			}
 			else{
+
 				// program has run to the end => stop
 				logging.info("Executing the given program has stopped [program stop time].");
+
+				if(video){
+					auto t1 = std::chrono::system_clock::now().time_since_epoch();
+					auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+					video->stopEncoding(t1ms - programStarted);
+					delete video;
+					video = nullptr;
+				}
+
 				cmdStopCommand();
 			}
 		}
@@ -893,6 +980,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	std::string message = keywords[bestKeyword];
 
 	engine_showScreen(message, bestPicture);
+
 	engine_updateScreen();
 	engine_pollEvents();
 
@@ -1348,6 +1436,15 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 
 		SDL_BlitSurface(msg, NULL, surface, &messageRect);
+
+		if(video && programStarted > 0){
+			auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+			video->insertFrame((t1ms - programStarted), surface);
+		}
+
+
 		SDL_FreeSurface(msg);
 	}
 

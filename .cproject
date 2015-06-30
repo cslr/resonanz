@@ -145,9 +145,9 @@
 							<tool id="cdt.managedbuild.tool.gnu.archiver.mingw.base.139031028" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.mingw.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.108060959" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug">
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.831174945" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.1042526061" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.1042526061" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.465623527" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.other.other.565405771" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.565405771" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.420087680" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
@@ -184,6 +184,8 @@
 									<listOptionValue builtIn="false" value="mingw32"/>
 									<listOptionValue builtIn="false" value="SDL2main"/>
 									<listOptionValue builtIn="false" value="SDL2"/>
+									<listOptionValue builtIn="false" value="theora"/>
+									<listOptionValue builtIn="false" value="ogg"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1166826309" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -251,7 +253,7 @@
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.1147405496" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.1791173002" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.1199565941" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1292629714" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
@@ -262,11 +264,13 @@
 									<listOptionValue builtIn="false" value="AMD64"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.dialect.flags.1119770874" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=c++11" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.debugging.other.985535834" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other" value="" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.565085260" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug.1704135873" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug">
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.mingw.so.debug.option.optimization.level.504964733" name="Optimization Level" superClass="gnu.c.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.mingw.so.debug.option.debugging.level.1006661406" name="Debug Level" superClass="gnu.c.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.misc.other.619932347" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -D_GLIBCXX_DEBUG" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.888408471" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug.727851692" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug">
@@ -288,6 +292,8 @@
 									<listOptionValue builtIn="false" value="mingw32"/>
 									<listOptionValue builtIn="false" value="SDL2main"/>
 									<listOptionValue builtIn="false" value="SDL2"/>
+									<listOptionValue builtIn="false" value="ogg"/>
+									<listOptionValue builtIn="false" value="theora"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.525724726" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-Wl,-add-stdcall-alias" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.914224169" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -307,7 +313,7 @@
 								<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
 								<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
 							</option>
-							<option id="gnu.cpp.compiler.option.other.other.1004491461" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -Wl,--add-stdcall-alias" valueType="string"/>
+							<option id="gnu.cpp.compiler.option.other.other.1004491461" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -Wl,--add-stdcall-alias -D_GLIBCXX_DEBUG" valueType="string"/>
 							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1161268527" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 						</tool>
 						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.406445636.1840664071" name="Resource Custom Build Step">
@@ -345,4 +351,5 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

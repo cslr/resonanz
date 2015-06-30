@@ -52,6 +52,7 @@ void Log::info(std::string msg){
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "INFO %5.5f %s\n", ms, msg.c_str());
 	fputs(buffer, handle);
+	fflush(handle);
 }
 
 
@@ -60,6 +61,7 @@ void Log::warn(std::string msg){
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "WARN %5.5f %s\n", ms, msg.c_str());
 	fputs(buffer, handle);
+	fflush(handle);
 }
 
 void Log::error(std::string msg){
@@ -67,6 +69,7 @@ void Log::error(std::string msg){
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "ERRO %5.5f %s\n", ms, msg.c_str());
 	fputs(buffer, handle);
+	fflush(handle);
 }
 
 void Log::fatal(std::string msg){
@@ -74,6 +77,7 @@ void Log::fatal(std::string msg){
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "FATA %5.5f %s\n", ms, msg.c_str());
 	fputs(buffer, handle);
+	fflush(handle);
 }
 
 

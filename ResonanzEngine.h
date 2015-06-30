@@ -32,6 +32,7 @@
 
 #include <dinrhiw/dinrhiw.h>
 #include "DataSource.h"
+#include "SDLTheora.h"
 
 namespace whiteice {
 namespace resonanz {
@@ -83,7 +84,8 @@ public:
 	bool cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
 	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
-			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program);
+			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw();
+
 
 	bool cmdStopCommand() throw();
 
@@ -140,7 +142,8 @@ private:
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
-	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown
+	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown when measuring response
 
 	// media resources
 	std::vector<std::string> keywords;
@@ -174,6 +177,9 @@ private:
 
 	std::vector< whiteice::nnetwork<> > keywordModels;
 	std::vector< whiteice::nnetwork<> > pictureModels;
+
+	long long programStarted; // 0 = program has not been started
+	SDLTheora* video; // used to encode program into video
 
 };
 
