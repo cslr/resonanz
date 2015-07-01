@@ -19,6 +19,7 @@
 #include "Log.h"
 #include "NMCFile.h"
 #include "EmotivInsightStub.h"
+#include "EmotivInsightPipeServer.h"
 
 #include "SDLTheora.h"
 
@@ -328,7 +329,9 @@ void ResonanzEngine::engine_loop()
 
 	const std::string fontname = "Vera.ttf";
 
-	eeg = new EmotivInsightStub();
+	// eeg = new EmotivInsightStub();
+	// reads emotiv values from the pipe (of the client)
+	eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
 
 	std::vector<unsigned int> nnArchitecture;
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
@@ -729,9 +732,10 @@ void ResonanzEngine::engine_loop()
 					eegTargetVariance[i] = programVar[i][currentSecond];
 				}
 
+				// INSTEAD OF PROGRAM VALUES:
 				// finds a stimuli which deepens current state further
 				// (moves measured values towards 0 and 1 from 0.5)
-				bool deepenMode = true;
+				bool deepenMode = false;
 				if(deepenMode){
 					const float alpha = 4.0f; // proper values 3-5 higher value deepens signal more
 
@@ -775,6 +779,23 @@ void ResonanzEngine::engine_loop()
 			if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING){
 				logging.info("Received keypress: stopping command..");
 				cmdStopCommand();
+			}
+		}
+
+		// monitors current emotiv eeg values and logs them into log file
+		{
+			std::vector<float> data;
+
+			if(eeg->data(data) == false){
+				logging.info("emotiv-insight: cannot access signal values");
+			}
+			else{
+				if(data.size() <= 5){
+					char buffer[128];
+					sprintf(buffer, "emotiv-insight: signal values: %.2f %.2f %.2f %.2f %.2f",
+							data[0], data[1], data[2], data[3], data[4]);
+					logging.info(buffer);
+				}
 			}
 		}
 

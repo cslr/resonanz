@@ -434,12 +434,12 @@ void SDLTheora::encoder_loop()
 					logging.error("sdl-theora: encoding frame failed");
 			}
 		}
-		else if(latest_frame_generated < f_frame){
+		else if((latest_frame_generated+1) < f_frame){
 			// writes prev frames
 
 			logging.info("sdl-theora: writing prev-frames");
 
-			for(int i=latest_frame_generated;i<f_frame;i++){
+			for(int i=(latest_frame_generated+1);i<f_frame;i++){
 				if(encode_frame(prev->buffer, &ogg_stream, &packet, &page) == false)
 					logging.error("sdl-theora: encoding frame failed");
 			}
@@ -447,7 +447,7 @@ void SDLTheora::encoder_loop()
 
 		// writes f-frame once (f_frame) if it is a new frame for this msec
 		// OR if it is a last frame [stream close frame]
-		if(latest_frame_generated != f_frame || f->last)
+		if(latest_frame_generated < f_frame || f->last)
 		{
 			logging.info("sdl-theora: writing current frame");
 

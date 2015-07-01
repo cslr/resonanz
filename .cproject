@@ -53,7 +53,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="maximpact.cpp|spectral_analysis.cpp|MuseOSCSampler.cpp|EmotivEPOC_FM_Synthesis_test_windows|tst" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -111,7 +111,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="maximpact.cpp|spectral_analysis.cpp|MuseOSCSampler.cpp|EmotivEPOC_FM_Synthesis_test_windows|tst" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -213,7 +213,7 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp|maximpact.cpp|spectral_analysis.cpp|MuseOSCSampler.cpp|EmotivEPOC_FM_Synthesis_test_windows|tst" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -255,6 +255,9 @@
 								<option id="gnu.cpp.compiler.option.dialect.std.1199565941" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1292629714" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/pipe-server-src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/emotiv_insight/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
 								</option>
@@ -324,7 +327,7 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="FMSoundSynthesis.cpp|ResonanzShow.cpp|SDLSoundSynthesis.cpp|main.cpp|maximpact.cpp|spectral_analysis.cpp|MuseOSCSampler.cpp|EmotivEPOC_FM_Synthesis_test_windows|tst" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|SDLSoundSynthesis.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|main.cpp|ResonanzShow.cpp|FMSoundSynthesis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
