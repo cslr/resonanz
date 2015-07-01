@@ -58,6 +58,7 @@ public:
 	std::string pictureDir;
 	std::string keywordsFile;
 	std::string modelDir;
+	std::string audioFile;
 
 	std::vector<std::string> signalName;
 	std::vector< std::vector<float> > programValues;
@@ -84,6 +85,7 @@ public:
 	bool cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
 	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
+			const std::string& audioFile,
 			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw();
 
 
@@ -131,6 +133,9 @@ private:
 	bool engine_loadMedia(const std::string& picdir, const std::string& keyfile, bool loadData);
 	bool engine_showScreen(const std::string& message, unsigned int picture);
 
+	bool engine_playAudioFile(const std::string& audioFile);
+	bool engine_stopAudioFile();
+
 	void engine_pollEvents();
 
 	void engine_updateScreen();
@@ -138,6 +143,8 @@ private:
 	SDL_Window* window = nullptr;
 	int SCREEN_WIDTH, SCREEN_HEIGHT;
 	TTF_Font* font = nullptr;
+	bool audioEnabled = true; // false if opening audio failed
+	Mix_Music* music = nullptr;
 
 	bool keypressed = false;
 	std::mutex keypress_mutex;

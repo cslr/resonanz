@@ -103,7 +103,7 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecuteProgram
   (JNIEnv * env, jobject jobj,
-		  jstring pictureDir, jstring keywordsFile, jstring modelDir,
+		  jstring pictureDir, jstring keywordsFile, jstring modelDir, jstring audioFile,
 		  jobjectArray targetNames, jobjectArray programs)
 {
 	try{
@@ -112,13 +112,15 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 		if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
 		if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
 		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+		if(env->IsSameObject(audioFile, NULL)) return (jboolean)false;
 
 		if(env->GetArrayLength(targetNames) != env->GetArrayLength(programs))
 			return (jboolean)false;
 
-		const char *pic = env->GetStringUTFChars(pictureDir, 0);
-		const char *key = env->GetStringUTFChars(keywordsFile, 0);
-		const char *mod = env->GetStringUTFChars(modelDir, 0);
+		const char *pic   = env->GetStringUTFChars(pictureDir, 0);
+		const char *key   = env->GetStringUTFChars(keywordsFile, 0);
+		const char *mod   = env->GetStringUTFChars(modelDir, 0);
+		const char *audio = env->GetStringUTFChars(audioFile, 0);
 
 		// load arrays
 		const jsize length = env->GetArrayLength(targetNames);
@@ -147,11 +149,13 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 			env->ReleaseFloatArrayElements(arr, body, 0);
 		}
 
-		result = engine.cmdExecuteProgram(std::string(pic), std::string(key), std::string(mod), targets, progs);
+		result = engine.cmdExecuteProgram(std::string(pic), std::string(key), std::string(mod),
+				std::string(audio), targets, progs);
 
 		env->ReleaseStringUTFChars(pictureDir, pic);
 		env->ReleaseStringUTFChars(keywordsFile, key);
 		env->ReleaseStringUTFChars(modelDir, mod);
+		env->ReleaseStringUTFChars(audioFile, audio);
 
 		return (jboolean)result;
 	}

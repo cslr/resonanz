@@ -34,10 +34,10 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    startExecuteProgram
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[[F)Z
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[[F)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecuteProgram
-  (JNIEnv *, jobject, jstring, jstring, jstring, jobjectArray, jobjectArray);
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jobjectArray, jobjectArray);
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine

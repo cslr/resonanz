@@ -13,7 +13,7 @@
   <with|font-series|bold|Introduction>
 
   While maybe the best way to handle mental health problems is talking with
-  somebody, getting advices, spiritual and emotional empathic support
+  somebody, getting wise advices, spiritual and emotional empathic support
   together with psychology lead therapy. The sad fact in modern western
   countries (and to some extent in developing countries too) is that many
   problems people have in life are treated using psychiatric drugs which just
@@ -23,15 +23,18 @@
 
   Neuromancer Neurostim is a program that cannot solve most of the problems
   but tries to replace need of drugs which have side-effects and don't work
-  that well - with measurements based brain stimulation which aims to:
+  that well - with measurements based brain stimulation (instead of
+  medication) which aims to:\ 
 
   <\enumerate-numeric>
-    <item>classify and recognize state of the patient (anxiety, low mood,
+    <item>classify and recognize the state of the patient (anxiety, low mood,
     overactivity, confusion, afraid..) by measuring brainwaves
 
     <item>stimulate patient by using pictures, words and sounds which are
     carefully chosen to remedy patients <em|measured problem> or to improve
-    overall stability or cognitive abilities of the brain
+    overall stability or cognitive abilities of the brain. The idea is to
+    stimulate similarly how music, horror films, art and talking can change
+    mood of the listener/watcher.
 
     <item>try to measure what happens <strong|after> stimulation (after
     withdrawal) - find a stimulation techniques that are long-lasting
@@ -150,6 +153,34 @@
     sequences that <with|font-shape|italic|are most likely> to push anybody
     with any starting state towards the target state.
   </itemize-dot>
+
+  \;
+
+  \;
+
+  \;
+
+  \;
+
+  <with|font-series|bold|Spinoff - MaxImpact>
+
+  MaxImpact product idea is a spinoff from developing Neuromancer. This
+  product is targeted for marketing people and designers. User takes pictures
+  of the product or have a picture of banner and then the software gives
+  instead evaluation how user is likely to react to it. What colors cause
+  marketing message to stay in customer's head the longest etc. The idea is
+  to calculate feature vectors <math|\<b-f\>> from pictures and measure users
+  response. The learnt model is then part of the program and can be used to
+  any picture to predict how much the user will react to it. And try
+  different product/ads designs/shapes/colors and select the one with the
+  best response.
+
+  Pricing: for a high-quality product made carefully 500 EUR for a software
+  license can make sense as it can really improve efficiency of the marketing
+  messages and large companies use lots of money in marketing.\ 
+
+  Customers: all companies have products that look like something, and they
+  want to do marketing too. Also marketing companies.
 
   \;
 </body>

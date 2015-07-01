@@ -112,7 +112,7 @@ ResonanzShow::~ResonanzShow()
   
   for(unsigned int i=0;i<tracks.size();i++){
     if(tracks[i] != NULL){
-      Mix_FreeMusic(tracks[i]);
+    	Mix_FreeMusic(tracks[i]);
       tracks[i] = NULL;
     }
   }
@@ -278,7 +278,7 @@ bool ResonanzShow::playRandomMusic(unsigned int& track)
 
 bool ResonanzShow::playMusic(unsigned int track)
 {
-  Mix_FadeOutMusic(500);
+	Mix_FadeOutMusic(500);
   
   if(track < sounds.size()){
     

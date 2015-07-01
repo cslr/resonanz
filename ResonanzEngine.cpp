@@ -207,7 +207,7 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::
 
 
 bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
-		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw()
+		const std::string& audioFile, const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw()
 {
 	if(targetSignal.size() != program.size())
 		return false;
@@ -241,6 +241,7 @@ bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std:
 	incomingCommand->pictureDir = pictureDir;
 	incomingCommand->keywordsFile = keywordsFile;
 	incomingCommand->modelDir = modelDir;
+	incomingCommand->audioFile = audioFile;
 	incomingCommand->signalName = targetSignal;
 	incomingCommand->programValues = program;
 
@@ -432,6 +433,9 @@ void ResonanzEngine::engine_loop()
 				keywordModels.clear();
 				pictureModels.clear();
 
+				if(prevCommand.audioFile.length() > 0)
+					engine_stopAudioFile();
+
 				// stops encoding if needed
 				if(video != nullptr){
 					auto t1 = std::chrono::system_clock::now().time_since_epoch();
@@ -622,6 +626,9 @@ void ResonanzEngine::engine_loop()
 #else
 					video = nullptr;
 #endif
+
+					if(currentCommand.audioFile.length() > 0)
+						engine_playAudioFile(currentCommand.audioFile);
 
 					// starts measuring time for the execution of the program
 
@@ -1512,31 +1519,37 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	}
 
 	if(TTF_Init() != 0){
-		printf("TTF_Init failed: %s\n", TTF_GetError());
-		fflush(stdout);
+		char buffer[80];
+		sprintf(buffer, "TTF_Init failed: %s\n", TTF_GetError());
+		logging.error(buffer);
 		throw std::runtime_error("TTF_Init() failed.");
 	}
 
 	int flags = IMG_INIT_JPG | IMG_INIT_PNG;
 
 	if(IMG_Init(flags) != flags){
-		printf("IMG_Init failed: %s\n", IMG_GetError());
-		fflush(stdout);
+		char buffer[80];
+		sprintf(buffer, "IMG_Init failed: %s\n", IMG_GetError());
+		logging.error(buffer);
 		IMG_Quit();
 		throw std::runtime_error("IMG_Init() failed.");
 	}
 
-#if 0
-	flags = MIX_INIT_OGG;
+	flags = MIX_INIT_OGG | MIX_INIT_MP3;
+
+	audioEnabled = true;
 
 	if(Mix_Init(flags) != flags){
-		printf("Mix_Init failed: %s\n", Mix_GetError());
-		fflush(stdout);
+		char buffer[80];
+		sprintf(buffer, "Mix_Init failed: %s\n", Mix_GetError());
+		logging.warn(buffer);
+		audioEnabled = false;
+		/*
 		IMG_Quit();
 		Mix_Quit();
 		throw std::runtime_error("Mix_Init() failed.");
+		*/
 	}
-#endif
 
 	double fontSize = 100.0*sqrt(((float)(SCREEN_WIDTH*SCREEN_HEIGHT))/(640.0*480.0));
 	unsigned int fs = (unsigned int)fontSize;
@@ -1546,22 +1559,20 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	font = TTF_OpenFont(fontname.c_str(), fs);
 
 	if(font == 0){
-		printf("TTF_OpenFont failure (%s): %s\n", fontname.c_str() , TTF_GetError());
-		fflush(stdout);
+		char buffer[80];
+		sprintf(buffer, "TTF_OpenFont failure (%s): %s\n", fontname.c_str() , TTF_GetError());
+		logging.error(buffer);
 		IMG_Quit();
 		Mix_Quit();
 		throw std::runtime_error("TTF_OpenFont() failed.");
 	}
 
-#if 0
 	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1){
-		IMG_Quit();
-		Mix_Quit();
-		printf("ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
-
-		throw std::runtime_error("Mix_OpenAudio() failed.");
+		audioEnabled = false;
+		char buffer[80];
+		sprintf(buffer, "ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
+		logging.warn(buffer);
 	}
-#endif
 
 	return true;
 }
@@ -1569,14 +1580,63 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 bool ResonanzEngine::engine_SDL_deinit()
 {
-  // SDL_CloseAudio();
-  TTF_CloseFont(font);
-  IMG_Quit();
-  // Mix_Quit();
-  TTF_Quit();
-  SDL_Quit();
+	if(audioEnabled)
+		SDL_CloseAudio();
 
-  return true;
+	TTF_CloseFont(font);
+	IMG_Quit();
+
+	if(audioEnabled)
+		Mix_Quit();
+
+	TTF_Quit();
+	SDL_Quit();
+
+	return true;
+}
+
+
+bool ResonanzEngine::engine_playAudioFile(const std::string& audioFile)
+{
+	if(audioEnabled){
+		music = Mix_LoadMUS(audioFile.c_str());
+
+		if(music != NULL){
+			if(Mix_PlayMusic(music, -1) == -1){
+				Mix_FreeMusic(music);
+				music = NULL;
+				logging.warn("sdl-music: cannot start playing music");
+				return false;
+			}
+			return true;
+		}
+		else{
+			char buffer[80];
+			sprintf(buffer, "sdl-music: loading audio file failed: %s", audioFile.c_str());
+			logging.warn(buffer);
+			return false;
+		}
+	}
+	else return false;
+}
+
+
+bool ResonanzEngine::engine_stopAudioFile()
+{
+	if(audioEnabled){
+		Mix_FadeOutMusic(50);
+
+		if(music == NULL){
+			return false;
+		}
+		else{
+			Mix_FreeMusic(music);
+			music = NULL;
+		}
+
+		return true;
+	}
+	else return false;
 }
 
 
