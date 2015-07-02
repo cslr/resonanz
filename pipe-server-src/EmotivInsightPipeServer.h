@@ -19,6 +19,8 @@ public:
 	EmotivInsightPipeServer(const std::string& pipename);
 	virtual ~EmotivInsightPipeServer();
 
+	virtual std::string getDataSourceName() const { return "Emotiv Insight WinPipe Server"; };
+
 protected:
 	std::string pipename;
 

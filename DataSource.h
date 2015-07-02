@@ -15,6 +15,16 @@ class DataSource {
 public:
   virtual ~DataSource(){ }
   
+  /*
+   * Returns unique DataSource name
+   */
+  virtual std::string getDataSourceName() const = 0;
+
+  /**
+  	 * Returns true if connection and data collection to device is currently working.
+  	 */
+  virtual bool connectionOk() const = 0;
+
   /**
    * returns current value
    */

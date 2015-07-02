@@ -99,6 +99,19 @@ public:
 	// analyzes given measurements database and model performance
 	std::string analyzeModel(const std::string& modelDir);
 
+	// sets and gets EEG device information [note: engine must be in "doNothing" state
+	// for the change of device to be successful]
+
+	static const int RE_EEG_NO_DEVICE = 0;
+	static const int RE_EEG_RANDOM_DEVICE = 1;
+	static const int RE_EEG_EMOTIV_INSIGHT_DEVICE = 2;
+	static const int RE_EEG_IA_MUSE_DEVICE = 3;
+
+	bool setEEGDeviceType(int deviceNumber);
+	int getEEGDeviceType();
+	void getEEGDeviceStatus(std::string& status);
+
+
 private:
 	const std::string windowTitle = "Neuromancer NeuroStim";
 	const std::string iconFile = "brain.png";
@@ -164,14 +177,16 @@ private:
 	bool engine_loadDatabase(const std::string& modelDir);
 	bool engine_storeMeasurement(unsigned int pic, unsigned int key, const std::vector<float>& eegBefore, const std::vector<float>& eegAfter);
 	bool engine_saveDatabase(const std::string& modelDir);
-	std::string calculateHashName(std::string& filename);
+	std::string calculateHashName(const std::string& filename);
 
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
 	std::mutex database_mutex; // mutex to synchronize I/O access to dataset files
 
-	DataSource* eeg = nullptr;
 
+	DataSource* eeg = nullptr;
+	std::mutex eeg_mutex;
+	int eegDeviceType = RE_EEG_NO_DEVICE;
 
 	bool engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel);
 

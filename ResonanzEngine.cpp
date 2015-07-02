@@ -18,6 +18,9 @@
 
 #include "Log.h"
 #include "NMCFile.h"
+
+#include "NoEEGDevice.h"
+#include "RandomEEG.h"
 #include "EmotivInsightStub.h"
 #include "EmotivInsightPipeServer.h"
 
@@ -293,6 +296,116 @@ bool ResonanzEngine::keypress(){
 	else return false;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+
+bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
+{
+	try{
+		std::lock_guard<std::mutex> lock(eeg_mutex);
+
+		if(eegDeviceType == deviceNumber)
+			return true; // nothing to do
+
+		if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING) // FIXME: [note race conditions!]
+			return false; // can only change EEG in inactive state
+
+		if(deviceNumber == ResonanzEngine::RE_EEG_NO_DEVICE){
+			if(eeg != nullptr) delete eeg;
+			eeg = new NoEEGDevice();
+		}
+		else if(deviceNumber == ResonanzEngine::RE_EEG_RANDOM_DEVICE){
+			if(eeg != nullptr) delete eeg;
+			eeg = new RandomEEG();
+		}
+		else if(deviceNumber == ResonanzEngine::RE_EEG_EMOTIV_INSIGHT_DEVICE){
+			if(eeg != nullptr) delete eeg;
+			eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
+		}
+		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
+			return false; // not currently supported
+		}
+		else{
+			return false; // unknown device
+		}
+
+		// updates neural network model according to signal number of the EEG device
+		{
+			std::vector<unsigned int> nnArchitecture;
+			nnArchitecture.push_back(eeg->getNumberOfSignals());
+			nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+			nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+			nnArchitecture.push_back(eeg->getNumberOfSignals());
+
+			if(nn != nullptr) delete nn;
+
+			nn = new whiteice::nnetwork<>(nnArchitecture);
+		}
+
+		eegDeviceType = deviceNumber;
+
+		return true;
+	}
+	catch(std::exception& e){
+		std::string error = "setEEGDeviceType() internal error: ";
+		error += e.what();
+
+		logging.warn(error);
+
+		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
+		eeg = new NoEEGDevice();
+		return false;
+	}
+}
+
+
+int ResonanzEngine::getEEGDeviceType()
+{
+	std::lock_guard<std::mutex> lock(eeg_mutex);
+
+	if(eeg != nullptr)
+		return eegDeviceType;
+	else
+		return RE_EEG_NO_DEVICE;
+
+}
+
+
+void ResonanzEngine::getEEGDeviceStatus(std::string& status)
+{
+	std::lock_guard<std::mutex> lock(eeg_mutex);
+
+	if(eeg != nullptr){
+		if(eeg->connectionOk()){
+			std::vector<float> values;
+			eeg->data(values);
+
+			if(values.size() > 0){
+				status = "Device is connected.\n";
+
+				status = status + "Latest measurements: ";
+
+				char buffer[80];
+				for(unsigned int i=0;i<values.size();i++){
+					sprintf(buffer, "%.2f ", values[i]);
+					status = status + buffer;
+				}
+
+				status = status + ".";
+			}
+			else{
+				status = "Device is NOT connected.";
+			}
+		}
+		else{
+			status = "Device is NOT connected.";
+		}
+	}
+	else{
+		status = "No device.";
+	}
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -332,7 +445,14 @@ void ResonanzEngine::engine_loop()
 
 	// eeg = new EmotivInsightStub();
 	// reads emotiv values from the pipe (of the client)
-	eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
+	// eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
+
+
+	{
+		std::lock_guard<std::mutex> lock(eeg_mutex);
+		eeg = new NoEEGDevice();
+		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
+	}
 
 	std::vector<unsigned int> nnArchitecture;
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
@@ -341,6 +461,8 @@ void ResonanzEngine::engine_loop()
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
 
 	nn = new whiteice::nnetwork<>(nnArchitecture);
+
+
 	unsigned int currentPictureModel = 0;
 	unsigned int currentKeywordModel = 0;
 
@@ -791,18 +913,27 @@ void ResonanzEngine::engine_loop()
 
 		// monitors current emotiv eeg values and logs them into log file
 		{
-			std::vector<float> data;
-
-			if(eeg->data(data) == false){
-				logging.info("emotiv-insight: cannot access signal values");
+			if(eeg->connectionOk() == false){
+				std::string line = "eeg ";
+				line += eeg->getDataSourceName();
+				line += " : no connection to hardware";
+				logging.info(line);
 			}
 			else{
-				if(data.size() <= 5){
-					char buffer[128];
-					sprintf(buffer, "emotiv-insight: signal values: %.2f %.2f %.2f %.2f %.2f",
-							data[0], data[1], data[2], data[3], data[4]);
-					logging.info(buffer);
+				std::string line = "eeg ";
+				line += eeg->getDataSourceName();
+				line + " : ";
+
+				std::vector<float> x;
+				eeg->data(x);
+
+				for(unsigned int i=0;i<x.size();i++){
+					char buffer[80];
+					sprintf(buffer, "%.2f ", x[0]);
+					line += buffer;
 				}
+
+				logging.info(line);
 			}
 		}
 
@@ -811,9 +942,11 @@ void ResonanzEngine::engine_loop()
 	if(window != nullptr)
 		SDL_DestroyWindow(window);
 
-	if(eeg != nullptr){
-		delete eeg;
+	{
+		std::lock_guard<std::mutex> lock(eeg_mutex);
+		if(eeg) delete eeg;
 		eeg = nullptr;
+		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
 	}
 
 	if(nn != nullptr){
@@ -841,7 +974,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 	unsigned int keywordModelsLoaded = 0;
 
 	for(unsigned int i=0;i<pictureModels.size();i++){
-		std::string filename = calculateHashName(pictures[i]) + ".model";
+		std::string filename = calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
 
 		if(pictureModels[i].load(filename) == false){
@@ -855,7 +988,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 	keywordModels.resize(keywords.size());
 
 	for(unsigned int i=0;i<keywordModels.size();i++){
-		std::string filename = calculateHashName(keywords[i]) + ".model";
+		std::string filename = calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
 
 		if(keywordModels[i].load(filename) == false){
@@ -1058,7 +1191,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				}
 
 				// saves optimization results to a file
-				std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(pictures[currentPictureModel]) + ".model";
+				std::string dbFilename = currentCommand.modelDir + "/" +
+						calculateHashName(pictures[currentPictureModel] + eeg->getDataSourceName()) + ".model";
 				nn->importdata(w);
 				if(nn->save(dbFilename) == false)
 					logging.error("saving nn configuration file failed");
@@ -1127,7 +1261,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				}
 
 				// saves optimization results to a file
-				std::string dbFilename = currentCommand.modelDir + "/" + calculateHashName(keywords[currentKeywordModel]) + ".model";
+				std::string dbFilename = currentCommand.modelDir + "/" +
+						calculateHashName(keywords[currentKeywordModel] + eeg->getDataSourceName()) + ".model";
 				nn->importdata(w);
 				if(nn->save(dbFilename) == false)
 					logging.error("saving nn configuration file failed");
@@ -1254,7 +1389,7 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 	// loads databases into memory or initializes new ones
 	for(unsigned int i=0;i<keywords.size();i++){
-		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i]) + ".ds";
+		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 
 		if(keywordData[i].load(dbFilename) == false){
 			keywordData[i].createCluster(name1, eeg->getNumberOfSignals());
@@ -1264,7 +1399,7 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 
 	for(unsigned int i=0;i<pictures.size();i++){
-		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i]) + ".ds";
+		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
 
 		if(pictureData[i].load(dbFilename) == false){
 			pictureData[i].createCluster(name1, eeg->getNumberOfSignals());
@@ -1303,7 +1438,7 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 
 	// saves databases from memory
 	for(unsigned int i=0;i<keywordData.size();i++){
-		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i]) + ".ds";
+		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 
 		if(keywordData[i].save(dbFilename) == false)
 			return false;
@@ -1311,7 +1446,7 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 
 
 	for(unsigned int i=0;i<pictureData.size();i++){
-		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i]) + ".ds";
+		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
 
 		if(pictureData[i].save(dbFilename) == false)
 			return false;
@@ -1321,7 +1456,7 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 }
 
 
-std::string ResonanzEngine::calculateHashName(std::string& filename)
+std::string ResonanzEngine::calculateHashName(const std::string& filename)
 {
 	try{
 		unsigned int N = strlen(filename.c_str()) + 1;

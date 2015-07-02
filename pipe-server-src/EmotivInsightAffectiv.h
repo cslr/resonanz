@@ -29,6 +29,9 @@ public:
 	EmotivInsightAffectiv();
 	virtual ~EmotivInsightAffectiv();
 
+
+	virtual std::string getDataSourceName() const { return "Emotiv Insight"; };
+
 	/**
 	 * Returns true if connection and data collection to device is currently working.
 	 */

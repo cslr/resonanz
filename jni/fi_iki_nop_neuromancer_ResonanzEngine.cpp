@@ -230,3 +230,59 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeM
 	catch(std::exception& e){ return (jboolean)false; }
 }
 
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    setEEGSourceDevice
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_setEEGSourceDevice
+  (JNIEnv * env, jobject obj, jint deviceNumber)
+{
+	try{
+		return (jboolean)engine.setEEGDeviceType((int)deviceNumber);
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+
+}
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getEEGSourceDevice
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getEEGSourceDevice
+  (JNIEnv * env, jobject obj)
+{
+	try{
+		return (jint)engine.getEEGDeviceType();
+	}
+	catch(std::exception& e){ return (jint)(-1); }
+}
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getEEGDeviceStatus
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getEEGDeviceStatus
+  (JNIEnv * env, jobject obj)
+{
+	try{
+		std::string status;
+
+		engine.getEEGDeviceStatus(status);
+
+		jstring result = env->NewStringUTF(status.c_str());
+
+		return result;
+	}
+	catch(std::exception& e){
+		std::string error = "Internal error: ";
+		error += e.what();
+
+		jstring result = env->NewStringUTF(error.c_str());
+		return result;
+	}
+}
+
