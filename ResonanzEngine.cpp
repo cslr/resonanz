@@ -303,12 +303,14 @@ bool ResonanzEngine::keypress(){
 bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 {
 	try{
-		std::lock_guard<std::mutex> lock(eeg_mutex);
+		std::lock_guard<std::mutex> lock1(eeg_mutex);
 
 		if(eegDeviceType == deviceNumber)
 			return true; // nothing to do
 
-		if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING) // FIXME: [note race conditions!]
+		std::lock_guard<std::mutex> lock2(command_mutex);
+
+		if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING)
 			return false; // can only change EEG in inactive state
 
 		if(deviceNumber == ResonanzEngine::RE_EEG_NO_DEVICE){
@@ -628,6 +630,7 @@ void ResonanzEngine::engine_loop()
 					SDL_RaiseWindow(window);
 					SDL_SetWindowGrab(window, SDL_FALSE);
 				}
+
 			}
 			else if(currentCommand.showScreen == false){
 				if(window != nullptr) SDL_DestroyWindow(window);
@@ -635,6 +638,15 @@ void ResonanzEngine::engine_loop()
 			}
 
 			// state entry actions:
+
+			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE || currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
+				std::lock_guard<std::mutex> lock(eeg_mutex);
+				if(eeg->connectionOk() == false){
+					logging.warn("eeg: no connection to eeg hardware => aborting measure/execute command");
+					cmdDoNothing(false);
+					continue;
+				}
+			}
 
 			// (re)loads media resources (pictures, keywords) if we want to do stimulation
 			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
@@ -655,6 +667,7 @@ void ResonanzEngine::engine_loop()
 					currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE)
 			{
 				engine_setStatus("resonanz-engine: loading database..");
+
 				if(engine_loadDatabase(currentCommand.modelDir) == false)
 					logging.error("loading database files failed");
 				else
@@ -779,6 +792,8 @@ void ResonanzEngine::engine_loop()
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM){
 			engine_setStatus("resonanz-engine: showing random examples..");
 
+			engine_stopHibernation();
+
 			if(keywords.size() > 0 && pictures.size() > 0){
 				unsigned int key = rand() % keywords.size();
 				unsigned int pic = rand() % pictures.size();
@@ -791,6 +806,8 @@ void ResonanzEngine::engine_loop()
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE){
 			engine_setStatus("resonanz-engine: measuring eeg-responses..");
+
+			engine_stopHibernation();
 
 			if(keywords.size() > 0 && pictures.size() > 0){
 				unsigned int key = rand() % keywords.size();
@@ -826,12 +843,16 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus(buffer);
 			}
 
+			engine_stopHibernation();
+
 			if(engine_optimizeModels(currentPictureModel, currentKeywordModel) == false)
 				logging.warn("model optimization failure");
 
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
 			engine_setStatus("resonanz-engine: executing program..");
+
+			engine_stopHibernation();
 
 			auto t1 = std::chrono::system_clock::now().time_since_epoch();
 			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
@@ -913,6 +934,8 @@ void ResonanzEngine::engine_loop()
 
 		// monitors current emotiv eeg values and logs them into log file
 		{
+			std::lock_guard<std::mutex> lock(eeg_mutex); // mutex might change below use otherwise..
+
 			if(eeg->connectionOk() == false){
 				std::string line = "eeg ";
 				line += eeg->getDataSourceName();
@@ -922,14 +945,14 @@ void ResonanzEngine::engine_loop()
 			else{
 				std::string line = "eeg ";
 				line += eeg->getDataSourceName();
-				line + " : ";
+				line + " :";
 
 				std::vector<float> x;
 				eeg->data(x);
 
 				for(unsigned int i=0;i<x.size();i++){
 					char buffer[80];
-					sprintf(buffer, "%.2f ", x[0]);
+					sprintf(buffer, " %.2f", x[0]);
 					line += buffer;
 				}
 
@@ -1731,6 +1754,16 @@ bool ResonanzEngine::engine_SDL_deinit()
 }
 
 
+void ResonanzEngine::engine_stopHibernation()
+{
+#ifdef _WIN32
+	// resets hibernation timers
+	SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+#endif
+}
+
+
+
 bool ResonanzEngine::engine_playAudioFile(const std::string& audioFile)
 {
 	if(audioEnabled){
@@ -1971,6 +2004,76 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 
 		return buffer;
 	}
+}
+
+
+bool ResonanzEngine::deleteModelData(const std::string& modelDir)
+{
+	// we go through database directory and delete all *.ds and *.model files
+	std::vector<std::string> databaseFiles;
+	std::vector<std::string> modelFiles;
+
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir (modelDir.c_str())) != NULL) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir (dir)) != NULL) {
+			const char* filename = ent->d_name;
+
+			if(strlen(filename) > 3)
+				if(strcmp(&(filename[strlen(filename)-3]),".ds") == 0)
+					databaseFiles.push_back(filename);
+		}
+		closedir (dir);
+	}
+	else { /* could not open directory */
+		return false;
+	}
+
+	dir = NULL;
+	ent = NULL;
+	if ((dir = opendir (modelDir.c_str())) != NULL) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir (dir)) != NULL) {
+			const char* filename = ent->d_name;
+
+			if(strlen(filename) > 6)
+				if(strcmp(&(filename[strlen(filename)-6]),".model") == 0)
+					modelFiles.push_back(filename);
+		}
+		closedir (dir);
+	}
+	else { /* could not open directory */
+		return false;
+	}
+
+	logging.info("about to delete models and measurements database..");
+
+	// prevents access to database from other threads
+	std::lock_guard<std::mutex> lock1(database_mutex);
+	// operation locks so that other command cannot start
+	std::lock_guard<std::mutex> lock2(command_mutex);
+
+	if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING)
+		return false;
+
+	if(keywordData.size() > 0 || pictureData.size() > 0 ||
+		keywordModels.size() > 0 || pictureModels.size() > 0)
+		return false; // do not delete anything if there models/data is loaded into memory
+
+	for(auto filename : databaseFiles){
+		auto f = modelDir + "/" + filename;
+		remove(f.c_str());
+	}
+
+	for(auto filename : modelFiles){
+		auto f = modelDir + "/" + filename;
+		remove(f.c_str());
+	}
+
+	logging.info("models and measurements database deleted");
+
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -99,6 +99,8 @@ public:
 	// analyzes given measurements database and model performance
 	std::string analyzeModel(const std::string& modelDir);
 
+	bool deleteModelData(const std::string& modelDir);
+
 	// sets and gets EEG device information [note: engine must be in "doNothing" state
 	// for the change of device to be successful]
 
@@ -140,6 +142,8 @@ private:
 
 	bool engine_SDL_init(const std::string& fontname);
 	bool engine_SDL_deinit();
+
+	void engine_stopHibernation();
 
 	bool measureColor(SDL_Surface* image, SDL_Color& averageColor);
 

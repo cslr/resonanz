@@ -233,6 +233,30 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeM
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    deleteModelData
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_deleteModelData
+ (JNIEnv * env, jobject obj, jstring modelDir)
+{
+	try{
+		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+
+		const char *mod = env->GetStringUTFChars(modelDir, 0);
+
+		bool result = engine.deleteModelData(std::string(mod));
+
+		env->ReleaseStringUTFChars(modelDir, mod);
+
+		return (jboolean)result;
+
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    setEEGSourceDevice
  * Signature: (I)Z
  */

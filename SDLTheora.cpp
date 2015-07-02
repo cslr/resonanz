@@ -491,6 +491,8 @@ void SDLTheora::encoder_loop()
 
 	logging.info("sdl-theora: encoder thread shutdown: ogg_stream_destroy");
 	ogg_stream_destroy(&ogg_stream);
+	logging.info("sdl-theora: encoder thread shutdown: ogg_stream_destroy.. done");
+
 
 	// all frames has been written
 	if(prev != nullptr){
