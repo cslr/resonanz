@@ -1014,7 +1014,7 @@ void ResonanzEngine::engine_loop()
 
 				for(unsigned int i=0;i<x.size();i++){
 					char buffer[80];
-					sprintf(buffer, " %.2f", x[0]);
+					sprintf(buffer, " %.2f", x[i]);
 					line += buffer;
 				}
 
