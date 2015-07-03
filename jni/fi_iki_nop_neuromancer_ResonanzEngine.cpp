@@ -104,7 +104,7 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecuteProgram
   (JNIEnv * env, jobject jobj,
 		  jstring pictureDir, jstring keywordsFile, jstring modelDir, jstring audioFile,
-		  jobjectArray targetNames, jobjectArray programs)
+		  jobjectArray targetNames, jobjectArray programs, jboolean blindMode, jboolean saveVideo)
 {
 	try{
 		bool result = true;
@@ -149,8 +149,11 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 			env->ReleaseFloatArrayElements(arr, body, 0);
 		}
 
+		bool monteCarloMode = (bool)blindMode;
+		bool saveVideoMode   = (bool)saveVideo;
+
 		result = engine.cmdExecuteProgram(std::string(pic), std::string(key), std::string(mod),
-				std::string(audio), targets, progs);
+				std::string(audio), targets, progs, monteCarloMode, saveVideoMode);
 
 		env->ReleaseStringUTFChars(pictureDir, pic);
 		env->ReleaseStringUTFChars(keywordsFile, key);
@@ -227,8 +230,76 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeM
 
 		return result;
 	}
-	catch(std::exception& e){ return (jboolean)false; }
+	catch(std::exception& e){
+		std::string msg = "Internal software error: ";
+		msg += e.what();
+
+		jstring result = env->NewStringUTF(msg.c_str());
+		return result;
+	}
 }
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getDeltaStatistics
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getDeltaStatistics
+  (JNIEnv * env, jobject obj, jstring pictureDir, jstring keywordsFile, jstring modelDir)
+{
+	try{
+		if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
+		if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
+		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+
+		const char *pic   = env->GetStringUTFChars(pictureDir, 0);
+		const char *key   = env->GetStringUTFChars(keywordsFile, 0);
+		const char *mod   = env->GetStringUTFChars(modelDir, 0);
+
+		std::string line = engine.deltaStatistics(std::string(pic), std::string(key), std::string(mod));
+
+		env->ReleaseStringUTFChars(pictureDir, pic);
+		env->ReleaseStringUTFChars(keywordsFile, key);
+		env->ReleaseStringUTFChars(modelDir, mod);
+
+		jstring result = env->NewStringUTF(line.c_str());
+
+		return result;
+	}
+	catch(std::exception& e){
+		std::string msg = "Internal software error: ";
+		msg += e.what();
+
+		jstring result = env->NewStringUTF(msg.c_str());
+		return result;
+	}
+}
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getLastExecutedProgramStatisics
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getLastExecutedProgramStatisics
+  (JNIEnv * env, jobject obj)
+{
+	try{
+		std::string line = engine.executedProgramStatistics();
+
+		jstring result = env->NewStringUTF(line.c_str());
+
+		return result;
+	}
+	catch(std::exception& e){
+		std::string msg = "Internal software error: ";
+		msg += e.what();
+
+		jstring result = env->NewStringUTF(msg.c_str());
+		return result;
+	}
+}
+
 
 
 /*

@@ -34,10 +34,10 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startOptim
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    startExecuteProgram
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[[F)Z
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[[FZZ)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecuteProgram
-  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jobjectArray, jobjectArray);
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jobjectArray, jobjectArray, jboolean, jboolean);
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
@@ -71,6 +71,21 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getStatusLi
 JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeModel
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getDeltaStatistics
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getDeltaStatistics
+  (JNIEnv *, jobject, jstring, jstring, jstring);
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    getLastExecutedProgramStatisics
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getLastExecutedProgramStatisics
+  (JNIEnv *, jobject);
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
@@ -78,7 +93,7 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeM
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_deleteModelData
- (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine

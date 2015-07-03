@@ -52,13 +52,17 @@ public:
 	static const unsigned int CMD_DO_OPTIMIZE = 3;
 	static const unsigned int CMD_DO_EXECUTE  = 4;
 
-	unsigned int command;
+	unsigned int command = CMD_DO_NOTHING;
 
-	bool showScreen;
+	bool showScreen = false;
 	std::string pictureDir;
 	std::string keywordsFile;
 	std::string modelDir;
 	std::string audioFile;
+
+	// does execute use EEG values or do Monte Carlo simulation
+	bool blindMonteCarlo = false;
+	bool saveVideo = false;
 
 	std::vector<std::string> signalName;
 	std::vector< std::vector<float> > programValues;
@@ -86,7 +90,8 @@ public:
 
 	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
 			const std::string& audioFile,
-			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw();
+			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program,
+			bool blindMonteCarlo = false, bool saveVideo = false) throw();
 
 
 	bool cmdStopCommand() throw();
@@ -98,6 +103,12 @@ public:
 
 	// analyzes given measurements database and model performance
 	std::string analyzeModel(const std::string& modelDir);
+
+	// calculates delta statistics from the measurements [with currently selected EEG]
+	std::string deltaStatistics(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) const;
+
+	// returns collected program performance statistics [program weighted RMS]
+	std::string executedProgramStatistics() const;
 
 	bool deleteModelData(const std::string& modelDir);
 
@@ -174,14 +185,14 @@ private:
 	std::vector<std::string> pictures;
 	std::vector<SDL_Surface*> images;
 
-	bool loadWords(const std::string filename, std::vector<std::string>& words);
-	bool loadPictures(const std::string directory, std::vector<std::string>& pictures);
+	bool loadWords(const std::string filename, std::vector<std::string>& words) const;
+	bool loadPictures(const std::string directory, std::vector<std::string>& pictures) const;
 
 
 	bool engine_loadDatabase(const std::string& modelDir);
 	bool engine_storeMeasurement(unsigned int pic, unsigned int key, const std::vector<float>& eegBefore, const std::vector<float>& eegAfter);
 	bool engine_saveDatabase(const std::string& modelDir);
-	std::string calculateHashName(const std::string& filename);
+	std::string calculateHashName(const std::string& filename) const;
 
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
@@ -201,8 +212,16 @@ private:
 	bool engine_executeProgram(const std::vector<float>& eegCurrent,
 			const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance);
 
+	// executes program blindly based on Monte Carlo sampling and prediction models
+	bool engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
+			const std::vector<float>& eegTargetVariance);
+
 	std::vector< whiteice::nnetwork<> > keywordModels;
 	std::vector< whiteice::nnetwork<> > pictureModels;
+
+	// for blind Monte Carlo sampling mode
+	std::vector< math::vertex<> > mcsamples;
+	const unsigned int MONTE_CARLO_SIZE = 1000; // number of samples used
 
 	long long programStarted; // 0 = program has not been started
 	SDLTheora* video; // used to encode program into video

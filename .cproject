@@ -253,7 +253,7 @@
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.1147405496" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.1791173002" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.1199565941" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG -fopenmp" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1292629714" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/pipe-server-src}&quot;"/>
@@ -298,7 +298,7 @@
 									<listOptionValue builtIn="false" value="ogg"/>
 									<listOptionValue builtIn="false" value="theora"/>
 								</option>
-								<option id="gnu.cpp.link.option.flags.525724726" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-Wl,-add-stdcall-alias" valueType="string"/>
+								<option id="gnu.cpp.link.option.flags.525724726" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-Wl,-add-stdcall-alias -fopenmp" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.914224169" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

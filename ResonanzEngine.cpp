@@ -10,6 +10,7 @@
 #include <exception>
 #include <iostream>
 #include <limits>
+#include <map>
 
 #include <math.h>
 #include <dirent.h>
@@ -210,7 +211,9 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::
 
 
 bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
-		const std::string& audioFile, const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program) throw()
+		const std::string& audioFile,
+		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program,
+		bool blindMonteCarlo, bool saveVideo) throw()
 {
 	if(targetSignal.size() != program.size())
 		return false;
@@ -247,6 +250,8 @@ bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std:
 	incomingCommand->audioFile = audioFile;
 	incomingCommand->signalName = targetSignal;
 	incomingCommand->programValues = program;
+	incomingCommand->blindMonteCarlo = blindMonteCarlo;
+	incomingCommand->saveVideo = saveVideo;
 
 	return true;
 }
@@ -445,11 +450,6 @@ void ResonanzEngine::engine_loop()
 
 	const std::string fontname = "Vera.ttf";
 
-	// eeg = new EmotivInsightStub();
-	// reads emotiv values from the pipe (of the client)
-	// eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
-
-
 	{
 		std::lock_guard<std::mutex> lock(eeg_mutex);
 		eeg = new NoEEGDevice();
@@ -559,6 +559,9 @@ void ResonanzEngine::engine_loop()
 
 				if(prevCommand.audioFile.length() > 0)
 					engine_stopAudioFile();
+
+				if(mcsamples.size() > 0)
+					mcsamples.clear();
 
 				// stops encoding if needed
 				if(video != nullptr){
@@ -750,17 +753,31 @@ void ResonanzEngine::engine_loop()
 					}
 
 
-#if 1
-					// starts video encoder
-					video = new SDLTheora(0.50f); // 50% quality
+					// initializes blind monte carlo data structures
+					if(currentCommand.blindMonteCarlo){
+						mcsamples.clear();
 
-					if(video->startEncoding("neurostim.ogv", SCREEN_WIDTH, SCREEN_HEIGHT) == false)
-						logging.error("starting theora video encoder failed");
-					else
-						logging.info("started theora video encoder");
-#else
-					video = nullptr;
-#endif
+						for(unsigned int i=0;i<MONTE_CARLO_SIZE;i++){
+							math::vertex<> u(names.size());
+							for(unsigned int j=0;j<u.size();j++)
+								u[j] = rand()/((double)RAND_MAX); // [0,1] valued signals sampled from [0,1]^D
+							mcsamples.push_back(u);
+						}
+					}
+
+					if(currentCommand.saveVideo){
+						// starts video encoder
+						video = new SDLTheora(0.50f); // 50% quality
+
+						if(video->startEncoding("neurostim.ogv", SCREEN_WIDTH, SCREEN_HEIGHT) == false)
+							logging.error("starting theora video encoder failed");
+						else
+							logging.info("started theora video encoding");
+					}
+					else{
+						// do not save video
+						video = nullptr;
+					}
 
 					if(currentCommand.audioFile.length() > 0)
 						engine_playAudioFile(currentCommand.audioFile);
@@ -806,6 +823,17 @@ void ResonanzEngine::engine_loop()
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE){
 			engine_setStatus("resonanz-engine: measuring eeg-responses..");
+
+			if(eeg->connectionOk() == false){
+				logging.info("measure command: eeg connection failed => aborting measurements");
+
+				cmdDoNothing(false); // new command: stops and starts idling
+
+				engine_pollEvents(); // polls for events
+				engine_updateScreen(); // always updates window if it exists
+
+				continue;
+			}
 
 			engine_stopHibernation();
 
@@ -902,7 +930,10 @@ void ResonanzEngine::engine_loop()
 				// shows picture/keyword which model predicts to give closest match to target
 				// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 
-				engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
+				if(currentCommand.blindMonteCarlo == false)
+					engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
+				else
+					engine_executeProgramMonteCarlo(eegTarget, eegTargetVariance);
 			}
 			else{
 
@@ -1160,6 +1191,239 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 	// now we have best picture and keyword that is predicted
 	// to change users state to target value: show them
+
+	std::string message = keywords[bestKeyword];
+
+	engine_showScreen(message, bestPicture);
+
+	engine_updateScreen();
+	engine_pollEvents();
+
+	return true;
+}
+
+
+// executes program blindly based on Monte Carlo sampling and prediction models
+// [only works for low dimensional target signals and well-trained models]
+bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
+		const std::vector<float>& eegTargetVariance)
+{
+	int bestKeyword = -1;
+	int bestPicture = -1;
+	float bestError = std::numeric_limits<double>::infinity();
+
+	math::vertex<> target(eegTarget.size());
+	math::vertex<> targetVariance(eegTargetVariance.size());
+
+	for(unsigned int i=0;i<target.size();i++){
+		target[i] = eegTarget[i];
+		targetVariance[i] = eegTargetVariance[i];
+	}
+
+	if(mcsamples.size() <= 0)
+		return false; // internal program error should have MC samples
+
+
+	for(unsigned int index=0;index<keywordModels.size();index++){
+		whiteice::nnetwork<>& model = keywordModels[index];
+
+		if(model.input_size() != mcsamples[0].size() || model.output_size() != eegTarget.size()){
+			logging.warn("skipping bad keyword prediction model");
+			continue; // bad model/data => ignore
+		}
+
+		// calculates average error for this model using MC samples
+		float error = 0.0f;
+
+#pragma omp parallel for
+		for(unsigned int mcindex=0;mcindex<mcsamples.size();mcindex++){
+			auto x = mcsamples[mcindex];
+
+			if(keywordData[index].preprocess(0, x) == false){
+				logging.warn("skipping bad keyword prediction model");
+				continue;
+			}
+
+			if(model.calculate(x, x) == false){
+				logging.warn("skipping bad keyword prediction model");
+				continue;
+			}
+
+			if(keywordData[index].invpreprocess(1, x) == false){
+				logging.warn("skipping bad keyword prediction model");
+				continue;
+			}
+
+			// now we have prediction x to the response to the given keyword
+			// calculates error (weighted distance to the target state)
+
+			auto delta = target - x;
+
+			for(unsigned int i=0;i<delta.size();i++)
+				delta[i] /= targetVariance[i];
+
+			auto e = delta.norm();
+
+			float ef = 0.0f;
+			math::convert(ef, e);
+
+#pragma omp critical(update_error1)
+			{
+				error += ef / mcsamples.size();
+			}
+		}
+
+		if(error < bestError){
+			bestError = error;
+			bestKeyword = index;
+		}
+
+		engine_pollEvents(); // polls here for incoming events in case there are lots of models and this is slow..
+	}
+
+
+	bestError = std::numeric_limits<double>::infinity();
+
+	for(unsigned int index=0;index<pictureModels.size();index++){
+		whiteice::nnetwork<>& model = pictureModels[index];
+
+		if(model.input_size() != mcsamples[0].size() || model.output_size() != eegTarget.size()){
+			logging.warn("skipping bad picture prediction model");
+			continue; // bad model/data => ignore
+		}
+
+		// calculates average error for this model using MC samples
+		float error = 0.0f;
+
+#pragma omp parallel for
+		for(unsigned int mcindex=0;mcindex<mcsamples.size();mcindex++){
+			auto x = mcsamples[mcindex];
+
+			if(pictureData[index].preprocess(0, x) == false){
+				logging.warn("skipping bad picture prediction model");
+				continue;
+			}
+
+			if(model.calculate(x, x) == false){
+				logging.warn("skipping bad picture prediction model");
+				continue;
+			}
+
+			if(pictureData[index].invpreprocess(1, x) == false){
+				logging.warn("skipping bad picture prediction model");
+				continue;
+			}
+
+			// now we have prediction x to the response to the given keyword
+			// calculates error (weighted distance to the target state)
+
+			auto delta = target - x;
+
+			for(unsigned int i=0;i<delta.size();i++)
+				delta[i] /= targetVariance[i];
+
+			auto e = delta.norm();
+
+			float ef = 0.0f;
+			math::convert(ef, e);
+
+#pragma omp critical(update_error2)
+			{
+				error += ef / mcsamples.size();
+			}
+		}
+
+		if(error < bestError){
+			bestError = error;
+			bestPicture = index;
+		}
+
+		engine_pollEvents(); // polls for incoming events in case there are lots of models
+	}
+
+	if(bestKeyword < 0 || bestPicture <=0){
+		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
+		engine_pollEvents();
+		return false;
+	}
+	else{
+		char buffer[80];
+		sprintf(buffer, "prediction model selected keyword/best picture: %s %s",
+				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
+		logging.info(buffer);
+	}
+
+
+	// calculates estimates for MCMC samples [user state after stimulus] for the next round
+	// we have two separate prediction models for this: keywords and pictures:
+	// * for each sample we decide randomly which prediction model to use.
+	// * additionally, we now postprocess samples to stay within [0,1] interval
+	//   as our eeg-metasignals are always within [0,1]-range
+	{
+		for(auto& x : mcsamples){
+
+			if((rand()&1) == 0){ // use keyword model to predict the outcome
+				const auto& index = bestKeyword;
+
+				whiteice::nnetwork<>& model = keywordModels[index];
+
+				if(keywordData[index].preprocess(0, x) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+
+				model.input() = x;
+
+				if(model.calculate(false) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+
+				x = model.output();
+
+				if(keywordData[index].invpreprocess(1, x) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+			}
+			else{ // use picture model to predict the outcome
+				const auto& index = bestPicture;
+
+				whiteice::nnetwork<>& model = pictureModels[index];
+
+				if(pictureData[index].preprocess(0, x) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+
+				model.input() = x;
+
+				if(model.calculate(false) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+
+				x = model.output();
+
+				if(pictureData[index].invpreprocess(1, x) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+			}
+
+			// post-process predicted x to be within [0,1] interval
+			for(unsigned int i=0;i<x.size();i++){
+				if(x[i] < 0.0f) x[i] = 0.0f;
+				else if(x[i] > 1.0f) x[i] = 1.0f;
+			}
+
+			engine_pollEvents(); // polls for incoming events in case there are lots of samples
+		}
+	}
+
+	// now we have best picture and keyword that is predicted
+	// to change users state to target value: show them
+
 
 	std::string message = keywords[bestKeyword];
 
@@ -1479,7 +1743,7 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 }
 
 
-std::string ResonanzEngine::calculateHashName(const std::string& filename)
+std::string ResonanzEngine::calculateHashName(const std::string& filename) const
 {
 	try{
 		unsigned int N = strlen(filename.c_str()) + 1;
@@ -1871,7 +2135,7 @@ bool ResonanzEngine::measureColor(SDL_Surface* image, SDL_Color& averageColor)
 
 
 
-bool ResonanzEngine::loadWords(const std::string filename, std::vector<std::string>& words)
+bool ResonanzEngine::loadWords(const std::string filename, std::vector<std::string>& words) const
 {
 	FILE* handle = fopen(filename.c_str(), "rt");
 
@@ -1897,7 +2161,7 @@ bool ResonanzEngine::loadWords(const std::string filename, std::vector<std::stri
 }
 
 
-bool ResonanzEngine::loadPictures(const std::string directory, std::vector<std::string>& pictures)
+bool ResonanzEngine::loadPictures(const std::string directory, std::vector<std::string>& pictures) const
 {
 	// looks for pics/*.jpg and pics/*.png files
 
@@ -2004,6 +2268,133 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 
 		return buffer;
 	}
+}
+
+
+// calculates delta statistics from the measurements [with currently selected EEG]
+std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) const
+{
+	// 1. loads picture and keywords files into local memory
+	std::vector<std::string> pictureFiles;
+	std::vector<std::string> keywords;
+
+	if(loadWords(keywordsFile, keywords) == false || loadPictures(pictureDir, pictureFiles) == false)
+		return "";
+
+	std::multimap<float, std::string> keywordDeltas;
+	std::multimap<float, std::string> pictureDeltas;
+	float mean_delta_keywords = 0.0f;
+	float var_delta_keywords  = 0.0f;
+	float mean_delta_pictures = 0.0f;
+	float var_delta_pictures  = 0.0f;
+	float num_keywords = 0.0f;
+	float num_pictures = 0.0f;
+
+	// 2. loads dataset files (.ds) one by one if possible and calculates mean delta
+	whiteice::dataset<> data;
+
+	// loads databases into memory or initializes new ones
+	for(unsigned int i=0;i<keywords.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
+
+		data.clearAll();
+
+		if(data.load(dbFilename) == true){
+			if(data.getNumberOfClusters() == 2){
+				float delta = 0.0f;
+
+				for(unsigned int j=0;j<data.size(0);j++){
+					auto d = data.access(1, j) - data.access(0, j);
+					delta += d.norm().c[0] / data.size(0);
+				}
+
+				std::pair<float, std::string> p;
+				p.first  = -delta;
+				p.second = keywords[i];
+				keywordDeltas.insert(p);
+
+				mean_delta_keywords += delta;
+				var_delta_keywords  += delta*delta;
+				num_keywords++;
+			}
+		}
+	}
+
+	mean_delta_keywords /= num_keywords;
+	var_delta_keywords  /= num_keywords;
+	var_delta_keywords  -= mean_delta_keywords;
+	var_delta_keywords  *= num_keywords/(num_keywords - 1.0f);
+
+	for(unsigned int i=0;i<pictureFiles.size();i++){
+		std::string dbFilename = modelDir + "/" + calculateHashName(pictureFiles[i] + eeg->getDataSourceName()) + ".ds";
+
+		data.clearAll();
+
+		if(data.load(dbFilename) == true){
+			if(data.getNumberOfClusters() == 2){
+				float delta = 0.0f;
+
+				for(unsigned int j=0;j<data.size(0);j++){
+					auto d = data.access(1, j) - data.access(0, j);
+					delta += d.norm().c[0] / data.size(0);
+				}
+
+				std::pair<float, std::string> p;
+				p.first  = -delta;
+				p.second = pictureFiles[i];
+				pictureDeltas.insert(p);
+
+				mean_delta_pictures += delta;
+				var_delta_pictures  += delta*delta;
+				num_pictures++;
+			}
+		}
+	}
+
+	mean_delta_pictures /= num_pictures;
+	var_delta_pictures  /= num_pictures;
+	var_delta_pictures  -= mean_delta_pictures;
+	var_delta_pictures  *= num_pictures/(num_pictures - 1.0f);
+
+	// 3. sorts deltas/keyword delta/picture (use <multimap> for automatic ordering) and prints the results
+
+	std::string report = "";
+	const unsigned int BUFSIZE = 512;
+	char buffer[BUFSIZE];
+
+	snprintf(buffer, BUFSIZE, "Picture delta: %.2f stdev(delta): %.2f\n", mean_delta_pictures, sqrt(var_delta_pictures));
+	report += buffer;
+	snprintf(buffer, BUFSIZE, "Keyword delta: %.2f stdev(delta): %.2f\n", mean_delta_keywords, sqrt(var_delta_keywords));
+	report += buffer;
+	snprintf(buffer, BUFSIZE, "\n");
+	report += buffer;
+
+	snprintf(buffer, BUFSIZE, "PICTURE DELTAS\n");
+	report += buffer;
+	for(auto& a : pictureDeltas){
+		snprintf(buffer, BUFSIZE, "%s: delta %.2f\n", a.second.c_str(), -a.first);
+		report += buffer;
+	}
+	snprintf(buffer, BUFSIZE, "\n");
+	report += buffer;
+
+	snprintf(buffer, BUFSIZE, "KEYWORD DELTAS\n");
+	report += buffer;
+	for(auto& a : keywordDeltas){
+		snprintf(buffer, BUFSIZE, "%s: delta %.2f\n", a.second.c_str(), -a.first);
+		report += buffer;
+	}
+	snprintf(buffer, BUFSIZE, "\n");
+	report += buffer;
+
+	return report;
+}
+
+
+// returns collected program performance statistics [program weighted RMS]
+std::string ResonanzEngine::executedProgramStatistics() const
+{
+	return "Executed program statistics not implemented yet (weighted RMS)";
 }
 
 
