@@ -219,6 +219,10 @@ private:
 	std::vector< whiteice::nnetwork<> > keywordModels;
 	std::vector< whiteice::nnetwork<> > pictureModels;
 
+	// for calculating program performance: RMS statistic
+	float programRMS = 0.0f;
+	int programRMS_N = 0;
+
 	// for blind Monte Carlo sampling mode
 	std::vector< math::vertex<> > mcsamples;
 	const unsigned int MONTE_CARLO_SIZE = 1000; // number of samples used

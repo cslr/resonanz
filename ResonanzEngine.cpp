@@ -789,6 +789,10 @@ void ResonanzEngine::engine_loop()
 					programStarted = t0ms;
 					lastProgramSecond = -1;
 
+					// RMS performance error calculation
+					programRMS = 0.0f;
+					programRMS_N = 0;
+
 					logging.info("Started executing neurostim program..");
 
 				}
@@ -890,6 +894,33 @@ void ResonanzEngine::engine_loop()
 
 			if(currentSecond <= lastProgramSecond)
 				continue; // nothing to do
+
+			if(lastProgramSecond > 0){
+				// calculates RMS error
+				std::vector<float> current;
+				std::vector<float> target;
+
+				target.resize(program.size());
+				for(unsigned int i=0;i<program.size();i++){
+					// what was our target BEFORE this time tick [did we move to target state]
+					target[i] = program[i][lastProgramSecond];
+				}
+
+				eeg->data(current);
+
+				if(target.size() == current.size()){
+					float rms = 0.0f;
+					for(unsigned int i=0;i<target.size();i++){
+						rms += (current[i] - target[i])*(current[i] - target[i]);
+					}
+					rms = sqrt(rms);
+
+					// adds current rms to the global RMS
+					programRMS += rms;
+					programRMS_N++;
+				}
+
+			}
 
 			lastProgramSecond = currentSecond;
 
@@ -2394,7 +2425,18 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 // returns collected program performance statistics [program weighted RMS]
 std::string ResonanzEngine::executedProgramStatistics() const
 {
-	return "Executed program statistics not implemented yet (weighted RMS)";
+	if(programRMS_N > 0){
+		float rms = programRMS / programRMS_N;
+
+		char buffer[80];
+		snprintf(buffer, 80, "Program performance (average error): %.2f.\n", rms);
+		std::string result = buffer;
+
+		return result;
+	}
+	else{
+		return "No program performance data available.\n";
+	}
 }
 
 
