@@ -24,6 +24,7 @@
 #include "RandomEEG.h"
 #include "EmotivInsightStub.h"
 #include "EmotivInsightPipeServer.h"
+#include "LightstoneDevice.h"
 
 #include "SDLTheora.h"
 
@@ -332,6 +333,10 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		}
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
 			return false; // not currently supported
+		}
+		else if(deviceNumber == ResonanzEngine::RE_WD_LIGHTSTONE){
+			if(eeg != nullptr) delete eeg;
+			eeg = new LightstoneDevice();
 		}
 		else{
 			return false; // unknown device
@@ -939,23 +944,6 @@ void ResonanzEngine::engine_loop()
 				for(unsigned int i=0;i<eegTarget.size();i++){
 					eegTarget[i] = program[i][currentSecond];
 					eegTargetVariance[i] = programVar[i][currentSecond];
-				}
-
-				// INSTEAD OF PROGRAM VALUES:
-				// finds a stimuli which deepens current state further
-				// (moves measured values towards 0 and 1 from 0.5)
-				bool deepenMode = false;
-				if(deepenMode){
-					const float alpha = 4.0f; // proper values 3-5 higher value deepens signal more
-
-					for(unsigned int i=0;i<eegTarget.size();i++){
-						auto t = eegCurrent[i];
-
-						t = (1.0f + whiteice::math::tanh((t-0.5f)*alpha))/2.0f;
-
-						eegTarget[i] = t;
-						eegTargetVariance[i] = 1.0f;
-					}
 				}
 
 				// shows picture/keyword which model predicts to give closest match to target

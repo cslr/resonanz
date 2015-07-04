@@ -119,6 +119,7 @@ public:
 	static const int RE_EEG_RANDOM_DEVICE = 1;
 	static const int RE_EEG_EMOTIV_INSIGHT_DEVICE = 2;
 	static const int RE_EEG_IA_MUSE_DEVICE = 3;
+	static const int RE_WD_LIGHTSTONE = 4;
 
 	bool setEEGDeviceType(int deviceNumber);
 	int getEEGDeviceType();

@@ -283,6 +283,7 @@
 								<option defaultValue="true" id="gnu.cpp.link.mingw.so.debug.option.shared.375171946" name="Shared (-shared)" superClass="gnu.cpp.link.mingw.so.debug.option.shared" value="true" valueType="boolean"/>
 								<option id="gnu.cpp.link.option.paths.1041481891" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;C:\install\lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/liblightstone/Debug}&quot;"/>
 								</option>
 								<option id="gnu.cpp.link.option.libs.999448462" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="dinrhiw"/>
@@ -297,6 +298,7 @@
 									<listOptionValue builtIn="false" value="SDL2"/>
 									<listOptionValue builtIn="false" value="ogg"/>
 									<listOptionValue builtIn="false" value="theora"/>
+									<listOptionValue builtIn="false" value="lightstone"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.525724726" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-Wl,-add-stdcall-alias -fopenmp" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.914224169" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -307,6 +309,33 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.2096201958" name="LightstoneDevice.cpp" rcbsApplicability="disable" resourcePath="LightstoneDevice.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.897025791">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.897025791" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
+							<option id="gnu.cpp.compiler.option.include.paths.1687187810" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/liblightstone/include}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/pipe-server-src}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/emotiv_insight/include}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
+							</option>
+							<option id="gnu.cpp.compiler.option.preprocessor.def.1745705323" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<listOptionValue builtIn="false" value="main=SDL_main"/>
+								<listOptionValue builtIn="false" value="USE_WIN32"/>
+								<listOptionValue builtIn="false" value="WIN32"/>
+								<listOptionValue builtIn="false" value="LIGHTSTONE_D"/>
+								<listOptionValue builtIn="false" value="WINOS"/>
+								<listOptionValue builtIn="false" value="AMD64"/>
+							</option>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1879099312" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+						</tool>
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.799028395" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.752608400" name="Resource Custom Build Step Input Type">
+								<additionalInput kind="additionalinputdependency" paths=""/>
+							</inputType>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.1850108474" name="Resource Custom Build Step Output Type"/>
+						</tool>
+					</fileInfo>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" name="fi_iki_nop_neuromancer_ResonanzEngine.cpp" rcbsApplicability="disable" resourcePath="jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801">
 						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
 							<option id="gnu.cpp.compiler.option.include.paths.1258167864" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">

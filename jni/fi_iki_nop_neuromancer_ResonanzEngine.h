@@ -41,6 +41,14 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    startMeasureProgram
+ * Signature: (Ljava/lang/String;[Ljava/lang/String;I)[[F
+ */
+JNIEXPORT jobjectArray JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startMeasureProgram
+  (JNIEnv *, jobject, jstring, jobjectArray, jint);
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    stopCommand
  * Signature: ()Z
  */

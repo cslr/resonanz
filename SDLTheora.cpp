@@ -37,6 +37,7 @@ SDLTheora::SDLTheora(float q) :
 SDLTheora::~SDLTheora()
 {
 	std::lock_guard<std::mutex> lock1(incoming_mutex);
+
 	for(auto& i : incoming){
 		delete[] i->buffer[0].data;
 		delete[] i->buffer[1].data;
@@ -47,6 +48,7 @@ SDLTheora::~SDLTheora()
 	incoming.clear();
 
 	std::lock_guard<std::mutex> lock2(start_lock);
+
 	running = false;
 	if(encoder_thread){
 		encoder_thread->detach();
@@ -76,7 +78,7 @@ bool SDLTheora::startEncoding(const std::string& filename, unsigned int width, u
 
 	th_info format;
 
-	memset(&format, 0, sizeof(format));
+	th_info_init(&format);
 
 	frameHeight = ((height + 15)/16)*16;
 	frameWidth  = ((width + 15)/16)*16;
@@ -177,6 +179,7 @@ bool SDLTheora::stopEncoding(unsigned int msecs, SDL_Surface* surface)
 	if(running){
 		if(__insert_frame(msecs, surface, true) == false){
 			logging.fatal("sdl-theora: inserting LAST frame failed");
+			return false;
 		}
 	}
 	else{
@@ -185,14 +188,24 @@ bool SDLTheora::stopEncoding(unsigned int msecs, SDL_Surface* surface)
 
 	std::lock_guard<std::mutex> lock(start_lock);
 
-	encoder_thread->join(); // bug: may block forever... [should do timed wait instead?]
-	delete encoder_thread;
-
+	if(encoder_thread){
+		// may block forever... [should do some kind of timed wait instead?]
+		encoder_thread->join();
+		delete encoder_thread;
+	}
 	encoder_thread = nullptr;
+
+	if(handle)
+		th_encode_free(handle);
 	handle = NULL;
+
+	if(outputFile)
+		fclose(outputFile);
 	outputFile = NULL;
 
-	return (running == false); // everything went correctly
+	running = false; // it is safe to do because we have start lock?
+
+	return true; // everything went correctly
 }
 
 
@@ -249,9 +262,11 @@ bool SDLTheora::__insert_frame(unsigned int msecs, SDL_Surface* surface, bool la
 	f->buffer[1].data = new unsigned char[frameHeight*frameWidth];
 	f->buffer[2].data = new unsigned char[frameHeight*frameWidth];
 
-	unsigned int index = 0;
+	// perfect opportunity for parallelization: pixel conversions are independet from each other
+#pragma omp parallel for
 	for(unsigned int y=0;y<(unsigned)frameHeight;y++){
-		for(unsigned int x=0;x<(unsigned)frameWidth;x++, index++){
+		for(unsigned int x=0;x<(unsigned)frameWidth;x++){
+			const unsigned int index = x + frameWidth*y;
 			unsigned int* source = (unsigned int*)(frame->pixels);
 
 			const unsigned int r = (source[index] & 0x00FF0000)>>16;
@@ -274,8 +289,6 @@ bool SDLTheora::__insert_frame(unsigned int msecs, SDL_Surface* surface, bool la
 			f->buffer[0].data[index] = (unsigned char)round(y);
 			f->buffer[1].data[index] = (unsigned char)round(Cb);
 			f->buffer[2].data[index] = (unsigned char)round(Cr);
-
-
 		}
 	}
 
@@ -337,15 +350,20 @@ void SDLTheora::encoder_loop()
 		return;
 	}
 
-	const char* vendorName = "CSLR WHiTEiCE NEUROMANCER NEUROSTIM <nop@iki.fi>";
-	char buffer[256];
-	strcpy(buffer, vendorName);
+	char vendorName[256];
+	strncpy(vendorName, "CSLR WHiTEiCE NEUROMANCER NEUROSTiM <nop@iki.fi>", 256);
+
+	char* comments[1];
+	comments[0] = vendorName;
+
+	int comment_lengths[1];
+	comment_lengths[0] = (strlen(vendorName)+1);
 
 	th_comment comment;
-	comment.user_comments = NULL;
-	comment.comment_lengths = NULL;
-	comment.comments = 0;
-	comment.vendor = buffer;
+	comment.user_comments = comments;
+	comment.comment_lengths = comment_lengths;
+	comment.comments = 1;
+	comment.vendor = vendorName;
 
 	int result = 0;
 
@@ -389,13 +407,13 @@ void SDLTheora::encoder_loop()
 	// keeps encoding incoming frames
 	SDLTheora::frame* f = nullptr;
 	int latest_frame_generated = -1;
+	prev = nullptr;
 
 	while(1)
 	{
 		{
 			char buffer[80];
-			sprintf(buffer, "sdl-theora: incoming frame buffer size: %d", (int)incoming.size());
-
+			snprintf(buffer, 80, "sdl-theora: incoming frame buffer size: %d", (int)incoming.size());
 			logging.info(buffer);
 		}
 
@@ -423,7 +441,7 @@ void SDLTheora::encoder_loop()
 		// last_frame_generated .. f_frame
 		// fills them with latest_frame_generated (prev)
 
-		if(latest_frame_generated == -1 && f_frame >= 0){
+		if(latest_frame_generated < 0 && f_frame >= 0){
 			// writes f frame
 			latest_frame_generated = 0;
 
@@ -432,6 +450,12 @@ void SDLTheora::encoder_loop()
 			for(int i=latest_frame_generated;i<f_frame;i++){
 				if(encode_frame(f->buffer, &ogg_stream, &packet, &page) == false)
 					logging.error("sdl-theora: encoding frame failed");
+				else{
+					char buffer[80];
+					snprintf(buffer, 80, "sdl-theora: encoding frame: %d/%d", i, FPS);
+					logging.info(buffer);
+				}
+
 			}
 		}
 		else if((latest_frame_generated+1) < f_frame){
@@ -442,6 +466,12 @@ void SDLTheora::encoder_loop()
 			for(int i=(latest_frame_generated+1);i<f_frame;i++){
 				if(encode_frame(prev->buffer, &ogg_stream, &packet, &page) == false)
 					logging.error("sdl-theora: encoding frame failed");
+				else{
+					char buffer[80];
+					snprintf(buffer, 80, "sdl-theora: encoding frame: %d/%d", i, FPS);
+					logging.info(buffer);
+				}
+
 			}
 		}
 
@@ -453,6 +483,12 @@ void SDLTheora::encoder_loop()
 
 			if(encode_frame(f->buffer, &ogg_stream, &packet, &page, f->last) == false)
 				logging.error("sdl-theora: encoding frame failed");
+			else{
+				char buffer[80];
+				snprintf(buffer, 80, "sdl-theora: encoding frame: %d/%d", f_frame, FPS);
+				logging.info(buffer);
+			}
+
 		}
 
 		latest_frame_generated = f_frame;
@@ -473,6 +509,7 @@ void SDLTheora::encoder_loop()
 		}
 	}
 
+#if 0
 	// writes yet unhandled packets into a page
 	{
 		if(ogg_stream_flush(&ogg_stream, &page) != 0){
@@ -485,7 +522,7 @@ void SDLTheora::encoder_loop()
 			}
 		}
 	}
-
+#endif
 
 	logging.info("sdl-theora: theora encoder thread shutdown sequence..");
 

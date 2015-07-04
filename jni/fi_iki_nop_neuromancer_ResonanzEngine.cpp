@@ -168,6 +168,58 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startExecu
 
 /*
  * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    startMeasureProgram
+ * Signature: (Ljava/lang/String;[Ljava/lang/String;I)[[F
+ */
+JNIEXPORT jobjectArray JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startMeasureProgram
+  (JNIEnv * env, jobject obj, jstring mediaFile, jobjectArray signalNames, jint programLengthMSECS)
+{
+	try{
+#if 0
+		std::vector< std::vector<float> > program; // program that will be measured
+		std::vector<std::string> names; // signal names that will be collected
+		std::string media; // media filenames
+
+		bool result = true;
+
+		if(env->IsSameObject(mediaFile, NULL)) return (jboolean)false;
+		if(env->IsSameObject(signalNames, NULL)) return (jboolean)false;
+
+		const char *m     = env->GetStringUTFChars(mediaFile, 0);
+		media = m;
+
+		// load arrays
+		const jsize length = env->GetArrayLength(signalNames);
+		names.resize((unsigned int)length);
+
+
+		for(unsigned int i=0;i<(unsigned int)length;i++){
+			jstring name = (jstring) env->GetObjectArrayElement(targetNames, i);
+			const char* n = env->GetStringUTFChars(name, 0);
+			targets[i] = n;
+			env->ReleaseStringUTFChars(name, n);
+
+			jfloatArray arr = (jfloatArray) env->GetObjectArrayElement(programs, i);
+			progs[i].resize((unsigned int)env->GetArrayLength(arr));
+
+			jfloat *body = env->GetFloatArrayElements(arr, 0);
+
+			for(unsigned int j=0;j<progs[i].size();j++){
+				progs[i][j] = (float)body[j];
+			}
+
+			env->ReleaseFloatArrayElements(arr, body, 0);
+		}
+#endif
+
+	}
+	catch(std::exception& e){ return (jboolean)false; }
+}
+
+
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
  * Method:    isBusy
  * Signature: ()Z
  */
