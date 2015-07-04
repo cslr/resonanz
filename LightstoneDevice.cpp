@@ -174,8 +174,17 @@ void LightstoneDevice::lightstone_loop()
 
 			std::lock_guard<std::mutex> lock(data_mutex);
 			std::vector<float> x(2);
-			x[0] = hr;
-			x[1] = r.scl;
+
+			// converts data to [0, 1] inverval
+			auto t = hr;
+			t = (1 + tanh(2.0f*(t - 80.0f)/40.0f))/2.0f; // nearly linear between [60, 100] then quickly goes to 0/1 after 40 or 120
+
+			auto u = r.scl/20.0f; // SCL values I have seen have been between in range [1,4] or 15, I guess [0,20] is safe
+			if(u < 0.0f) u = 0.0f;
+			else if(u > 1.0f) u = 1.0f;
+
+			x[0] = t;
+			x[1] = u;
 			this->value = x;
 
 			auto duration1 = std::chrono::system_clock::now().time_since_epoch();
