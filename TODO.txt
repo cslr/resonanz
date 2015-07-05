@@ -1,43 +1,21 @@
 TODO
 
-- TEST/WRITE targeted/programmed stimulation (using .NMC files) code into ResonanzEngine
+- write MuseOSC driver
 
-- WRITE real EmotivInsightDataSource class using Emotiv SDK
+- measure program from stimuli
 
-- TESTING
+- move from second long "ticks" to 
+  subsecond ticks and use it everywhere to get subsecond accuracy
+  
+- fix/text MC sampling code (speed): support non-real time rendering
 
+- sync music well with video
+  - encoding music into encoded videos (later afterwards using external ffmpeg command)
+  
+- decode theora+ogg video+audio files when measuring programs
 
-STIMULATION: 
+- program RMS error: measure program RMS with random stimuli for comparision
 
-- (picture-based) stimulation needs more high-quality pictures
-  [pictures causing calmness]
-
-  *YOU NEED *STRONG* PICTURES* IF YOU ARE GOING TO GET ANY REAL EFFECT*
-
-- licensing mess: REMOVE media files that require 
-  ShareAlike (same license as the original) instead of just Attribution
-
-  [This means that you can distribute the resulting movie commercially]
-
-- study available sound instrument software codes for Linux (and Windows),
-  VST host/instruments afaik do not support easy setting/fetching of patch
-  parameters so it is not good solution but other sound synthesizer 
-  architechtures might actually do this
-
-- study psycle and use (or implement) some better sound synthesizers,
-  more advanced post processing (filter cutoff [low/highpass filtering 
-  using fftw])
-
-- look at LADSPA plugins, VST plugins are not very good because 
-  you cannot easily manipulate and fetch synthesizer plugin parameters 
-  from the host (use as the simulator)
-
-- word stimulation needs to be rapid and needs 
-  something extra to maximize the impact, try to get text2speech working?
-
-- later: algorithmic music might make sense
-
-
-
-
+- neurodynamic re-inforcement learning when assigning credits
+  from multiple different stimuli
 

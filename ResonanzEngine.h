@@ -51,6 +51,7 @@ public:
 	static const unsigned int CMD_DO_MEASURE  = 2;
 	static const unsigned int CMD_DO_OPTIMIZE = 3;
 	static const unsigned int CMD_DO_EXECUTE  = 4;
+	static const unsigned int CMD_DO_MEASURE_PROGRAM = 5;
 
 	unsigned int command = CMD_DO_NOTHING;
 
@@ -66,6 +67,8 @@ public:
 
 	std::vector<std::string> signalName;
 	std::vector< std::vector<float> > programValues;
+
+	unsigned int programLengthTicks = 0; // measured program length in ticks
 };
 
 
@@ -88,6 +91,10 @@ public:
 
 	bool cmdOptimizeModel(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
+	bool cmdMeasureProgram(const std::string& mediaFile,
+				const std::vector<std::string>& signalNames,
+				const unsigned int programLengthTicks) throw();
+
 	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
 			const std::string& audioFile,
 			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program,
@@ -100,6 +107,10 @@ public:
 	bool isBusy() throw();
 
 	bool keypress(); // detects keypress from GUI
+
+	// measured program functions
+	bool invalidateMeasuredProgram(); // invalidates currently measured program
+	bool getMeasuredProgram(std::vector< std::vector<float> >& program);
 
 	// analyzes given measurements database and model performance
 	std::string analyzeModel(const std::string& modelDir);
@@ -230,6 +241,11 @@ private:
 
 	long long programStarted; // 0 = program has not been started
 	SDLTheora* video; // used to encode program into video
+
+
+	std::mutex measure_program_mutex;
+	std::vector< std::vector<float> > measuredProgram;
+	std::vector< std::vector<float> > rawMeasuredSignals; // used internally
 
 };
 

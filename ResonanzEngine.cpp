@@ -211,6 +211,28 @@ bool ResonanzEngine::cmdOptimizeModel(const std::string& pictureDir, const std::
 }
 
 
+bool ResonanzEngine::cmdMeasureProgram(const std::string& mediaFile,
+			const std::vector<std::string>& signalNames,
+			const unsigned int programLengthTicks) throw()
+{
+	// could do more checks here but JNI code calling this SHOULD WORK CORRECTLY SO I DON'T
+
+	std::lock_guard<std::mutex> lock(command_mutex);
+	if(incomingCommand != nullptr) delete incomingCommand;
+	incomingCommand = new ResonanzCommand();
+
+	incomingCommand->command = ResonanzCommand::CMD_DO_MEASURE_PROGRAM;
+	incomingCommand->showScreen = true;
+	incomingCommand->audioFile = mediaFile;
+	incomingCommand->signalName = signalNames;
+	incomingCommand->blindMonteCarlo = false;
+	incomingCommand->saveVideo = false;
+	incomingCommand->programLengthTicks = programLengthTicks;
+
+	return true;
+}
+
+
 bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
 		const std::string& audioFile,
 		const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program,
@@ -579,6 +601,13 @@ void ResonanzEngine::engine_loop()
 					programStarted = 0;
 				}
 			}
+			else if(prevCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
+				// clears internal data structure
+				rawMeasuredSignals.clear();
+
+				if(prevCommand.audioFile.length() > 0)
+					engine_stopAudioFile();
+			}
 
 			// state exit/entry actions:
 
@@ -806,6 +835,46 @@ void ResonanzEngine::engine_loop()
 				}
 			}
 
+			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
+				// checks command signal names maps to some eeg signals
+				std::vector<std::string> names;
+				eeg->getSignalNames(names);
+
+				unsigned int matches = 0;
+				for(auto& n : names){
+					for(auto& m : currentCommand.signalName){
+						if(n == m){ // string comparion
+							matches++;
+						}
+					}
+				}
+
+				if(matches == 0){
+					logging.warn("resonanz-engine: measure program signal names don't match to device signals");
+
+					this->cmdDoNothing(false); // abort
+					continue;
+				}
+
+				rawMeasuredSignals.resize(names.size()); // setups data structure for measurements
+
+				// invalidates old program
+				this->invalidateMeasuredProgram();
+
+				// starts measuring time for the execution of the program
+
+				auto t0 = std::chrono::system_clock::now().time_since_epoch();
+				auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
+				programStarted = t0ms;
+				lastProgramSecond = -1;
+
+				// currently just plays audio and shows blank screen
+				if(currentCommand.audioFile.length() > 0)
+					engine_playAudioFile(currentCommand.audioFile);
+
+				// => ready to measure
+			}
+
 		}
 
 		// executes current command
@@ -971,7 +1040,71 @@ void ResonanzEngine::engine_loop()
 				cmdStopCommand();
 			}
 		}
+		else if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
+			engine_setStatus("resonanz-engine: measuring program..");
 
+			engine_stopHibernation();
+
+			auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+			long long currentSecond = (long long)
+					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
+
+			if(currentSecond <= lastProgramSecond)
+				continue; // nothing to do
+
+			lastProgramSecond = currentSecond;
+
+			if(currentSecond < currentCommand.programLengthTicks){
+				// measurement program continues: just measures values and do nothing
+				// as the background thread currently handles playing of the music
+				// LATER: do video decoding and showing..
+
+				std::vector<float> values(eeg->getNumberOfSignals());
+				eeg->data(values);
+
+				for(unsigned int i=0;i<rawMeasuredSignals.size();i++)
+					rawMeasuredSignals[i].push_back(values[i]);
+
+				engine_updateScreen();
+				engine_pollEvents();
+			}
+			else{
+				// stops measuring program:
+				// transforms raw signals into measuredProgram values
+
+				std::lock_guard<std::mutex> lock(measure_program_mutex);
+
+				std::vector<std::string> names;
+				eeg->getSignalNames(names);
+
+				measuredProgram.resize(currentCommand.signalName.size());
+
+				for(unsigned int i=0;i<measuredProgram.size();i++){
+					measuredProgram[i].resize(currentCommand.programLengthTicks);
+					for(auto& m : measuredProgram[i])
+						m = -1.0f;
+				}
+
+				for(unsigned int j=0;j<currentCommand.signalName.size();j++){
+					for(unsigned int n=0;n<names.size();n++){
+						if(names[n] == currentCommand.signalName[j]){ // finds a matching signal in a command
+							unsigned int MIN = measuredProgram[j].size();
+							if(rawMeasuredSignals[n].size() < MIN)
+								MIN = rawMeasuredSignals[n].size();
+							for(unsigned int i=0;i<MIN;i++){
+								if(rawMeasuredSignals[n][i] >= 0.0f){
+									measuredProgram[j][i] = rawMeasuredSignals[n][i];
+								}
+							}
+						}
+					}
+				}
+
+				cmdStopCommand();
+			}
+		}
 
 		engine_pollEvents();
 
@@ -2290,6 +2423,32 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 }
 
 
+// measured program functions
+bool ResonanzEngine::invalidateMeasuredProgram()
+{
+	// invalidates currently measured program
+	std::lock_guard<std::mutex> lock(measure_program_mutex);
+
+	this->measuredProgram.resize(0);
+
+	return true;
+}
+
+
+bool ResonanzEngine::getMeasuredProgram(std::vector< std::vector<float> >& program)
+{
+	// gets currently measured program
+	std::lock_guard<std::mutex> lock(measure_program_mutex);
+
+	if(measuredProgram.size() == 0)
+		return false;
+
+	program = this->measuredProgram;
+
+	return true;
+}
+
+
 // calculates delta statistics from the measurements [with currently selected EEG]
 std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) const
 {
@@ -2341,7 +2500,7 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 
 	mean_delta_keywords /= num_keywords;
 	var_delta_keywords  /= num_keywords;
-	var_delta_keywords  -= mean_delta_keywords;
+	var_delta_keywords  -= mean_delta_keywords*mean_delta_keywords;
 	var_delta_keywords  *= num_keywords/(num_keywords - 1.0f);
 
 	for(unsigned int i=0;i<pictureFiles.size();i++){
@@ -2372,7 +2531,7 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 
 	mean_delta_pictures /= num_pictures;
 	var_delta_pictures  /= num_pictures;
-	var_delta_pictures  -= mean_delta_pictures;
+	var_delta_pictures  -= mean_delta_pictures*mean_delta_pictures;
 	var_delta_pictures  *= num_pictures/(num_pictures - 1.0f);
 
 	// 3. sorts deltas/keyword delta/picture (use <multimap> for automatic ordering) and prints the results
