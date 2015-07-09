@@ -143,6 +143,14 @@ JNIEXPORT jint JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getEEGSourceDe
 JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getEEGDeviceStatus
   (JNIEnv *, jobject);
 
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    setParameter
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_setParameter
+  (JNIEnv *, jobject, jstring, jstring);
+
 #ifdef __cplusplus
 }
 #endif

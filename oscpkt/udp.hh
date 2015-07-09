@@ -26,6 +26,8 @@
 #ifndef OSCPKT_UDP_HH
 #define OSCPKT_UDP_HH
 
+#include <iostream>
+
 #include <sys/types.h>
 #if defined(_MSC_VER) || defined(WIN32)
 /*
@@ -40,6 +42,11 @@
 # if defined(_MSC_VER)
 #  pragma comment(lib, "ws2_32.lib")
 # endif
+#elif defined(MINGW) || defined(__MINGW32__) || defined(__MINGW64__)
+/* mingw don't have unix sockets but supports windows ones */
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
 #else
 # include <sys/socket.h>
 # include <netinet/in.h>

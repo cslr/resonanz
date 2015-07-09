@@ -6,9 +6,11 @@
  */
 
 #include <iostream>
+#include <vector>
+#include <math.h>
 
-#include "oscpkt.h"
-#include "udp.h"
+#include "oscpkt.hh"
+#include "udp.hh"
 
 using namespace oscpkt;
 
@@ -33,54 +35,221 @@ int main(int argc, char** argv)
 {
 	const unsigned int port = 4545;
 
-	std::cout << "MUSE TEST OSC (UDP PORT 4545) LISTENER" < std::endl;
+	std::cout << "MUSE TEST OSC (UDP PORT 4545) LISTENER" << std::endl;
+	fflush(stdout);
 
 	UdpSocket sock;
 	sock.bindTo(port);
 
-	if(!sock.isOk()) return; // failure [retry?]
+	if(!sock.isOk()) return -1; // failure [retry?]
 
 	PacketReader pr;
 	PacketWriter pw;
 
+	std::vector<int> connectionQuality;
+	bool hasConnection = false;
+	float delta = 0.0f, theta = 0.0f, alpha = 0.0f, beta = 0.0f, gamma = 0.0f;
+
 	while(sock.isOk()){
+
+		if(hasConnection){
+			float q = 0.0f;
+			for(auto qi : connectionQuality)
+				if(qi > 0) q++;
+			q = q / connectionQuality.size();
+
+			// printf("EEQ: D:%.2f T:%.2f A:%.2f B:%.2f G:%.2f [QUALITY: %.2f]\n", delta, theta, alpha, beta, gamma, q);
+			printf("EEQ POWER: %.2f [QUALITY %.2f]\n",
+					log(exp(delta)+exp(theta)+exp(alpha)+exp(beta)+exp(gamma)), q);
+
+			fflush(stdout);
+		}
+
 		if(sock.receiveNextPacket(30)){
 			pr.init(sock.packetData(), sock.packetSize());
 			Message* msg;
 			while(pr.isOk() && ((msg = pr.popMessage()) != 0)){
-				Message::ArgReader r = msg->match("/muse/elements/is-good");
+				Message::ArgReader r = msg->match("/muse/elements/is_good");
 
-				while(r.nbArgRemaining() > 0 && r.isOk()){
+				if(r.isOk() == true){ // matched
+					// there are 4 ints telling connection quality
+					std::vector<int> quality;
 
-					if(r.isFloat()){
-						float f;
-						r = r.popFloat(f);
-						std::cout << "f = " << f << std::endl;
+					while(r.nbArgRemaining()){
+						if(r.isInt32()){
+							int32_t i;
+							r = r.popInt32(i);
+							quality.push_back((int)i);
+						}
+						else{
+							r = r.pop();
+						}
 					}
-					else if(r.isDouble()){
-						double f;
-						r  = r.popDouble(f);
-						std::cout << "d = " << f << std::endl;
-					}
-					else if(r.isInt32()){
-						int32_t i;
 
-						r = r.popInt32(i);
-						std::cout << "i = " << i << std::endl;
+					if(quality.size() > 0){
+						connectionQuality = quality;
 					}
-					else if(r.isInt64()){
-						int64_t i;
 
-						r = r.popInt64(i);
-						std::cout << "i = " << i << std::endl;
-					}
-					else{
-						std::cout << "unknown element" << std::endl;
+					bool connection = false;
+
+					for(auto q : quality)
+						if(q > 0) connection = true;
+
+					hasConnection = connection;
+				}
+
+				// gets relative frequency bands..
+
+				r = msg->match("/muse/elements/delta_absolute");
+				if(r.isOk()){
+					float f1, f2, f3, f4;
+					if(r.popFloat(f1).popFloat(f2).popFloat(f3).popFloat(f4).isOkNoMoreArgs()){
+						std::vector<float> v;
+						v.push_back(f1); v.push_back(f2); v.push_back(f3); v.push_back(f4);
+
+						// calculates mean according to connection quality
+						float mean = 0.0f;
+						float samples = 0.0f;
+
+						for(unsigned int i=0;i<connectionQuality.size() && i<v.size();i++){
+							if(connectionQuality[i] > 0){
+								mean += exp(v[i]);
+								samples++;
+							}
+						}
+
+						if(samples > 0.0f){
+							mean /= samples;
+							mean = log(mean);
+						}
+						else
+							mean = 0.5f; // mean value without data
+
+						delta = mean;
 					}
 				}
+
+				r = msg->match("/muse/elements/theta_absolute");
+				if(r.isOk()){
+					float f1, f2, f3, f4;
+					if(r.popFloat(f1).popFloat(f2).popFloat(f3).popFloat(f4).isOkNoMoreArgs()){
+						std::vector<float> v;
+						v.push_back(f1); v.push_back(f2); v.push_back(f3); v.push_back(f4);
+
+						// calculates mean according to connection quality
+						float mean = 0.0f;
+						float samples = 0.0f;
+
+						for(unsigned int i=0;i<connectionQuality.size() && i<v.size();i++){
+							if(connectionQuality[i] > 0){
+								mean += exp(v[i]);
+								samples++;
+							}
+						}
+
+						if(samples > 0.0f){
+							mean /= samples;
+							mean = log(mean);
+						}
+						else
+							mean = 0.5f; // mean value without data
+
+						theta = mean;
+					}
+				}
+
+				r = msg->match("/muse/elements/alpha_absolute");
+				if(r.isOk()){
+					float f1, f2, f3, f4;
+					if(r.popFloat(f1).popFloat(f2).popFloat(f3).popFloat(f4).isOkNoMoreArgs()){
+						std::vector<float> v;
+						v.push_back(f1); v.push_back(f2); v.push_back(f3); v.push_back(f4);
+
+						// calculates mean according to connection quality
+						float mean = 0.0f;
+						float samples = 0.0f;
+
+						for(unsigned int i=0;i<connectionQuality.size() && i<v.size();i++){
+							if(connectionQuality[i] > 0){
+								mean += exp(v[i]);
+								samples++;
+							}
+						}
+
+						if(samples > 0.0f){
+							mean /= samples;
+							mean = log(mean);
+						}
+						else
+							mean = 0.5f; // mean value without data
+
+						alpha = mean;
+					}
+				}
+
+
+				r = msg->match("/muse/elements/beta_absolute");
+				if(r.isOk()){
+					float f1, f2, f3, f4;
+					if(r.popFloat(f1).popFloat(f2).popFloat(f3).popFloat(f4).isOkNoMoreArgs()){
+						std::vector<float> v;
+						v.push_back(f1); v.push_back(f2); v.push_back(f3); v.push_back(f4);
+
+						// calculates mean according to connection quality
+						float mean = 0.0f;
+						float samples = 0.0f;
+
+						for(unsigned int i=0;i<connectionQuality.size() && i<v.size();i++){
+							if(connectionQuality[i] > 0){
+								mean += exp(v[i]);
+								samples++;
+							}
+						}
+
+						if(samples > 0.0f){
+							mean /= samples;
+							mean = log(mean);
+						}
+						else
+							mean = 0.5f; // mean value without data
+
+						beta = mean;
+					}
+				}
+
+				r = msg->match("/muse/elements/gamma_absolute");
+				if(r.isOk()){
+					float f1, f2, f3, f4;
+					if(r.popFloat(f1).popFloat(f2).popFloat(f3).popFloat(f4).isOkNoMoreArgs()){
+						std::vector<float> v;
+						v.push_back(f1); v.push_back(f2); v.push_back(f3); v.push_back(f4);
+
+						// calculates mean according to connection quality
+						float mean = 0.0f;
+						float samples = 0.0f;
+
+						for(unsigned int i=0;i<connectionQuality.size() && i<v.size();i++){
+							if(connectionQuality[i] > 0){
+								mean += exp(v[i]);
+								samples++;
+							}
+						}
+
+						if(samples > 0.0f){
+							mean /= samples;
+							mean = log(mean);
+						}
+						else
+							mean = 0.5f; // mean value without data
+
+						gamma = mean;
+					}
+				}
+
 			}
 		}
 	}
 
+	return 0;
 }
 

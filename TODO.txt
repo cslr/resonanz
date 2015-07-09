@@ -2,7 +2,10 @@ TODO
 
 - write MuseOSC driver
 
-- measure program from stimuli
+- HMM based analysis and generation of N-step long probable stimulation sequences
+  (sample N>2 HMM sequences and only generate model and try 
+   to learn 1..N long sequence models if probability of sequence is high enough)
+   
 
 - move from second long "ticks" to 
   subsecond ticks and use it everywhere to get subsecond accuracy

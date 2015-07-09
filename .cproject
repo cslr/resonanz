@@ -53,7 +53,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="oscpkt/tst/muse-io-test.cpp|oscpkt/oscpkt_test.cc|oscpkt/oscpkt_demo.cc|EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -111,7 +111,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="oscpkt/tst/muse-io-test.cpp|oscpkt/oscpkt_test.cc|oscpkt/oscpkt_demo.cc|EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -213,7 +213,7 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="oscpkt/tst/muse-io-test.cpp|oscpkt/oscpkt_test.cc|oscpkt/oscpkt_demo.cc|EmotivEPOC_FM_Synthesis_test_windows|jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -252,7 +252,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug">
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.1147405496" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.1791173002" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.dialect.std.1199565941" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.1199565941" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.other.other.1139294006" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -mwindows -D_GLIBCXX_DEBUG -fopenmp" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1292629714" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
@@ -266,7 +266,7 @@
 									<listOptionValue builtIn="false" value="WINOS"/>
 									<listOptionValue builtIn="false" value="AMD64"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.dialect.flags.1119770874" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=c++11" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.1119770874" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.debugging.other.985535834" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other" value="" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.565085260" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -299,6 +299,7 @@
 									<listOptionValue builtIn="false" value="ogg"/>
 									<listOptionValue builtIn="false" value="theora"/>
 									<listOptionValue builtIn="false" value="lightstone"/>
+									<listOptionValue builtIn="false" value="ws2_32"/>
 								</option>
 								<option id="gnu.cpp.link.option.flags.525724726" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-Wl,-add-stdcall-alias -fopenmp" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.914224169" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
@@ -309,6 +310,25 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" name="fi_iki_nop_neuromancer_ResonanzEngine.cpp" rcbsApplicability="disable" resourcePath="jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
+							<option id="gnu.cpp.compiler.option.include.paths.1258167864" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+								<listOptionValue builtIn="false" value="&quot;C:\Program Files\Java\jdk1.7.0_80\include&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;C:\Program Files\Java\jdk1.7.0_80\include\win32&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
+							</option>
+							<option id="gnu.cpp.compiler.option.other.other.1004491461" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -Wl,--add-stdcall-alias -D_GLIBCXX_DEBUG" valueType="string"/>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1161268527" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+						</tool>
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.406445636.1840664071" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.1591759482.307907457" name="Resource Custom Build Step Input Type">
+								<additionalInput kind="additionalinputdependency" paths=""/>
+							</inputType>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.449620605.692295999" name="Resource Custom Build Step Output Type"/>
+						</tool>
+					</fileInfo>
 					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.2096201958" name="LightstoneDevice.cpp" rcbsApplicability="disable" resourcePath="LightstoneDevice.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.897025791">
 						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.897025791" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
 							<option id="gnu.cpp.compiler.option.include.paths.1687187810" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
@@ -336,27 +356,98 @@
 							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.1850108474" name="Resource Custom Build Step Output Type"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" name="fi_iki_nop_neuromancer_ResonanzEngine.cpp" rcbsApplicability="disable" resourcePath="jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801">
-						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.458280801" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
-							<option id="gnu.cpp.compiler.option.include.paths.1258167864" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-								<listOptionValue builtIn="false" value="&quot;C:\Program Files\Java\jdk1.7.0_80\include&quot;"/>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1106997506.90373292.863166853" name="MuseOSC.cpp" rcbsApplicability="disable" resourcePath="MuseOSC.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.1424417737">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234.1424417737" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.247801234">
+							<option id="gnu.cpp.compiler.option.include.paths.1407247445" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
-								<listOptionValue builtIn="false" value="&quot;C:\Program Files\Java\jdk1.7.0_80\include\win32&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/oscpkt}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/pipe-server-src}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/emotiv_insight/include}&quot;"/>
 								<listOptionValue builtIn="false" value="&quot;C:\install\include\SDL2&quot;"/>
 								<listOptionValue builtIn="false" value="&quot;C:\install\include\&quot;"/>
 							</option>
-							<option id="gnu.cpp.compiler.option.other.other.1004491461" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -Wl,--add-stdcall-alias -D_GLIBCXX_DEBUG" valueType="string"/>
-							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1161268527" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1814719548" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 						</tool>
-						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.406445636.1840664071" name="Resource Custom Build Step">
-							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.1591759482.307907457" name="Resource Custom Build Step Input Type">
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.532946314" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.1558678570" name="Resource Custom Build Step Input Type">
 								<additionalInput kind="additionalinputdependency" paths=""/>
 							</inputType>
-							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.449620605.692295999" name="Resource Custom Build Step Output Type"/>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.2003475524" name="Resource Custom Build Step Output Type"/>
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="EmotivEPOC_FM_Synthesis_test_windows|SDLSoundSynthesis.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|main.cpp|ResonanzShow.cpp|FMSoundSynthesis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="oscpkt/tst/muse-io-test.cpp|oscpkt/oscpkt_test.cc|oscpkt/oscpkt_demo.cc|EmotivEPOC_FM_Synthesis_test_windows|SDLSoundSynthesis.cpp|MuseOSCSampler.cpp|spectral_analysis.cpp|main.cpp|ResonanzShow.cpp|FMSoundSynthesis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="cdt.managedbuild.config.gnu.mingw.so.debug.1557316766.101175492">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.mingw.so.debug.1557316766.101175492" moduleId="org.eclipse.cdt.core.settings" name="test-muse-io-receiver">
+				<externalSettings>
+					<externalSetting>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/resonanz-engine"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/resonanz-engine/test-muse-io-receiver"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="resonanz-engine" srcPrefixMapping="" srcRootPath=""/>
+					</externalSetting>
+				</externalSettings>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactName="test-muse-io-receiver" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="test program to receive muse osc packets" id="cdt.managedbuild.config.gnu.mingw.so.debug.1557316766.101175492" name="test-muse-io-receiver" parent="cdt.managedbuild.config.gnu.mingw.so.debug">
+					<folderInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1557316766.101175492." name="/" resourcePath="">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.mingw.so.debug.1601761509" name="MinGW GCC" superClass="cdt.managedbuild.toolchain.gnu.mingw.so.debug">
+							<targetPlatform id="cdt.managedbuild.target.gnu.platform.mingw.so.debug.2027148681" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.mingw.so.debug"/>
+							<builder buildPath="${workspace_loc:/resonanz-library}/Debug" id="cdt.managedbuild.tool.gnu.builder.mingw.base.578904186" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="cdt.managedbuild.tool.gnu.builder.mingw.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.mingw.so.debug.1469714599" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.mingw.so.debug">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.96198043" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.mingw.base.999095556" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.mingw.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.1170243406" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug">
+								<option id="gnu.cpp.compiler.mingw.so.debug.option.optimization.level.1234804456" name="Optimization Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.mingw.so.debug.option.debugging.level.262952031" name="Debug Level" superClass="gnu.cpp.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.259790543" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.include.paths.470844935" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/oscpkt}&quot;"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1292651675" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug.344264876" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.mingw.so.debug">
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.mingw.so.debug.option.optimization.level.209905708" name="Optimization Level" superClass="gnu.c.compiler.mingw.so.debug.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="gnu.c.compiler.mingw.so.debug.option.debugging.level.618891210" name="Debug Level" superClass="gnu.c.compiler.mingw.so.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1126372181" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug.14899600" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.so.debug">
+								<option defaultValue="true" id="gnu.c.link.mingw.so.debug.option.shared.873379996" name="Shared (-shared)" superClass="gnu.c.link.mingw.so.debug.option.shared" valueType="boolean"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug.1152137489" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug">
+								<option defaultValue="true" id="gnu.cpp.link.mingw.so.debug.option.shared.912097695" name="Shared (-shared)" superClass="gnu.cpp.link.mingw.so.debug.option.shared" value="false" valueType="boolean"/>
+								<option id="gnu.cpp.link.option.libs.1295178741" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="ws2_32"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1194850696" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+								<outputType id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug.output.277583549" outputPrefix="" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.so.debug.output"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.mingw.so.debug.1557316766.101175492.2051282738" name="MuseOSC.cpp" rcbsApplicability="disable" resourcePath="MuseOSC.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.1170243406.1541313326">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.1170243406.1541313326" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.so.debug.1170243406">
+							<option id="gnu.cpp.compiler.option.include.paths.1831232071" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/oscpkt}&quot;"/>
+							</option>
+							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.83525484" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+						</tool>
+					</fileInfo>
+					<sourceEntries>
+						<entry excluding="MuseOSC.cpp|main.cpp|SDLSoundSynthesis.cpp|FMSoundSynthesis.cpp|jni|SDLTheora.cpp|ResonanzEngine.cpp|LightstoneDevice.cpp|pipe-server-src|oscpkt/oscpkt_test.cc|oscpkt/oscpkt_demo.cc|EmotivEPOC_FM_Synthesis_test_windows|MuseOSCSampler.cpp|spectral_analysis.cpp|tst|maximpact.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -382,6 +473,22 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/resonanz-engine"/>
+		</configuration>
+		<configuration configurationName="test-muse-io-receiver">
+			<resource resourceType="PROJECT" workspacePath="/resonanz-engine"/>
+		</configuration>
+		<configuration configurationName="resonanz-bin">
+			<resource resourceType="PROJECT" workspacePath="/resonanz-engine"/>
+		</configuration>
+		<configuration configurationName="resonanz-engine-jni-dll">
+			<resource resourceType="PROJECT" workspacePath="/resonanz-engine"/>
+		</configuration>
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/resonanz-engine"/>
+		</configuration>
+	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

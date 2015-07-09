@@ -25,6 +25,7 @@
 #include "EmotivInsightStub.h"
 #include "EmotivInsightPipeServer.h"
 #include "LightstoneDevice.h"
+#include "MuseOSC.h"
 
 #include "SDLTheora.h"
 
@@ -354,7 +355,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
 		}
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
-			return false; // not currently supported
+			if(eeg != nullptr) delete eeg;
+			eeg = new MuseOSC(4545);
 		}
 		else if(deviceNumber == ResonanzEngine::RE_WD_LIGHTSTONE){
 			if(eeg != nullptr) delete eeg;
@@ -368,8 +370,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		{
 			std::vector<unsigned int> nnArchitecture;
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
-			nnArchitecture.push_back(4*eeg->getNumberOfSignals());
-			nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+			// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
 
 			if(nn != nullptr) delete nn;
@@ -442,6 +444,45 @@ void ResonanzEngine::getEEGDeviceStatus(std::string& status)
 }
 
 
+bool ResonanzEngine::setParameter(const std::string& parameter, const std::string& value)
+{
+	{
+		char buffer[256];
+		snprintf(buffer, 256, "resonanz-engine::setParameter: %s = %s", parameter.c_str(), value.c_str());
+		logging.info(buffer);
+	}
+
+	if(parameter == "pca-preprocess"){
+		if(value == "true"){
+			pcaPreprocess = true;
+			return true;
+		}
+		else if(value == "false"){
+			pcaPreprocess = false;
+			return true;
+		}
+		else return false;
+
+	}
+	else if(parameter == "use-bayesian-nnetwork"){
+		if(value == "true"){
+			use_bayesian_nnetwork = true;
+			return true;
+		}
+		else if(value == "false"){
+			use_bayesian_nnetwork = false;
+			return true;
+		}
+		else return false;
+	}
+	else{
+		return false;
+	}
+
+	return false;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 // main worker thread loop to execute commands
@@ -485,12 +526,12 @@ void ResonanzEngine::engine_loop()
 
 	std::vector<unsigned int> nnArchitecture;
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
-	nnArchitecture.push_back(4*eeg->getNumberOfSignals());
-	nnArchitecture.push_back(4*eeg->getNumberOfSignals());
+	// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+	nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 	nnArchitecture.push_back(eeg->getNumberOfSignals());
 
 	nn = new whiteice::nnetwork<>(nnArchitecture);
-
+	bnn = new bayesian_nnetwork<>();
 
 	unsigned int currentPictureModel = 0;
 	unsigned int currentKeywordModel = 0;
@@ -566,17 +607,23 @@ void ResonanzEngine::engine_loop()
 				pictureData.clear();
 			}
 			else if(prevCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
-				// removes unnecessarily data structures from memory (measurements database) [no need to save it because it was not changed]
-				keywordData.clear();
-				pictureData.clear();
-
-				// also stops computation if needed
+				// stops computation if needed
 				if(optimizer != nullptr){
 					if(optimizer->isRunning())
 						optimizer->stopComputation();
 					delete optimizer;
 					optimizer = nullptr;
 				}
+
+				if(bayes_optimizer != nullptr){
+					bayes_optimizer->stopSampler();
+					delete bayes_optimizer;
+					bayes_optimizer = nullptr;
+				}
+
+				// removes unnecessarily data structures from memory (measurements database) [no need to save it because it was not changed]
+				keywordData.clear();
+				pictureData.clear();
 			}
 			else if(prevCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
 				keywordData.clear();
@@ -1018,10 +1065,12 @@ void ResonanzEngine::engine_loop()
 				// shows picture/keyword which model predicts to give closest match to target
 				// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 
+				const float timedelta = 1.0f; // current delta between pictures [in seconds]
+
 				if(currentCommand.blindMonteCarlo == false)
-					engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance);
+					engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance, timedelta);
 				else
-					engine_executeProgramMonteCarlo(eegTarget, eegTargetVariance);
+					engine_executeProgramMonteCarlo(eegTarget, eegTargetVariance, timedelta);
 			}
 			else{
 
@@ -1160,6 +1209,11 @@ void ResonanzEngine::engine_loop()
 		nn = nullptr;
 	}
 
+	if(bnn != nullptr){
+		delete bnn;
+		bnn = nullptr;
+	}
+
 	engine_SDL_deinit();
 
 }
@@ -1213,7 +1267,8 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 // shows picture/keyword which model predicts to give closest match to target
 // minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
-		const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance)
+		const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance,
+		float timestep_)
 {
 	int bestKeyword = -1;
 	int bestPicture = -1;
@@ -1221,6 +1276,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 	math::vertex<> target(eegTarget.size());
 	math::vertex<> targetVariance(eegTargetVariance.size());
+	whiteice::math::blas_real<float> timestep = timestep_;
 
 	for(unsigned int i=0;i<target.size();i++){
 		target[i] = eegTarget[i];
@@ -1229,9 +1285,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 
 	for(unsigned int index=0;index<keywordModels.size();index++){
-		whiteice::nnetwork<>& model = keywordModels[index];
+		whiteice::bayesian_nnetwork<>& model = keywordModels[index];
 
-		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size()){
+		if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
 			logging.warn("skipping bad keyword prediction model");
 			continue; // bad model/data => ignore
 		}
@@ -1245,27 +1301,26 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 			continue;
 		}
 
-		model.input() = x;
+		math::vertex<> m;
+		math::matrix<> cov;
 
-		if(model.calculate(false) == false){
+		if(model.calculate(x, m, cov) == false){
 			logging.warn("skipping bad keyword prediction model");
 			continue;
 		}
 
-		x = model.output();
-
-		if(keywordData[index].invpreprocess(1, x) == false){
-			logging.warn("skipping bad keyword prediction model");
-			continue;
-		}
+		m *= timestep; // corrects delta to given timelength
+		cov *= timestep*timestep;
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
 
-		auto delta = target - x;
+		auto delta = target - (m + x);
 
-		for(unsigned int i=0;i<delta.size();i++)
+		for(unsigned int i=0;i<delta.size();i++){
+			delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 			delta[i] /= targetVariance[i];
+		}
 
 		auto error = delta.norm();
 
@@ -1281,9 +1336,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	bestError = std::numeric_limits<double>::infinity();
 
 	for(unsigned int index=0;index<pictureModels.size();index++){
-		whiteice::nnetwork<>& model = pictureModels[index];
+		whiteice::bayesian_nnetwork<>& model = pictureModels[index];
 
-		if(model.input_size() != eegCurrent.size() || model.output_size() != eegTarget.size()){
+		if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
 			logging.warn("skipping bad picture prediction model");
 			continue; // bad model/data => ignore
 		}
@@ -1297,27 +1352,26 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 			continue;
 		}
 
-		model.input() = x;
+		math::vertex<> m;
+		math::matrix<> cov;
 
-		if(model.calculate(false) == false){
+		if(model.calculate(x, m, cov) == false){
 			logging.warn("skipping bad picture prediction model");
 			continue;
 		}
 
-		x = model.output();
-
-		if(pictureData[index].invpreprocess(1, x) == false){
-			logging.warn("skipping bad picture prediction model");
-			continue;
-		}
+		m *= timestep; // corrects delta to given timelength
+		cov *= timestep*timestep;
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
 
-		auto delta = target - x;
+		auto delta = target - (m + x);
 
-		for(unsigned int i=0;i<delta.size();i++)
+		for(unsigned int i=0;i<delta.size();i++){
+			delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 			delta[i] /= targetVariance[i];
+		}
 
 		auto error = delta.norm();
 
@@ -1329,7 +1383,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
 
-	if(bestKeyword < 0 || bestPicture <=0){
+	if(bestKeyword < 0 || bestPicture < 0){
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
 		return false;
@@ -1358,7 +1412,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 // executes program blindly based on Monte Carlo sampling and prediction models
 // [only works for low dimensional target signals and well-trained models]
 bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
-		const std::vector<float>& eegTargetVariance)
+		const std::vector<float>& eegTargetVariance, float timestep_)
 {
 	int bestKeyword = -1;
 	int bestPicture = -1;
@@ -1366,6 +1420,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 
 	math::vertex<> target(eegTarget.size());
 	math::vertex<> targetVariance(eegTargetVariance.size());
+	whiteice::math::blas_real<float> timestep = timestep_;
 
 	for(unsigned int i=0;i<target.size();i++){
 		target[i] = eegTarget[i];
@@ -1377,9 +1432,9 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 
 
 	for(unsigned int index=0;index<keywordModels.size();index++){
-		whiteice::nnetwork<>& model = keywordModels[index];
+		whiteice::bayesian_nnetwork<>& model = keywordModels[index];
 
-		if(model.input_size() != mcsamples[0].size() || model.output_size() != eegTarget.size()){
+		if(model.inputSize() != mcsamples[0].size() || model.outputSize() != eegTarget.size()){
 			logging.warn("skipping bad keyword prediction model");
 			continue; // bad model/data => ignore
 		}
@@ -1396,23 +1451,26 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				continue;
 			}
 
-			if(model.calculate(x, x) == false){
+			math::vertex<> m;
+			math::matrix<> cov;
+
+			if(model.calculate(x, m, cov) == false){
 				logging.warn("skipping bad keyword prediction model");
 				continue;
 			}
 
-			if(keywordData[index].invpreprocess(1, x) == false){
-				logging.warn("skipping bad keyword prediction model");
-				continue;
-			}
+			m *= timestep; // corrects delta to given timelength
+			cov *= timestep*timestep;
 
 			// now we have prediction x to the response to the given keyword
 			// calculates error (weighted distance to the target state)
 
-			auto delta = target - x;
+			auto delta = target - (m + x);
 
-			for(unsigned int i=0;i<delta.size();i++)
+			for(unsigned int i=0;i<delta.size();i++){
+				delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 				delta[i] /= targetVariance[i];
+			}
 
 			auto e = delta.norm();
 
@@ -1437,9 +1495,9 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	bestError = std::numeric_limits<double>::infinity();
 
 	for(unsigned int index=0;index<pictureModels.size();index++){
-		whiteice::nnetwork<>& model = pictureModels[index];
+		whiteice::bayesian_nnetwork<>& model = pictureModels[index];
 
-		if(model.input_size() != mcsamples[0].size() || model.output_size() != eegTarget.size()){
+		if(model.inputSize() != mcsamples[0].size() || model.outputSize() != eegTarget.size()){
 			logging.warn("skipping bad picture prediction model");
 			continue; // bad model/data => ignore
 		}
@@ -1456,23 +1514,26 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				continue;
 			}
 
-			if(model.calculate(x, x) == false){
-				logging.warn("skipping bad picture prediction model");
+			math::vertex<> m;
+			math::matrix<> cov;
+
+			if(model.calculate(x, m, cov) == false){
+				logging.warn("skipping bad keyword prediction model");
 				continue;
 			}
 
-			if(pictureData[index].invpreprocess(1, x) == false){
-				logging.warn("skipping bad picture prediction model");
-				continue;
-			}
+			m *= timestep; // corrects delta to given timelength
+			cov *= timestep*timestep;
 
 			// now we have prediction x to the response to the given keyword
 			// calculates error (weighted distance to the target state)
 
-			auto delta = target - x;
+			auto delta = target - (m + x);
 
-			for(unsigned int i=0;i<delta.size();i++)
+			for(unsigned int i=0;i<delta.size();i++){
+				delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 				delta[i] /= targetVariance[i];
+			}
 
 			auto e = delta.norm();
 
@@ -1493,7 +1554,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 		engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
 
-	if(bestKeyword < 0 || bestPicture <=0){
+	if(bestKeyword < 0 || bestPicture < 0){
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
 		return false;
@@ -1517,50 +1578,52 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 			if((rand()&1) == 0){ // use keyword model to predict the outcome
 				const auto& index = bestKeyword;
 
-				whiteice::nnetwork<>& model = keywordModels[index];
+				whiteice::bayesian_nnetwork<>& model = keywordModels[index];
 
 				if(keywordData[index].preprocess(0, x) == false){
 					logging.error("mc sampling: skipping bad keyword prediction model");
 					continue;
 				}
 
-				model.input() = x;
+				math::vertex<> m;
+				math::matrix<> cov;
 
-				if(model.calculate(false) == false){
-					logging.error("mc sampling: skipping bad keyword prediction model");
+				if(model.calculate(x, m, cov) == false){
+					logging.warn("skipping bad keyword prediction model");
 					continue;
 				}
 
-				x = model.output();
+				m *= timestep; // corrects delta to given timelength
+				cov *= timestep*timestep;
 
-				if(keywordData[index].invpreprocess(1, x) == false){
-					logging.error("mc sampling: skipping bad keyword prediction model");
-					continue;
-				}
+				// TODO take a MCMC sample from N(mean, cov)
+
+				x = m + x; // just uses mean value here..
 			}
 			else{ // use picture model to predict the outcome
 				const auto& index = bestPicture;
 
-				whiteice::nnetwork<>& model = pictureModels[index];
+				whiteice::bayesian_nnetwork<>& model = pictureModels[index];
 
 				if(pictureData[index].preprocess(0, x) == false){
 					logging.error("mc sampling: skipping bad keyword prediction model");
 					continue;
 				}
 
-				model.input() = x;
+				math::vertex<> m;
+				math::matrix<> cov;
 
-				if(model.calculate(false) == false){
-					logging.error("mc sampling: skipping bad keyword prediction model");
+				if(model.calculate(x, m, cov) == false){
+					logging.warn("skipping bad keyword prediction model");
 					continue;
 				}
 
-				x = model.output();
+				m *= timestep; // corrects delta to given timelength
+				cov *= timestep*timestep;
 
-				if(pictureData[index].invpreprocess(1, x) == false){
-					logging.error("mc sampling: skipping bad keyword prediction model");
-					continue;
-				}
+				// TODO take a MCMC sample from N(mean, cov)
+
+				x = m + x; // just uses mean value here..
 			}
 
 			// post-process predicted x to be within [0,1] interval
@@ -1590,15 +1653,18 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 
 bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel)
 {
+
 	if(currentPictureModel < pictureData.size()){
 
-		if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+		 // first model to be optimized (no need to store the previous result)
+		if(optimizer == nullptr && bayes_optimizer == nullptr){
 			whiteice::math::vertex<> w;
 
 			nn->randomize();
 			nn->exportdata(w);
 
 			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+			optimizer->minimize(w);
 
 			{
 				char buffer[1024];
@@ -1607,16 +1673,88 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				logging.info(buffer);
 			}
 
-			optimizer->minimize(w);
 		}
-		else{
+		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
+
 			whiteice::math::blas_real<float> error = 1000.0f;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+				// gets finished solution
+
+				optimizer->stopComputation();
+				optimizer->getSolution(w, error, iterations);
+
+				nn->importdata(w);
+
+				// switches to bayesian optimizer
+				const bool adaptive = true;
+
+				bayes_optimizer = new whiteice::HMC_convergence_check<>(*nn, pictureData[currentPictureModel], adaptive);
+				bayes_optimizer->startSampler();
+
+				delete optimizer;
+				optimizer = nullptr;
+			}
+
+		}
+		else if(bayes_optimizer != nullptr){
+			if(bayes_optimizer->getNumberOfSamples() >= 1000){ // time to stop computation [got uncertainly information]
+
+				bayes_optimizer->stopSampler();
+
+				{
+					char buffer[1024];
+					sprintf(buffer, "resonanz bayes model optimization stopped. picture: %d iterations: %d",
+							currentPictureModel, bayes_optimizer->getNumberOfSamples());
+					logging.info(buffer);
+				}
+
+				// saves optimization results to a file
+				std::string dbFilename = currentCommand.modelDir + "/" +
+						calculateHashName(pictures[currentPictureModel] + eeg->getDataSourceName()) + ".model";
+
+				bayes_optimizer->getNetwork(*bnn);
+
+				if(bnn->save(dbFilename) == false)
+					logging.error("saving bayesian nn configuration file failed");
+
+				delete bayes_optimizer;
+				bayes_optimizer = nullptr;
+
+				// starts new computation
+				currentPictureModel++;
+				if(currentPictureModel < pictures.size()){
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz bayes model optimization started: picture %d database size: %d",
+								currentPictureModel, pictureData[currentPictureModel].size(0));
+						logging.info(buffer);
+					}
+
+					// actives pre-optimizer
+					whiteice::math::vertex<> w;
+
+					nn->randomize();
+					nn->exportdata(w);
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					optimizer->minimize(w);
+
+				}
+			}
+		}
+		else if(optimizer != nullptr){
+			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::math::vertex<> w;
+			unsigned int iterations = 0;
+
+			optimizer->getSolution(w, error, iterations);
+
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
 				// gets finished solution
 
 				optimizer->stopComputation();
@@ -1633,7 +1771,10 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				std::string dbFilename = currentCommand.modelDir + "/" +
 						calculateHashName(pictures[currentPictureModel] + eeg->getDataSourceName()) + ".model";
 				nn->importdata(w);
-				if(nn->save(dbFilename) == false)
+
+				bnn->importNetwork(*nn);
+
+				if(bnn->save(dbFilename) == false)
 					logging.error("saving nn configuration file failed");
 
 				delete optimizer;
@@ -1657,10 +1798,12 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				}
 			}
 		}
+
 	}
 	else if(currentKeywordModel < keywords.size()){
 
-		if(optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+		if(optimizer == nullptr && bayes_optimizer == nullptr){ // first model to be optimized (no need to store the previous result)
+
 			whiteice::math::vertex<> w;
 
 			nn->randomize();
@@ -1672,12 +1815,109 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 			{
 				char buffer[1024];
 				sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
-						currentKeywordModel, keywordData[currentKeywordModel].size(0));
+							currentKeywordModel, keywordData[currentKeywordModel].size(0));
 				logging.info(buffer);
 			}
 
 		}
-		else{
+		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
+
+			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::math::vertex<> w;
+			unsigned int iterations = 0;
+
+			optimizer->getSolution(w, error, iterations);
+
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+				// gets finished solution
+
+				optimizer->stopComputation();
+				optimizer->getSolution(w, error, iterations);
+
+				nn->importdata(w);
+
+				// switches to bayesian optimizer
+				const bool adaptive = true;
+
+				bayes_optimizer = new whiteice::HMC_convergence_check<>(*nn, keywordData[currentKeywordModel], adaptive);
+				bayes_optimizer->startSampler();
+
+				delete optimizer;
+				optimizer = nullptr;
+			}
+
+		}
+		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
+
+			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::math::vertex<> w;
+			unsigned int iterations = 0;
+
+			optimizer->getSolution(w, error, iterations);
+
+			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+				// gets finished solution
+
+				optimizer->stopComputation();
+				optimizer->getSolution(w, error, iterations);
+
+				nn->importdata(w);
+
+				// switches to bayesian optimizer
+				const bool adaptive = true;
+
+				bayes_optimizer = new whiteice::HMC_convergence_check<>(*nn, keywordData[currentKeywordModel], adaptive);
+				bayes_optimizer->startSampler();
+
+				delete optimizer;
+				optimizer = nullptr;
+			}
+
+		}
+		else if(bayes_optimizer != nullptr){
+			if(bayes_optimizer->getNumberOfSamples() >= 1000){ // time to stop computation
+
+				bayes_optimizer->stopSampler();
+
+				{
+					char buffer[1024];
+					sprintf(buffer, "resonanz bayes model optimization stopped. keyword: %d iterations: %d",
+							currentKeywordModel, bayes_optimizer->getNumberOfSamples());
+					logging.info(buffer);
+				}
+
+				// saves optimization results to a file
+				std::string dbFilename = currentCommand.modelDir + "/" +
+						calculateHashName(keywords[currentKeywordModel] + eeg->getDataSourceName()) + ".model";
+
+				bayes_optimizer->getNetwork(*bnn);
+
+				if(bnn->save(dbFilename) == false)
+					logging.error("saving bayesian nn configuration file failed");
+
+				delete bayes_optimizer;
+				bayes_optimizer = nullptr;
+
+				// starts new computation
+				currentKeywordModel++;
+				if(currentKeywordModel < keywords.size()){
+					{
+						char buffer[1024];
+						sprintf(buffer, "resonanz bayes model optimization started: keyword %d database size: %d",
+								currentKeywordModel, keywordData[currentKeywordModel].size(0));
+						logging.info(buffer);
+					}
+
+					whiteice::math::vertex<> w;
+					nn->randomize();
+					nn->exportdata(w);
+
+					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					optimizer->minimize(w);
+				}
+			}
+		}
+		else if(optimizer != nullptr){
 			whiteice::math::blas_real<float> error = 1000.0f;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
@@ -1703,7 +1943,10 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				std::string dbFilename = currentCommand.modelDir + "/" +
 						calculateHashName(keywords[currentKeywordModel] + eeg->getDataSourceName()) + ".model";
 				nn->importdata(w);
-				if(nn->save(dbFilename) == false)
+
+				bnn->importNetwork(*nn);
+
+				if(bnn->save(dbFilename) == false)
 					logging.error("saving nn configuration file failed");
 
 				delete optimizer;
@@ -1834,6 +2077,15 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 			keywordData[i].createCluster(name1, eeg->getNumberOfSignals());
 			keywordData[i].createCluster(name2, eeg->getNumberOfSignals());
 		}
+
+		{
+			if(pcaPreprocess)
+				keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			else
+				keywordData[i].convert(0); // removes all preprocessings from input
+
+			keywordData[i].convert(1); // removes all preprocessings from output
+		}
 	}
 
 
@@ -1843,6 +2095,16 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		if(pictureData[i].load(dbFilename) == false){
 			pictureData[i].createCluster(name1, eeg->getNumberOfSignals());
 			pictureData[i].createCluster(name2, eeg->getNumberOfSignals());
+		}
+
+
+		{
+			if(pcaPreprocess)
+				pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			else
+				pictureData[i].convert(0); // removes all preprocessings from input
+
+			pictureData[i].convert(1); // removes all preprocessings from output
 		}
 	}
 
@@ -1856,9 +2118,14 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 	t1.resize(eegBefore.size());
 	t2.resize(eegAfter.size());
 
+	if(t1.size() != t2.size())
+		return false;
+
+	const whiteice::math::blas_real<float> delta = MEASUREMODE_DELAY_MS/1000.0f;
+
 	for(unsigned int i=0;i<t1.size();i++){
 		t1[i] = eegBefore[i];
-		t2[i] = eegAfter[i];
+		t2[i] = (eegAfter[i] - eegBefore[i])/delta; // stores aprox "derivate": dEEG/dt
 	}
 
 	keywordData[key].add(0, t1);
@@ -1879,6 +2146,15 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	for(unsigned int i=0;i<keywordData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 
+		{
+			if(pcaPreprocess)
+				keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			else
+				keywordData[i].convert(0); // removes all preprocessings from input
+
+			keywordData[i].convert(1); // removes all preprocessings from output
+		}
+
 		if(keywordData[i].save(dbFilename) == false)
 			return false;
 	}
@@ -1886,6 +2162,15 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 
 	for(unsigned int i=0;i<pictureData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
+
+		{
+			if(pcaPreprocess)
+				pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			else
+				pictureData[i].convert(0); // removes all preprocessings from input
+
+			pictureData[i].convert(1); // removes all preprocessings from output
+		}
 
 		if(pictureData[i].save(dbFilename) == false)
 			return false;
@@ -2378,6 +2663,10 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 	unsigned int failed = 0;
 	unsigned int models = 0;
 
+	float total_error = 0.0f;
+	float total_N     = 0.0f;
+
+
 	std::lock_guard<std::mutex> lock(database_mutex);
 
 	for(auto filename : databaseFiles){
@@ -2395,12 +2684,46 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 
 		std::string modelFilename = fullname.substr(0, fullname.length()-3) + ".model";
 
-		// check if there is a model file and load it into memory and calculate average error
-		whiteice::nnetwork<> nnet;
-		if(nnet.load(modelFilename))
+		// check if there is a model file and load it into memory and TODO: calculate average error
+		whiteice::bayesian_nnetwork<> nnet;
+
+		if(nnet.load(modelFilename)){
 			models++;
 
+			if(ds.getNumberOfClusters() != 2)
+				continue;
+
+			if(ds.size(0) != ds.size(1))
+				continue;
+
+			float error = 0.0f;
+			float error_N = 0.0f;
+
+			for(unsigned int i=0;i<ds.size();i++){
+				math::vertex<> m;
+				math::matrix<> cov;
+
+				auto x = ds.access(0, i);
+
+				if(nnet.calculate(x, m, cov) == false)
+					continue;
+
+				auto delta = ds.access(1, i) - m;
+				error += delta.norm().c[0];
+				error_N++;
+			}
+
+			if(error_N > 0.0f){
+				error /= error_N; // average error for this stimulation element
+				total_error += error;
+				total_N++;
+			}
+		}
+
 	}
+
+	if(total_N > 0.0f)
+		total_error /= total_N;
 
 
 	if(N > 0){
@@ -2408,8 +2731,8 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 		double modelPercentage = 100*models/((double)N);
 
 		char buffer[1024];
-		sprintf(buffer, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d",
-				N, modelPercentage, avgDSSamples, minDSSamples);
+		sprintf(buffer, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d\nAverage model error: %f\n",
+				N, modelPercentage, avgDSSamples, minDSSamples, total_error);
 
 		return buffer;
 	}

@@ -136,6 +136,9 @@ public:
 	int getEEGDeviceType();
 	void getEEGDeviceStatus(std::string& status);
 
+	// sets special configuration parameter of resonanz-engine
+	bool setParameter(const std::string& parameter, const std::string& value);
+
 
 private:
 	const std::string windowTitle = "Neuromancer NeuroStim";
@@ -209,6 +212,7 @@ private:
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
 	std::mutex database_mutex; // mutex to synchronize I/O access to dataset files
+	bool pcaPreprocess = true; // should measured data be preprocessed using PCA
 
 
 	DataSource* eeg = nullptr;
@@ -219,17 +223,21 @@ private:
 
 	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
 	whiteice::nnetwork<>* nn = nullptr;
+	whiteice::bayesian_nnetwork<>* bnn = nullptr;
+	whiteice::HMC_convergence_check<>* bayes_optimizer = nullptr;
+	int neuralnetwork_complexity = 10; // values above 10 seem to make sense
+	bool use_bayesian_nnetwork = false;
 
 	bool engine_loadModels(const std::string& modelDir); // loads prediction models for program execution, returns false in case of failure
 	bool engine_executeProgram(const std::vector<float>& eegCurrent,
-			const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance);
+			const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance, float timedelta);
 
 	// executes program blindly based on Monte Carlo sampling and prediction models
 	bool engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
-			const std::vector<float>& eegTargetVariance);
+			const std::vector<float>& eegTargetVariance, float timedelta);
 
-	std::vector< whiteice::nnetwork<> > keywordModels;
-	std::vector< whiteice::nnetwork<> > pictureModels;
+	std::vector< whiteice::bayesian_nnetwork<> > keywordModels;
+	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
 
 	// for calculating program performance: RMS statistic
 	float programRMS = 0.0f;

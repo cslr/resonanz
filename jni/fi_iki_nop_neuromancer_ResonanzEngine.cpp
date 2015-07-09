@@ -495,3 +495,31 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getEEGDevic
 	}
 }
 
+
+/*
+ * Class:     fi_iki_nop_neuromancer_ResonanzEngine
+ * Method:    setParameter
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_setParameter
+  (JNIEnv * env, jobject obj, jstring parameter, jstring value)
+{
+	try{
+		if(env->IsSameObject(parameter, NULL)) return (jboolean)false;
+		if(env->IsSameObject(value, NULL))     return (jboolean)false;
+
+		const char *p = env->GetStringUTFChars(parameter, 0);
+		const char* v = env->GetStringUTFChars(value, 0);
+
+		bool result = engine.setParameter(std::string(p), std::string(v));
+
+		env->ReleaseStringUTFChars(parameter, p);
+		env->ReleaseStringUTFChars(value, v);
+
+		return (jboolean)result;
+
+	}
+	catch(std::exception& e){
+		return (jboolean)false;
+	}
+}
