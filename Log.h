@@ -34,9 +34,9 @@ protected:
 	typedef std::chrono::high_resolution_clock clock;
 	typedef std::chrono::milliseconds milliseconds;
 
-	FILE* handle = nullptr;
-	char* buffer = nullptr;
+	FILE* handle = nullptr; // initially prints to stdout until initialized by ctor
 	static const int BUFLEN = 8192;
+	char buffer[BUFLEN];
 
 	clock::time_point t0;
 	std::mutex file_lock;

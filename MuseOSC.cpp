@@ -34,7 +34,7 @@ MuseOSC::MuseOSC(unsigned int portNum) throw(std::runtime_error) :
 
 	try{
 		running = true;
-		worker_thread = new std::thread(muse_loop, this);
+		worker_thread = new std::thread(&MuseOSC::muse_loop, this);
 	}
 	catch(std::exception){
 		running = false;

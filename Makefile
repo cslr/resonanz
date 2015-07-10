@@ -12,17 +12,24 @@ RM = rm -f
 MV = mv
 CP = cp
 
-CFLAGS = -std=c++11 -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
-CXXFLAGS = -std=c++11 -O2 -g `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I.
+CFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
+CXXFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
 
-OBJECTS = FMSoundSynthesis.o SDLSoundSynthesis.o ResonanzShow.o EmotivInsightStub.o spectral_analysis.o main.o
-SOURCES = FMSoundSynthesis.cpp SDLSoundSynthesis.cpp ResonanzShow.cpp EmotivInsightStub.cpp spectral_analysis.cpp main.cpp tst/spectral_test.cpp
+OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o 
+
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp
+
+
 
 # MuseOSCSampler.o
 
 TARGET = resonanz
 
-LIBS = `sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -lfftw3 -lm
+LIBS = `sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -fopenmp -ltheoraenc -ltheoradec -logg
+
+RESONANZ_OBJECTS=$(OBJECTS) main.o
+
+JNILIB_OBJECTS=$(OBJECTS) jni/fi_iki_nop_neuromancer_ResonanzEngine.o
 
 SPECTRAL_TEST_OBJECTS=spectral_analysis.o tst/spectral_test.o
 SPECTRAL_TEST_TARGET=spectral_test
@@ -38,8 +45,13 @@ MAXIMPACT_TARGET=maximpact
 
 ############################################################
 
-all: $(OBJECTS) spectral_test
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+all: $(OBJECTS) resonanz jnilib spectral_test
+
+resonanz: $(RESONANZ_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(RESONANZ_OBJECTS) $(LIBS)
+
+jnilib: $(JNILIB_OBJECTS)
+# TODO build shared library for JNI class to link to
 
 spectral_test: $(SPECTRAL_TEST_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(SPECTRAL_TEST_TARGET) $(SPECTRAL_TEST_OBJECTS) $(LIBS)

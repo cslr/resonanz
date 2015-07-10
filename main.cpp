@@ -33,31 +33,6 @@ bool parse_float_vector(std::vector<float>& v, const char* str);
 bool keypress();
 
 
-#if 0
-bool loadWords(std::string filename, std::vector<std::string>& words);
-bool loadPictures(std::string directory, std::vector<std::string>& pictures);
-bool loadMusic(std::string directory, std::vector<std::string>& tracks);
-
-std::string calculateHashName(std::string& filename);
-
-
-struct prediction
-{
-  whiteice::dataset<>  ds;
-  whiteice::nnetwork<> nn;
-};
-
-
-// finds the best stimulus to reach the target state with the prediction engine
-unsigned int findBestStimulus(const unsigned int initialStimulationIndex,
-			      const whiteice::math::vertex<>& initialResult,
-			      const std::vector<prediction*>& preds,
-			      const whiteice::math::vertex<>& currentState,
-			      const whiteice::math::vertex<>& target,
-			      const whiteice::math::vertex<>& var_error,
-			      whiteice::math::vertex<>& predictedNewState);
-#endif
-
 void print_usage()
 {
 	printf("Usage: resonanz <mode> [options]\n");
@@ -74,7 +49,9 @@ void print_usage()
 	printf("--keyword-file=  source keywords file\n");
 	printf("--model-dir=     model directory for measurements and prediction models\n");
 	printf("--program-file=  sets NMC program file for emotiv insight values\n");
-	printf("-v               verbose mode\n");
+	printf("--device=        sets measurement device: muse, [insight], random\n");
+	printf("--pca            preprocess input data with pca if possible\n");
+	printf("-v               verbose mode\n");	
 	printf("\n");
 	printf("This is alpha version version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
 }
@@ -96,6 +73,8 @@ int main(int argc, char** argv){
 	bool analyzeCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;
 	std::string programFile;
+	std::string device = "muse";
+	bool usepca  = false;
 	bool verbose = false;
 
 	for(int i=1;i<argc;i++){
@@ -144,6 +123,13 @@ int main(int argc, char** argv){
 	    	char* p = &(argv[i][15]);
 	    	if(strlen(p) > 0) programFile = p;
 	    }
+	    else if(strncmp(argv[i], "--device=", 9) == 0){
+	        char* p = &(argv[i][9]);
+	        if(strlen(p) > 0) device = p;
+	    } 
+	    else if(strcmp(argv[i],"--pca") == 0){
+	        usepca = true;
+	    }
 	    else if(strcmp(argv[i],"-v") == 0){
 	    	verbose = true;
 	    }
@@ -163,6 +149,28 @@ int main(int argc, char** argv){
 	// starts resonanz engine
 	whiteice::resonanz::ResonanzEngine engine;
 
+	// sets engine parameters
+	{
+	    // sets measurement device
+	    if(device == "muse"){
+	      // listens UDP traffic at localhost:4545 (from muse-io)
+	      if(engine.setEEGDeviceType(whiteice::resonanz::ResonanzEngine::RE_EEG_IA_MUSE_DEVICE))
+		printf("Hardware: IA Muse EEG\n");
+	    }
+	    else if(device == "random"){
+	      if(engine.setEEGDeviceType(whiteice::resonanz::ResonanzEngine::RE_EEG_RANDOM_DEVICE))
+		printf("Hardware: Random pseudodevice\n");
+	    }
+	    
+	    if(usepca)
+	      engine.setParameter("pca-preprocess", "true");
+	    else
+	      engine.setParameter("pca-preprocess", "false");
+	    
+	    engine.setParameter("use-bayesian-nnetwork", "false");
+	}
+	
+	
 	if(cmd.command == cmd.CMD_DO_RANDOM){
 		if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile) == false){
 			printf("ERROR: bad parameters\n");
@@ -181,6 +189,8 @@ int main(int argc, char** argv){
 			return -1;
 		}
 	}
+#if 0 
+IMPLEMENT/FIX ME
 	else if(cmd.command == cmd.CMD_DO_EXECUTE){
 		whiteice::resonanz::NMCFile file;
 		if(file.loadFile(programFile) == false){
@@ -205,6 +215,7 @@ int main(int argc, char** argv){
 		}
 
 	}
+#endif
 	else if(analyzeCommand == true){
 		std::string msg = engine.analyzeModel(cmd.modelDir);
 		std::cout << msg << std::endl;

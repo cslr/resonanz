@@ -71,8 +71,12 @@ public:
 	unsigned int programLengthTicks = 0; // measured program length in ticks
 };
 
-
-class ResonanzEngine {
+/**
+ * ResonanzEngine is singleton (You can have only SINGLE instance active at time)
+ * (using multiple ResonanzEngine's at the same time is NOT thread-safe)
+ */
+class ResonanzEngine 
+{
 public:
 	ResonanzEngine();
 	virtual ~ResonanzEngine();
@@ -188,6 +192,7 @@ private:
 	TTF_Font* font = nullptr;
 	bool audioEnabled = true; // false if opening audio failed
 	Mix_Music* music = nullptr;
+	const bool fullscreen = false; // set to use fullscreen mode otherwise 800x600 window
 
 	bool keypressed = false;
 	std::mutex keypress_mutex;

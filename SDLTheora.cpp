@@ -126,7 +126,7 @@ bool SDLTheora::startEncoding(const std::string& filename, unsigned int width, u
 
 	try{
 		latest_frame_encoded = -1;
-		encoder_thread = new std::thread(encoder_loop, this);
+		encoder_thread = new std::thread(&SDLTheora::encoder_loop, this);
 
 		if(encoder_thread == nullptr){
 			running = false;

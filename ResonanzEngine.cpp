@@ -22,11 +22,17 @@
 
 #include "NoEEGDevice.h"
 #include "RandomEEG.h"
+
+#ifdef LIGHTSTONE
+#include "LightstoneDevice.h"
+#endif
+
+#ifdef EMOTIV_INSIGHT
 #include "EmotivInsightStub.h"
 #include "EmotivInsightPipeServer.h"
-#include "LightstoneDevice.h"
-#include "MuseOSC.h"
+#endif
 
+#include "MuseOSC.h"
 #include "SDLTheora.h"
 
 #ifdef _WIN32
@@ -56,7 +62,7 @@ ResonanzEngine::ResonanzEngine()
 	eeg = nullptr;
 
 	// starts updater thread thread
-	workerThread = new std::thread(std::bind(ResonanzEngine::engine_loop, this));
+	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
 }
 
@@ -125,7 +131,7 @@ bool ResonanzEngine::reset() throw()
 		thread_is_running = true;
 
 		// starts updater thread thread
-		workerThread = new std::thread(std::bind(ResonanzEngine::engine_loop, this));
+		workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 		workerThread->detach();
 
 		return true;
@@ -350,18 +356,22 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(eeg != nullptr) delete eeg;
 			eeg = new RandomEEG();
 		}
+#ifdef EMOTIV_INSIGHT
 		else if(deviceNumber == ResonanzEngine::RE_EEG_EMOTIV_INSIGHT_DEVICE){
 			if(eeg != nullptr) delete eeg;
 			eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
 		}
+#endif
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
 			if(eeg != nullptr) delete eeg;
 			eeg = new MuseOSC(4545);
 		}
+#ifdef LIGHTSTONE
 		else if(deviceNumber == ResonanzEngine::RE_WD_LIGHTSTONE){
 			if(eeg != nullptr) delete eeg;
 			eeg = new LightstoneDevice();
 		}
+#endif
 		else{
 			return false; // unknown device
 		}
@@ -662,11 +672,20 @@ void ResonanzEngine::engine_loop()
 			if(currentCommand.showScreen == true && prevCommand.showScreen == false){
 				if(window != nullptr) SDL_DestroyWindow(window);
 
-				window = SDL_CreateWindow(windowTitle.c_str(),
+				if(fullscreen){
+				  window = SDL_CreateWindow(windowTitle.c_str(),
 							    SDL_WINDOWPOS_CENTERED,
 							    SDL_WINDOWPOS_CENTERED,
 							    SCREEN_WIDTH, SCREEN_HEIGHT,
 							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+				}
+				else{
+				  window = SDL_CreateWindow(windowTitle.c_str(),
+							    SDL_WINDOWPOS_CENTERED,
+							    SDL_WINDOWPOS_CENTERED,
+							    SCREEN_WIDTH, SCREEN_HEIGHT,
+							    SDL_WINDOW_SHOWN);
+				}
 
 				if(window != nullptr){
 					SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
@@ -690,11 +709,20 @@ void ResonanzEngine::engine_loop()
 			else if(currentCommand.showScreen == true && prevCommand.showScreen == true){
 				// just empties current window with blank (black) screen
 				if(window == nullptr){
-					window = SDL_CreateWindow(windowTitle.c_str(),
+				        if(fullscreen){
+				          window = SDL_CreateWindow(windowTitle.c_str(),
 								    SDL_WINDOWPOS_CENTERED,
 								    SDL_WINDOWPOS_CENTERED,
 								    SCREEN_WIDTH, SCREEN_HEIGHT,
 								    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+					}
+					else{
+				          window = SDL_CreateWindow(windowTitle.c_str(),
+								    SDL_WINDOWPOS_CENTERED,
+								    SDL_WINDOWPOS_CENTERED,
+								    SCREEN_WIDTH, SCREEN_HEIGHT,
+								    SDL_WINDOW_SHOWN);
+					}
 				}
 
 				if(window != nullptr){
@@ -739,10 +767,15 @@ void ResonanzEngine::engine_loop()
 
 				bool loadData = (currentCommand.command != ResonanzCommand::CMD_DO_OPTIMIZE);
 
-				if(engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile, loadData) == false)
+				if(engine_loadMedia(currentCommand.pictureDir, currentCommand.keywordsFile, loadData) == false){
 					logging.error("loading media files failed");
-				else
-					logging.info("loading media files successful");
+				}
+				else{
+				        char buffer[80];
+					snprintf(buffer, 80, "loading media files successful (%d keywords, %d pics)",
+						 keywords.size(), pictures.size());
+					logging.info(buffer);
+				}
 			}
 
 			// (re)-setups and initializes data structures used for measurements
@@ -940,7 +973,8 @@ void ResonanzEngine::engine_loop()
 				unsigned int key = rand() % keywords.size();
 				unsigned int pic = rand() % pictures.size();
 
-				engine_showScreen(keywords[key], pic);
+				if(engine_showScreen(keywords[key], pic) == false)
+				  logging.warn("random stimulus: engine_showScreen() failed.");
 			}
 
 			engine_pollEvents(); // polls for events
@@ -2039,6 +2073,7 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 	for(unsigned int i=0;i<images.size();i++){
 		if(images[i] != nullptr)
 			SDL_FreeSurface(images[i]);
+		images[i] = nullptr;
 	}
 
 	if(loadData){
@@ -2225,15 +2260,26 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	if(surface == nullptr)
 		return false;
 
-	SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
+	if(SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0)) != 0)
+	  return false;
 
 	int bgcolor = 0;
+	int elementsDisplayed = 0;
 
 	if(picture < pictures.size()){ // shows a picture
 		if(images[picture] == NULL){
 			SDL_Surface* image = IMG_Load(pictures[picture].c_str());
+			
+			if(image == NULL){
+			  char buffer[120];
+			  snprintf(buffer, 120, "showscreen: loading image FAILED (%s): %s",
+				   SDL_GetError(), pictures[picture].c_str());
+			  logging.warn(buffer);
+			}
+			
 			SDL_Rect imageRect;
 			SDL_Surface* scaled = 0;
+
 
 			if(image != 0){
 				if((image->w) > (image->h)){
@@ -2243,7 +2289,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 					scaled = SDL_CreateRGBSurface(0, (int)(image->w*wscale), (int)(image->h*wscale), 32,
 							0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
-					SDL_BlitScaled(image, NULL, scaled, NULL);
+					if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
+					  return false;
 
 				}
 				else{
@@ -2253,10 +2300,14 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 					scaled = SDL_CreateRGBSurface(0, (int)(image->w*hscale), (int)(image->h*hscale), 32,
 							0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
-					SDL_BlitScaled(image, NULL, scaled, NULL);
+					if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
+					  return false;
 				}
 
 				images[picture] = scaled;
+			}
+			else{
+			        elementsDisplayed++;
 			}
 
 			if(scaled != NULL){
@@ -2270,7 +2321,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 				imageRect.x = (SCREEN_WIDTH - scaled->w)/2;
 				imageRect.y = (SCREEN_HEIGHT - scaled->h)/2;
 
-				SDL_BlitSurface(images[picture], NULL, surface, &imageRect);
+				if(SDL_BlitSurface(images[picture], NULL, surface, &imageRect) != 0)
+				  return false;
 			}
 
 			if(image)
@@ -2293,7 +2345,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			imageRect.x = (SCREEN_WIDTH - scaled->w)/2;
 			imageRect.y = (SCREEN_HEIGHT - scaled->h)/2;
 
-			SDL_BlitSurface(images[picture], NULL, surface, &imageRect);
+			if(SDL_BlitSurface(images[picture], NULL, surface, &imageRect) != 0)
+			  return false;
 		}
 	}
 
@@ -2313,6 +2366,9 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			color = black;
 
 		SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message.c_str(), color);
+		
+		if(msg != NULL)
+		  elementsDisplayed++;
 
 		SDL_Rect messageRect;
 
@@ -2322,7 +2378,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		messageRect.h = msg->h;
 
 
-		SDL_BlitSurface(msg, NULL, surface, &messageRect);
+		if(SDL_BlitSurface(msg, NULL, surface, &messageRect) != 0)
+		  return false;
 
 		if(video && programStarted > 0){
 			auto t1 = std::chrono::system_clock::now().time_since_epoch();
@@ -2335,7 +2392,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		SDL_FreeSurface(msg);
 	}
 
-	return true;
+	return (elementsDisplayed > 0);
 }
 
 
@@ -2370,8 +2427,14 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	SDL_DisplayMode mode;
 
 	if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-		SCREEN_WIDTH = mode.w;
-		SCREEN_HEIGHT = mode.h;
+	        if(fullscreen){
+		  SCREEN_WIDTH = mode.w;
+		  SCREEN_HEIGHT = mode.h;
+		}
+		else{
+		  SCREEN_WIDTH = mode.w/2;
+		  SCREEN_HEIGHT = mode.h/2;
+		}
 	}
 	else{
 		return false; // something went wrong
