@@ -14,6 +14,8 @@
 
 #include <math.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include <dinrhiw/dinrhiw.h>
 
@@ -46,6 +48,10 @@ namespace resonanz {
 ResonanzEngine::ResonanzEngine()
 {
 	std::lock_guard<std::mutex> lock(thread_mutex);
+
+	// initializes random number generation here (again) this is needed?
+	// so that JNI implementation gets different random numbers and experiments don't repeat each other..
+	srand(time(0));
 
 	engine_setStatus("resonanz-engine: starting..");
 
@@ -434,7 +440,7 @@ void ResonanzEngine::getEEGDeviceStatus(std::string& status)
 
 				char buffer[80];
 				for(unsigned int i=0;i<values.size();i++){
-					sprintf(buffer, "%.2f ", values[i]);
+					snprintf(buffer, 80, "%.2f ", values[i]);
 					status = status + buffer;
 				}
 
@@ -557,6 +563,9 @@ void ResonanzEngine::engine_loop()
 	unsigned int currentPictureModel = 0;
 	unsigned int currentKeywordModel = 0;
 
+	// model optimization ETA information
+	whiteice::linear_ETA<float> optimizeETA;
+
 	// used to execute program [targetting target values]
 	const float programHz = 1.0; // 1 program step means 1 second
 	std::vector< std::vector<float> > program;
@@ -640,6 +649,14 @@ void ResonanzEngine::engine_loop()
 					bayes_optimizer->stopSampler();
 					delete bayes_optimizer;
 					bayes_optimizer = nullptr;
+				}
+
+				// also saves database because preprocessing parameters may have changed
+				if(engine_saveDatabase(prevCommand.modelDir) == false){
+					logging.error("saving database failed");
+				}
+				else{
+					logging.error("saving database successful");
 				}
 
 				// removes unnecessarily data structures from memory (measurements database) [no need to save it because it was not changed]
@@ -806,6 +823,11 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus("resonanz-engine: initializing prediction model optimization..");
 				currentPictureModel = 0;
 				currentKeywordModel = 0;
+
+				if(this->use_bayesian_nnetwork)
+					logging.info("model optimization uses BAYESIAN UNCERTAINTY estimation through sampling");
+
+				optimizeETA.start(0.0f, 1.0f);
 
 				// checks there is enough data to do meaningful optimization
 				bool aborted = false;
@@ -1032,9 +1054,16 @@ void ResonanzEngine::engine_loop()
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 			const float percentage = (currentPictureModel + currentKeywordModel)/((float)(pictureData.size()+keywordData.size()));
+
+			optimizeETA.update(percentage);
+
 			{
-				char buffer[80];
-				sprintf(buffer, "resonanz-engine: optimizing prediction model (%.2f%%)..", 100.0f*percentage);
+				float eta = optimizeETA.estimate();
+				eta = eta / 60.0f; // ETA in minutes
+
+				char buffer[160];
+				snprintf(buffer, 160, "resonanz-engine: optimizing prediction model (%.2f%%) [ETA %.1f min]..",
+						100.0f*percentage, eta);
 
 				engine_setStatus(buffer);
 			}
@@ -1227,7 +1256,7 @@ void ResonanzEngine::engine_loop()
 
 				for(unsigned int i=0;i<x.size();i++){
 					char buffer[80];
-					sprintf(buffer, " %.2f", x[i]);
+					snprintf(buffer, 80, " %.2f", x[i]);
 					line += buffer;
 				}
 
@@ -1352,6 +1381,11 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 			continue;
 		}
 
+		if(keywordData[index].invpreprocess(1, m) == false){
+			logging.warn("skipping bad keyword prediction model");
+			continue;
+		}
+
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
 
@@ -1403,6 +1437,11 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 			continue;
 		}
 
+		if(pictureData[index].invpreprocess(1, m) == false){
+			logging.warn("skipping bad picture prediction model");
+			continue;
+		}
+
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
 
@@ -1433,7 +1472,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	}
 	else{
 		char buffer[80];
-		sprintf(buffer, "prediction model selected keyword/best picture: %s %s",
+		snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
 				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
 		logging.info(buffer);
 	}
@@ -1502,6 +1541,11 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				continue;
 			}
 
+			if(keywordData[index].invpreprocess(1, m) == false){
+				logging.warn("skipping bad keyword prediction model");
+				continue;
+			}
+
 			m *= timestep; // corrects delta to given timelength
 			cov *= timestep*timestep;
 
@@ -1561,7 +1605,12 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 			math::matrix<> cov;
 
 			if(model.calculate(x, m, cov) == false){
-				logging.warn("skipping bad keyword prediction model");
+				logging.warn("skipping bad picture prediction model");
+				continue;
+			}
+
+			if(pictureData[index].invpreprocess(1, m) == false){
+				logging.warn("skipping bad picture prediction model");
 				continue;
 			}
 
@@ -1604,7 +1653,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	}
 	else{
 		char buffer[80];
-		sprintf(buffer, "prediction model selected keyword/best picture: %s %s",
+		snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
 				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
 		logging.info(buffer);
 	}
@@ -1636,6 +1685,11 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 					continue;
 				}
 
+				if(keywordData[index].invpreprocess(1, m) == false){
+					logging.error("mc sampling: skipping bad keyword prediction model");
+					continue;
+				}
+
 				m *= timestep; // corrects delta to given timelength
 				cov *= timestep*timestep;
 
@@ -1649,7 +1703,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				whiteice::bayesian_nnetwork<>& model = pictureModels[index];
 
 				if(pictureData[index].preprocess(0, x) == false){
-					logging.error("mc sampling: skipping bad keyword prediction model");
+					logging.error("mc sampling: skipping bad picture prediction model");
 					continue;
 				}
 
@@ -1657,9 +1711,16 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				math::matrix<> cov;
 
 				if(model.calculate(x, m, cov) == false){
-					logging.warn("skipping bad keyword prediction model");
+					logging.warn("skipping bad picture prediction model");
 					continue;
 				}
+
+				if(pictureData[index].invpreprocess(1, m) == false){
+					logging.error("mc sampling: skipping bad picture prediction model");
+					continue;
+				}
+
+				// FIXME if output is PCAed then covariance matrix should be preprocessed too
 
 				m *= timestep; // corrects delta to given timelength
 				cov *= timestep*timestep;
@@ -1710,8 +1771,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 			optimizer->minimize(w);
 
 			{
-				char buffer[1024];
-				sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+				char buffer[512];
+				snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
 						currentPictureModel, pictureData[currentPictureModel].size(0));
 				logging.info(buffer);
 			}
@@ -1745,13 +1806,13 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 
 		}
 		else if(bayes_optimizer != nullptr){
-			if(bayes_optimizer->getNumberOfSamples() >= 1000){ // time to stop computation [got uncertainly information]
+			if(bayes_optimizer->getNumberOfSamples() >= BAYES_NUM_SAMPLES){ // time to stop computation [got uncertainly information]
 
 				bayes_optimizer->stopSampler();
 
 				{
-					char buffer[1024];
-					sprintf(buffer, "resonanz bayes model optimization stopped. picture: %d iterations: %d",
+					char buffer[512];
+					snprintf(buffer, 512, "resonanz bayes model optimization stopped. picture: %d iterations: %d",
 							currentPictureModel, bayes_optimizer->getNumberOfSamples());
 					logging.info(buffer);
 				}
@@ -1772,8 +1833,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				currentPictureModel++;
 				if(currentPictureModel < pictures.size()){
 					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz bayes model optimization started: picture %d database size: %d",
+						char buffer[512];
+						snprintf(buffer, 512, "resonanz bayes model optimization started: picture %d database size: %d",
 								currentPictureModel, pictureData[currentPictureModel].size(0));
 						logging.info(buffer);
 					}
@@ -1804,8 +1865,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				optimizer->getSolution(w, error, iterations);
 
 				{
-					char buffer[1024];
-					sprintf(buffer, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
+					char buffer[512];
+					snprintf(buffer, 512, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
 							currentPictureModel, iterations, error.c[0]);
 					logging.info(buffer);
 				}
@@ -1830,8 +1891,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 					nn->exportdata(w);
 
 					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz model optimization started: picture %d database size: %d",
+						char buffer[512];
+						snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
 								currentPictureModel, pictureData[currentPictureModel].size(0));
 						logging.info(buffer);
 					}
@@ -1856,8 +1917,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 			optimizer->minimize(w);
 
 			{
-				char buffer[1024];
-				sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+				char buffer[512];
+				snprintf(buffer, 512, "resonanz model optimization started: keyword %d database size: %d",
 							currentKeywordModel, keywordData[currentKeywordModel].size(0));
 				logging.info(buffer);
 			}
@@ -1918,13 +1979,13 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 
 		}
 		else if(bayes_optimizer != nullptr){
-			if(bayes_optimizer->getNumberOfSamples() >= 1000){ // time to stop computation
+			if(bayes_optimizer->getNumberOfSamples() >= BAYES_NUM_SAMPLES){ // time to stop computation
 
 				bayes_optimizer->stopSampler();
 
 				{
-					char buffer[1024];
-					sprintf(buffer, "resonanz bayes model optimization stopped. keyword: %d iterations: %d",
+					char buffer[512];
+					snprintf(buffer, 512, "resonanz bayes model optimization stopped. keyword: %d iterations: %d",
 							currentKeywordModel, bayes_optimizer->getNumberOfSamples());
 					logging.info(buffer);
 				}
@@ -1945,8 +2006,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 				currentKeywordModel++;
 				if(currentKeywordModel < keywords.size()){
 					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz bayes model optimization started: keyword %d database size: %d",
+						char buffer[512];
+						snprintf(buffer, 512, "resonanz bayes model optimization started: keyword %d database size: %d",
 								currentKeywordModel, keywordData[currentKeywordModel].size(0));
 						logging.info(buffer);
 					}
@@ -1976,8 +2037,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 
 
 				{
-					char buffer[1024];
-					sprintf(buffer, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
+					char buffer[512];
+					snprintf(buffer, 512, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
 							currentKeywordModel, iterations, error.c[0]);
 					logging.info(buffer);
 				}
@@ -2002,8 +2063,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 					nn->exportdata(w);
 
 					{
-						char buffer[1024];
-						sprintf(buffer, "resonanz model optimization started: keyword %d database size: %d",
+						char buffer[512];
+						snprintf(buffer, 512, "resonanz model optimization started: keyword %d database size: %d",
 								currentKeywordModel, keywordData[currentKeywordModel].size(0));
 						logging.info(buffer);
 					}
@@ -2123,12 +2184,34 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		}
 
 		{
-			if(pcaPreprocess)
-				keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-			else
-				keywordData[i].convert(0); // removes all preprocessings from input
+			if(pcaPreprocess){
+				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing keyword measurements [input]");
+					keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#if 0
+				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing keyword measurements [output]");
+					keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#endif
+				keywordData[i].convert(1);
+			}
+			else{
+				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA processing of keyword measurements [input]");
+					keywordData[i].convert(0); // removes all preprocessings from input
+				}
+#if 0
+				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA processing of keyword measurements [output]");
+					keywordData[i].convert(1); // removes all preprocessings from input
+				}
+#endif
+				keywordData[i].convert(1);
+			}
 
-			keywordData[i].convert(1); // removes all preprocessings from output
+			// keywordData[i].convert(1); // removes all preprocessings from output
 		}
 	}
 
@@ -2143,12 +2226,34 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 
 		{
-			if(pcaPreprocess)
-				pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-			else
-				pictureData[i].convert(0); // removes all preprocessings from input
+			if(pcaPreprocess){
+				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing picture measurements [input]");
+					pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#if 0
+				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing picture measurements [output]");
+					pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#endif
+				pictureData[i].convert(1);
+			}
+			else{
+				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA processing of picture measurements [input]");
+					pictureData[i].convert(0); // removes all preprocessings from input
+				}
+#if 0
+				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA processing of picture measurements [output]");
+					pictureData[i].convert(1); // removes all preprocessings from input
+				}
+#endif
+				pictureData[i].convert(1);
+			}
 
-			pictureData[i].convert(1); // removes all preprocessings from output
+			// pictureData[i].convert(1); // removes all preprocessings from output
 		}
 	}
 
@@ -2191,12 +2296,35 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 
 		{
-			if(pcaPreprocess)
-				keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-			else
-				keywordData[i].convert(0); // removes all preprocessings from input
+			if(pcaPreprocess){
+				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing keyword measurements data [input]");
+					keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#if 0
+				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing keyword measurements data [output]");
+					keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#endif
+				keywordData[i].convert(1); // removes preprocessigns from output
+			}
+			else{
+				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA preprocessing from keyword measurements data [input]");
+					keywordData[i].convert(0); // removes all preprocessings from input
+				}
 
-			keywordData[i].convert(1); // removes all preprocessings from output
+#if 0
+				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA preprocessing from keyword measurements data [output]");
+					keywordData[i].convert(1); // removes all preprocessings from input
+				}
+#endif
+				keywordData[i].convert(1); // removes preprocessigns from output
+			}
+
+			// keywordData[i].convert(1); // removes all preprocessings from output
 		}
 
 		if(keywordData[i].save(dbFilename) == false)
@@ -2208,12 +2336,34 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
 
 		{
-			if(pcaPreprocess)
-				pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-			else
-				pictureData[i].convert(0); // removes all preprocessings from input
+			if(pcaPreprocess){
+				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing picture measurements data [input]");
+					pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#if 0
+				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+					logging.info("PCA preprocessing picture measurements data [output]");
+					pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+				}
+#endif
+				pictureData[i].convert(1); // removes preprocessigns from output
+			}
+			else{
+				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA preprocessing from picture measurements data [input]");
+					pictureData[i].convert(0); // removes all preprocessings from input
+				}
+#if 0
+				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+					logging.info("Removing PCA preprocessing from picture measurements data [output]");
+					pictureData[i].convert(1); // removes all preprocessings from input
+				}
+#endif
+				pictureData[i].convert(1);
+			}
 
-			pictureData[i].convert(1); // removes all preprocessings from output
+			// pictureData[i].convert(1); // removes all preprocessings from output
 		}
 
 		if(pictureData[i].save(dbFilename) == false)
@@ -2239,7 +2389,7 @@ std::string ResonanzEngine::calculateHashName(const std::string& filename) const
 			std::string result = "";
 			for(unsigned int i=0;i<20;i++){
 				char buffer[10];
-				sprintf(buffer, "%.2x", hash160[i]);
+				snprintf(buffer, 10, "%.2x", hash160[i]);
 				result += buffer;
 			}
 
@@ -2460,7 +2610,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 	if(TTF_Init() != 0){
 		char buffer[80];
-		sprintf(buffer, "TTF_Init failed: %s\n", TTF_GetError());
+		snprintf(buffer, 80, "TTF_Init failed: %s\n", TTF_GetError());
 		logging.error(buffer);
 		throw std::runtime_error("TTF_Init() failed.");
 	}
@@ -2469,7 +2619,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 	if(IMG_Init(flags) != flags){
 		char buffer[80];
-		sprintf(buffer, "IMG_Init failed: %s\n", IMG_GetError());
+		snprintf(buffer, 80, "IMG_Init failed: %s\n", IMG_GetError());
 		logging.error(buffer);
 		IMG_Quit();
 		throw std::runtime_error("IMG_Init() failed.");
@@ -2481,7 +2631,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 	if(Mix_Init(flags) != flags){
 		char buffer[80];
-		sprintf(buffer, "Mix_Init failed: %s\n", Mix_GetError());
+		snprintf(buffer, 80, "Mix_Init failed: %s\n", Mix_GetError());
 		logging.warn(buffer);
 		audioEnabled = false;
 		/*
@@ -2500,7 +2650,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 	if(font == 0){
 		char buffer[80];
-		sprintf(buffer, "TTF_OpenFont failure (%s): %s\n", fontname.c_str() , TTF_GetError());
+		snprintf(buffer, 80, "TTF_OpenFont failure (%s): %s\n", fontname.c_str() , TTF_GetError());
 		logging.error(buffer);
 		IMG_Quit();
 		Mix_Quit();
@@ -2510,7 +2660,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1){
 		audioEnabled = false;
 		char buffer[80];
-		sprintf(buffer, "ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
+		snprintf(buffer, 80, "ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
 		logging.warn(buffer);
 	}
 
@@ -2562,7 +2712,7 @@ bool ResonanzEngine::engine_playAudioFile(const std::string& audioFile)
 		}
 		else{
 			char buffer[80];
-			sprintf(buffer, "sdl-music: loading audio file failed: %s", audioFile.c_str());
+			snprintf(buffer, 80, "sdl-music: loading audio file failed: %s", audioFile.c_str());
 			logging.warn(buffer);
 			return false;
 		}
@@ -2789,7 +2939,13 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 				if(nnet.calculate(x, m, cov) == false)
 					continue;
 
-				auto delta = ds.access(1, i) - m;
+				auto y = ds.access(1, i);
+
+				// converts data to real output values for meaningful comparision against cases WITHOUT preprocessing
+				if(ds.invpreprocess(1, m) == false || ds.invpreprocess(1, y) == false)
+					continue; // skip this datapoints
+
+				auto delta = y - m;
 				error += delta.norm().c[0];
 				error_N++;
 			}
@@ -2812,14 +2968,14 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir)
 		double modelPercentage = 100*models/((double)N);
 
 		char buffer[1024];
-		sprintf(buffer, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d\nAverage model error: %f\n",
+		snprintf(buffer, 1024, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d\nAverage model error: %f\n",
 				N, modelPercentage, avgDSSamples, minDSSamples, total_error);
 
 		return buffer;
 	}
 	else{
 		char buffer[1024];
-		sprintf(buffer, "%d entries (0%% has a model). samples(avg): %.2f, samples(min): %d",
+		snprintf(buffer, 1024, "%d entries (0%% has a model). samples(avg): %.2f, samples(min): %d",
 				0, 0.0, 0);
 
 		return buffer;
@@ -2871,6 +3027,7 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	float var_delta_pictures  = 0.0f;
 	float num_keywords = 0.0f;
 	float num_pictures = 0.0f;
+	float pca_preprocess = 0.0f;
 
 	// 2. loads dataset files (.ds) one by one if possible and calculates mean delta
 	whiteice::dataset<> data;
@@ -2886,7 +3043,7 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 				float delta = 0.0f;
 
 				for(unsigned int j=0;j<data.size(0);j++){
-					auto d = data.access(1, j) - data.access(0, j);
+					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
 
@@ -2898,6 +3055,9 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 				mean_delta_keywords += delta;
 				var_delta_keywords  += delta*delta;
 				num_keywords++;
+
+				if(data.hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval))
+					pca_preprocess++;
 			}
 		}
 	}
@@ -2917,7 +3077,7 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 				float delta = 0.0f;
 
 				for(unsigned int j=0;j<data.size(0);j++){
-					auto d = data.access(1, j) - data.access(0, j);
+					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
 
@@ -2929,6 +3089,9 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 				mean_delta_pictures += delta;
 				var_delta_pictures  += delta*delta;
 				num_pictures++;
+
+				if(data.hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval))
+					pca_preprocess++;
 			}
 		}
 	}
@@ -2947,6 +3110,8 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	snprintf(buffer, BUFSIZE, "Picture delta: %.2f stdev(delta): %.2f\n", mean_delta_pictures, sqrt(var_delta_pictures));
 	report += buffer;
 	snprintf(buffer, BUFSIZE, "Keyword delta: %.2f stdev(delta): %.2f\n", mean_delta_keywords, sqrt(var_delta_keywords));
+	report += buffer;
+	snprintf(buffer, BUFSIZE, "PCA preprocessing: %.1f%% of elements\n", 100.0f*pca_preprocess/(num_pictures + num_keywords));
 	report += buffer;
 	snprintf(buffer, BUFSIZE, "\n");
 	report += buffer;

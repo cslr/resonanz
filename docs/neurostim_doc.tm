@@ -396,7 +396,58 @@
   without timbecause almost all algorithms that try to analyze <math|D>
   dimensional problems grow at least <math|O<around*|(|D<rsup|2>|)>> because
   you ``have to'' compute how each element affects to each other element
-  <with|font-series|bold|but not so in HMM model!>.
+  <with|font-series|bold|but not so in HMM model!>. This property is so good
+  that it might be event possible to try to give HMM multiobservational
+  picture data because the problem grows linearly to the number of pixels in
+  image.
+
+  \;
+
+  <strong|Prediction model clustering>
+
+  Calculating prediction model for each stimulation element separatedly
+  requires lots of measurements and restricts use of the computational
+  methods to be simple in order to scale to large number of different
+  stimulation elements. One approach could be to calculate feature vector
+  <math|\<b-x\>> from stimulation elements and then try to calculate joint
+  prediction model which is parameterized by <math|\<b-x\>>:
+  \ <math|\<b-t\><rsub|next>=\<b-f\><around*|(|\<b-t\><rsub|prev>,\<b-x\>|)>>.
+  However, calculating such feature vector from large pictures and large
+  amount of keywords is a complicated task.
+
+  Another, somewhat simple approach would be ``model clustering'' approach
+  (my own idea). Here we use EM-method (expectation maximization). We assume
+  that elements belong to <math|K> different clusters which each has it's own
+  distinct prediction model <math|\<b-f\><rsub|k><around*|(|\<b-t\>|)>>. We
+  initially assing each stimulation element (and its measurement data)
+  randomly to one of the clusters <math|k>. All data belonging to such
+  prediction model cluster is then used to optimize/calculate updated
+  prediction model <math|\<b-f\><rsub|k><around*|(|\<b-t\>|)>>. After this
+  step stimulation elements are re-assigned to prediction models (clusters)
+  according to their measurement data. Prediction model <math|k> with the
+  smallest prediction error is the chosen model for a stimulation element.
+  Now the method follows typicaly EM-clustering approach, prediction models
+  are updated and stimulation elements re-assigned as long as there are
+  changes in stimulation elements.
+
+  This method is ``discretized version'' and don't use any indermediate
+  parameters like feature vectors but concentrates directly to minimize
+  prediction error with <math|K> different clusters. After computation of
+  such models, one requires very little new data when using prediction
+  methods for new stimulation elements. New stimulation elements are always
+  assigned to such prediction model which gives smallest prediction error to
+  available data. This means that one can assign prediction model to
+  stimulation element even when there is just a single measurement available.
+  It is also likely that because prediction models are clustered, that they
+  are quite different and only a small amount of data is required to
+  accuratedly select a good prediction model for a new stimulation element.
+
+  Only problem is that now different stimulation elements has exactly
+  <with|font-series|bold|same> predicted response to stimuli. Basically one
+  could pick the stimulation element randomly, but for words, for example,
+  some kind of corpus based model could pick most likely element. Similarly,
+  for pictures it might be good idea to try to minimize difference between
+  pictures in order to create ``smooth'' simulation.
 
   \;
 
@@ -420,7 +471,17 @@
 
   \;
 
-  \;
+  <with|font-series|bold|Different approach>
+
+  Because using advanced computational methods, the burden of using lots of
+  different images is great. A bit different approach to the problem would be
+  to show black screen most of the time and then only quickly show a single
+  picture for a while in order to push system back on the right track.
+
+  For example, a group of words (with similar and ``good'' overall response)
+  could be shown quickly and system would compute a single <math|T>
+  milliseconds long stimulation picture that will push system towards target
+  state.
 
   \;
 

@@ -230,8 +230,9 @@ private:
 	whiteice::nnetwork<>* nn = nullptr;
 	whiteice::bayesian_nnetwork<>* bnn = nullptr;
 	whiteice::HMC_convergence_check<>* bayes_optimizer = nullptr;
-	int neuralnetwork_complexity = 10; // values above 10 seem to make sense
+	int neuralnetwork_complexity = 200; // values above 10 seem to make sense
 	bool use_bayesian_nnetwork = false;
+	const unsigned int BAYES_NUM_SAMPLES = 2500; // number of samples collected from "bayesian posterior" (what we really sample is MLE prior thought..)
 
 	bool engine_loadModels(const std::string& modelDir); // loads prediction models for program execution, returns false in case of failure
 	bool engine_executeProgram(const std::vector<float>& eegCurrent,
