@@ -485,6 +485,17 @@ bool ResonanzEngine::setParameter(const std::string& parameter, const std::strin
 		}
 		else return false;
 	}
+	else if(parameter == "fullscreen"){
+	        if(value == "true"){
+		        fullscreen = true;
+			return true;
+		}
+		else if(value == "false"){
+		        fullscreen = false;
+			return true;
+		}
+		else return false;
+	}
 	else{
 		return false;
 	}
@@ -677,7 +688,7 @@ void ResonanzEngine::engine_loop()
 							    SDL_WINDOWPOS_CENTERED,
 							    SDL_WINDOWPOS_CENTERED,
 							    SCREEN_WIDTH, SCREEN_HEIGHT,
-							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
 				}
 				else{
 				  window = SDL_CreateWindow(windowTitle.c_str(),
@@ -2418,8 +2429,11 @@ void ResonanzEngine::engine_pollEvents()
 
 void ResonanzEngine::engine_updateScreen()
 {
-	if(window != nullptr)
-		SDL_UpdateWindowSurface(window);
+  if(window != nullptr){
+    if(SDL_UpdateWindowSurface(window) != 0){
+      printf("engine_updateScreen() failed: %s\n", SDL_GetError());
+    }
+  }
 }
 
 
