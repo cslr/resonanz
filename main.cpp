@@ -36,7 +36,7 @@ bool keypress();
 void print_usage()
 {
 	printf("Usage: resonanz <mode> [options]\n");
-	printf("Resonanz engine v0.5 Learn and activate brainwave entraintment stimulus.");
+	printf("Learn and activate brainwave entraintment stimulus.");
 	printf("\n");
 	printf("--random         display random stimulation\n");
 	printf("--measure        measure brainwave responses to pictures/keywords\n");
@@ -53,7 +53,7 @@ void print_usage()
 	printf("--pca            preprocess input data with pca if possible\n");
 	printf("-v               verbose mode\n");	
 	printf("\n");
-	printf("This is alpha version version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
+	printf("This is alpha version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
 }
 
 
@@ -61,7 +61,7 @@ int main(int argc, char** argv){
 	srand(time(0));
 
 	if(argc > 1){
-		printf("Resonanz engine v0.51 <http://resonanz.sourceforge.net>\n");
+		printf("Resonanz engine v0.55\n");
 	}
 	else{
 		print_usage();
@@ -162,10 +162,12 @@ int main(int argc, char** argv){
 		printf("Hardware: Random pseudodevice\n");
 	    }
 	    
-	    if(usepca)
+	    if(usepca){
 	      engine.setParameter("pca-preprocess", "true");
-	    else
+	    }
+	    else{
 	      engine.setParameter("pca-preprocess", "false");
+	    }
 	    
 	    engine.setParameter("use-bayesian-nnetwork", "false");
 	}

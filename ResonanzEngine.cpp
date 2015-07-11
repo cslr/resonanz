@@ -60,7 +60,20 @@ ResonanzEngine::ResonanzEngine()
 	}
 
 	eeg = nullptr;
+	{
+		std::lock_guard<std::mutex> lock(eeg_mutex);
+		eeg = new NoEEGDevice();
+		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
 
+		std::vector<unsigned int> nnArchitecture;
+		nnArchitecture.push_back(eeg->getNumberOfSignals());
+		// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+		nnArchitecture.push_back(eeg->getNumberOfSignals());
+		
+		nn = new whiteice::nnetwork<>(nnArchitecture);
+	}
+	
 	// starts updater thread thread
 	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
@@ -363,8 +376,10 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		}
 #endif
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
+		        printf("MUSE DEVICE CREATION\n");
 			if(eeg != nullptr) delete eeg;
 			eeg = new MuseOSC(4545);
+			printf("MUSE DEVICE CREATION DONE\n");
 		}
 #ifdef LIGHTSTONE
 		else if(deviceNumber == ResonanzEngine::RE_WD_LIGHTSTONE){
@@ -528,19 +543,6 @@ void ResonanzEngine::engine_loop()
 
 	const std::string fontname = "Vera.ttf";
 
-	{
-		std::lock_guard<std::mutex> lock(eeg_mutex);
-		eeg = new NoEEGDevice();
-		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
-	}
-
-	std::vector<unsigned int> nnArchitecture;
-	nnArchitecture.push_back(eeg->getNumberOfSignals());
-	// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-	nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-	nnArchitecture.push_back(eeg->getNumberOfSignals());
-
-	nn = new whiteice::nnetwork<>(nnArchitecture);
 	bnn = new bayesian_nnetwork<>();
 
 	unsigned int currentPictureModel = 0;
