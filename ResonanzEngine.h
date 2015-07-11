@@ -192,13 +192,13 @@ private:
 	TTF_Font* font = nullptr;
 	bool audioEnabled = true; // false if opening audio failed
 	Mix_Music* music = nullptr;
-	const bool fullscreen = false; // set to use fullscreen mode otherwise 800x600 window
+	bool fullscreen = false; // set to use fullscreen mode otherwise window
 
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
 	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
-	static const unsigned int MEASUREMODE_DELAY_MS = 500; // how long each screen is shown when measuring response
+	static const unsigned int MEASUREMODE_DELAY_MS = 200; // how long each screen is shown when measuring response
 
 	// media resources
 	std::vector<std::string> keywords;

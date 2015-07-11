@@ -60,20 +60,7 @@ ResonanzEngine::ResonanzEngine()
 	}
 
 	eeg = nullptr;
-	{
-		std::lock_guard<std::mutex> lock(eeg_mutex);
-		eeg = new NoEEGDevice();
-		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
 
-		std::vector<unsigned int> nnArchitecture;
-		nnArchitecture.push_back(eeg->getNumberOfSignals());
-		// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-		nnArchitecture.push_back(eeg->getNumberOfSignals());
-		
-		nn = new whiteice::nnetwork<>(nnArchitecture);
-	}
-	
 	// starts updater thread thread
 	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
@@ -376,10 +363,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		}
 #endif
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
-		        printf("MUSE DEVICE CREATION\n");
 			if(eeg != nullptr) delete eeg;
 			eeg = new MuseOSC(4545);
-			printf("MUSE DEVICE CREATION DONE\n");
 		}
 #ifdef LIGHTSTONE
 		else if(deviceNumber == ResonanzEngine::RE_WD_LIGHTSTONE){
@@ -543,6 +528,19 @@ void ResonanzEngine::engine_loop()
 
 	const std::string fontname = "Vera.ttf";
 
+	{
+		std::lock_guard<std::mutex> lock(eeg_mutex);
+		eeg = new NoEEGDevice();
+		eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
+	}
+
+	std::vector<unsigned int> nnArchitecture;
+	nnArchitecture.push_back(eeg->getNumberOfSignals());
+	// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+	nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+	nnArchitecture.push_back(eeg->getNumberOfSignals());
+
+	nn = new whiteice::nnetwork<>(nnArchitecture);
 	bnn = new bayesian_nnetwork<>();
 
 	unsigned int currentPictureModel = 0;
@@ -1002,15 +1000,13 @@ void ResonanzEngine::engine_loop()
 				unsigned int key = rand() % keywords.size();
 				unsigned int pic = rand() % pictures.size();
 
-				engine_showScreen(keywords[key], pic);
-
-				engine_pollEvents(); // polls for events
-				engine_updateScreen(); // always updates window if it exists
-
 				std::vector<float> eegBefore;
 				std::vector<float> eegAfter;
 
+				engine_showScreen(keywords[key], pic);
+
 				eeg->data(eegBefore);
+				engine_updateScreen(); // always updates window if it exists
 				engine_sleep(MEASUREMODE_DELAY_MS);
 				eeg->data(eegAfter);
 
@@ -2284,6 +2280,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 
 			if(image != 0){
+			        logging.info("showscreen: image is loaded successsfully.");
+			  
 				if((image->w) > (image->h)){
 					double wscale = ((double)SCREEN_WIDTH)/((double)image->w);
 					// scaled = zoomSurface(image, wscale, wscale, SMOOTHING_ON);
@@ -2313,6 +2311,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			}
 
 			if(scaled != NULL){
+			        logging.info("showscreen: scaled was created successsfully.");
+
 				SDL_Color averageColor;
 				measureColor(scaled, averageColor);
 
@@ -2331,6 +2331,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 				SDL_FreeSurface(image);
 		}
 		else{
+		       logging.info("showscreen: image was non null.");
+
 			SDL_Rect imageRect;
 			SDL_Surface* scaled = 0;
 

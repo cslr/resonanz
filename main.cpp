@@ -50,6 +50,7 @@ void print_usage()
 	printf("--model-dir=     model directory for measurements and prediction models\n");
 	printf("--program-file=  sets NMC program file for emotiv insight values\n");
 	printf("--device=        sets measurement device: muse, [insight], random\n");
+	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
 	printf("--pca            preprocess input data with pca if possible\n");
 	printf("-v               verbose mode\n");	
 	printf("\n");
@@ -75,6 +76,7 @@ int main(int argc, char** argv){
 	std::string programFile;
 	std::string device = "muse";
 	bool usepca  = false;
+	bool fullscreen = false;
 	bool verbose = false;
 
 	for(int i=1;i<argc;i++){
@@ -126,6 +128,9 @@ int main(int argc, char** argv){
 	    else if(strncmp(argv[i], "--device=", 9) == 0){
 	        char* p = &(argv[i][9]);
 	        if(strlen(p) > 0) device = p;
+	    }
+	    else if(strcmp(argv[i],"--fullscreen") == 0){
+	        fullscreen = true;
 	    } 
 	    else if(strcmp(argv[i],"--pca") == 0){
 	        usepca = true;
@@ -167,6 +172,13 @@ int main(int argc, char** argv){
 	    }
 	    else{
 	      engine.setParameter("pca-preprocess", "false");
+	    }
+	    
+	    if(fullscreen){
+	      engine.setParameter("fullscreen", "true");
+	    }
+	    else{
+	      engine.setParameter("fullscreen", "false");
 	    }
 	    
 	    engine.setParameter("use-bayesian-nnetwork", "false");
