@@ -51,7 +51,7 @@ ResonanzEngine::ResonanzEngine()
 
 	// initializes random number generation here (again) this is needed?
 	// so that JNI implementation gets different random numbers and experiments don't repeat each other..
-	srand(time(0));
+	srand(rng.rand());
 
 	engine_setStatus("resonanz-engine: starting..");
 
@@ -275,7 +275,9 @@ bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std:
 	// interpolation of missing (negative) values between value points:
 	// uses NMCFile functionality for this
 
-	for(auto& p : program)
+	auto programcopy = program;
+
+	for(auto& p : programcopy)
 		NMCFile::interpolateProgram(p);
 
 	incomingCommand->command = ResonanzCommand::CMD_DO_EXECUTE;
@@ -285,7 +287,7 @@ bool ResonanzEngine::cmdExecuteProgram(const std::string& pictureDir, const std:
 	incomingCommand->modelDir = modelDir;
 	incomingCommand->audioFile = audioFile;
 	incomingCommand->signalName = targetSignal;
-	incomingCommand->programValues = program;
+	incomingCommand->programValues = programcopy;
 	incomingCommand->blindMonteCarlo = blindMonteCarlo;
 	incomingCommand->saveVideo = saveVideo;
 
@@ -573,6 +575,8 @@ void ResonanzEngine::engine_loop()
 	programStarted = 0LL; // program has not been started
 	long long lastProgramSecond = 0LL;
 
+	std::vector<float> eegCurrent;
+
 
 
 	// tries to initialize SDL library functionality - and load the font
@@ -705,13 +709,13 @@ void ResonanzEngine::engine_loop()
 							    SDL_WINDOWPOS_CENTERED,
 							    SDL_WINDOWPOS_CENTERED,
 							    SCREEN_WIDTH, SCREEN_HEIGHT,
-							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
+							    SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
 				}
 				else{
 				  window = SDL_CreateWindow(windowTitle.c_str(),
 							    SDL_WINDOWPOS_CENTERED,
 							    SDL_WINDOWPOS_CENTERED,
-							    SCREEN_WIDTH, SCREEN_HEIGHT,
+							    SCREEN_WIDTH/2, SCREEN_HEIGHT/2,
 							    SDL_WINDOW_SHOWN);
 				}
 
@@ -727,10 +731,10 @@ void ResonanzEngine::engine_loop()
 					SDL_Surface* surface = SDL_GetWindowSurface(window);
 					SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
 					SDL_RaiseWindow(window);
-					SDL_SetWindowGrab(window, SDL_TRUE);
+					// SDL_SetWindowGrab(window, SDL_TRUE);
 					SDL_UpdateWindowSurface(window);
 					SDL_RaiseWindow(window);
-					SDL_SetWindowGrab(window, SDL_FALSE);
+					// SDL_SetWindowGrab(window, SDL_FALSE);
 				}
 
 			}
@@ -748,7 +752,7 @@ void ResonanzEngine::engine_loop()
 				          window = SDL_CreateWindow(windowTitle.c_str(),
 								    SDL_WINDOWPOS_CENTERED,
 								    SDL_WINDOWPOS_CENTERED,
-								    SCREEN_WIDTH, SCREEN_HEIGHT,
+								    SCREEN_WIDTH/2, SCREEN_HEIGHT/2,
 								    SDL_WINDOW_SHOWN);
 					}
 				}
@@ -765,10 +769,10 @@ void ResonanzEngine::engine_loop()
 					SDL_Surface* surface = SDL_GetWindowSurface(window);
 					SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
 					SDL_RaiseWindow(window);
-					SDL_SetWindowGrab(window, SDL_TRUE);
+					// SDL_SetWindowGrab(window, SDL_TRUE);
 					SDL_UpdateWindowSurface(window);
 					SDL_RaiseWindow(window);
-					SDL_SetWindowGrab(window, SDL_FALSE);
+					// SDL_SetWindowGrab(window, SDL_FALSE);
 				}
 
 			}
@@ -799,9 +803,9 @@ void ResonanzEngine::engine_loop()
 					logging.error("loading media files failed");
 				}
 				else{
-				        char buffer[80];
+				    char buffer[80];
 					snprintf(buffer, 80, "loading media files successful (%d keywords, %d pics)",
-						 keywords.size(), pictures.size());
+							(int)keywords.size(), (int)pictures.size());
 					logging.info(buffer);
 				}
 			}
@@ -861,7 +865,7 @@ void ResonanzEngine::engine_loop()
 				try{
 					engine_setStatus("resonanz-engine: loading prediction model..");
 
-					if(engine_loadModels(currentCommand.modelDir) == false){
+					if(engine_loadModels(currentCommand.modelDir) == false && instantmodel == false){
 						logging.error("Couldn't load models from model dir: " + currentCommand.modelDir);
 						this->cmdStopCommand();
 						continue; // aborts initializing execute command
@@ -883,7 +887,7 @@ void ResonanzEngine::engine_loop()
 					for(auto& p : programVar){
 						p.resize(currentCommand.programValues[0].size());
 						for(unsigned int i=0;i<p.size();i++)
-							p[i] = 100000.0f; // 100.000 very large value (near infinite) => can take any value
+							p[i] = 1000000.0f; // 1.000.000 very large value (near infinite) => can take any value
 					}
 
 					for(unsigned int j=0;j<currentCommand.signalName.size();j++){
@@ -907,7 +911,7 @@ void ResonanzEngine::engine_loop()
 						for(unsigned int i=0;i<MONTE_CARLO_SIZE;i++){
 							math::vertex<> u(names.size());
 							for(unsigned int j=0;j<u.size();j++)
-								u[j] = rand()/((double)RAND_MAX); // [0,1] valued signals sampled from [0,1]^D
+								u[j] = rng.rand()/((double)RAND_MAX); // [0,1] valued signals sampled from [0,1]^D
 							mcsamples.push_back(u);
 						}
 					}
@@ -1002,12 +1006,20 @@ void ResonanzEngine::engine_loop()
 
 			engine_stopHibernation();
 
-			if(keywords.size() > 0 && pictures.size() > 0){
-				unsigned int key = rand() % keywords.size();
-				unsigned int pic = rand() % pictures.size();
+			if(pictures.size() > 0){
+				if(keywords.size() > 0){
+					unsigned int key = rng.rand() % keywords.size();
+					unsigned int pic = rng.rand() % pictures.size();
 
-				if(engine_showScreen(keywords[key], pic) == false)
-				  logging.warn("random stimulus: engine_showScreen() failed.");
+					if(engine_showScreen(keywords[key], pic) == false)
+						logging.warn("random stimulus: engine_showScreen() failed.");
+				}
+				else{
+					unsigned int pic = rng.rand() % pictures.size();
+
+					if(engine_showScreen(" ", pic) == false)
+						logging.warn("random stimulus: engine_showScreen() failed.");
+				}
 			}
 
 			engine_pollEvents(); // polls for events
@@ -1030,8 +1042,8 @@ void ResonanzEngine::engine_loop()
 			engine_stopHibernation();
 
 			if(keywords.size() > 0 && pictures.size() > 0){
-				unsigned int key = rand() % keywords.size();
-				unsigned int pic = rand() % pictures.size();
+				unsigned int key = rng.rand() % keywords.size();
+				unsigned int pic = rng.rand() % pictures.size();
 
 				std::vector<float> eegBefore;
 				std::vector<float> eegAfter;
@@ -1046,6 +1058,24 @@ void ResonanzEngine::engine_loop()
 				engine_pollEvents();
 
 				engine_storeMeasurement(pic, key, eegBefore, eegAfter);
+			}
+			else if(pictures.size() > 0){
+				unsigned int pic = rng.rand() % pictures.size();
+
+				std::vector<float> eegBefore;
+				std::vector<float> eegAfter;
+
+				engine_showScreen(" ", pic);
+
+				eeg->data(eegBefore);
+				engine_updateScreen(); // always updates window if it exists
+				engine_sleep(MEASUREMODE_DELAY_MS);
+				eeg->data(eegAfter);
+
+				engine_pollEvents();
+
+				engine_storeMeasurement(pic, 0, eegBefore, eegAfter);
+
 			}
 			else{
 				engine_pollEvents(); // polls for events
@@ -1085,18 +1115,21 @@ void ResonanzEngine::engine_loop()
 			long long currentSecond = (long long)
 					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
 
-			if(currentSecond <= lastProgramSecond)
-				continue; // nothing to do
+			if(currentSecond > lastProgramSecond && lastProgramSecond >= 0){
+				eeg->data(eegCurrent);
 
-			if(lastProgramSecond > 0){
 				// calculates RMS error
 				std::vector<float> current;
 				std::vector<float> target;
+				std::vector<float> eegTargetVariance;
 
 				target.resize(program.size());
+				eegTargetVariance.resize(program.size());
+
 				for(unsigned int i=0;i<program.size();i++){
 					// what was our target BEFORE this time tick [did we move to target state]
 					target[i] = program[i][lastProgramSecond];
+					eegTargetVariance[i] = programVar[i][lastProgramSecond];
 				}
 
 				eeg->data(current);
@@ -1104,7 +1137,7 @@ void ResonanzEngine::engine_loop()
 				if(target.size() == current.size()){
 					float rms = 0.0f;
 					for(unsigned int i=0;i<target.size();i++){
-						rms += (current[i] - target[i])*(current[i] - target[i]);
+						rms += (current[i] - target[i])*(current[i] - target[i])/eegTargetVariance[i];
 					}
 					rms = sqrt(rms);
 
@@ -1112,7 +1145,9 @@ void ResonanzEngine::engine_loop()
 					programRMS += rms;
 					programRMS_N++;
 				}
-
+			}
+			else if(currentSecond > lastProgramSecond && lastProgramSecond < 0){
+				eeg->data(eegCurrent);
 			}
 
 			lastProgramSecond = currentSecond;
@@ -1120,11 +1155,8 @@ void ResonanzEngine::engine_loop()
 
 			if(currentSecond < (signed)program[0].size()){
 				// executes program
-				std::vector<float> eegCurrent;
 				std::vector<float> eegTarget;
 				std::vector<float> eegTargetVariance;
-
-				eeg->data(eegCurrent);
 
 				eegTarget.resize(eegCurrent.size());
 				eegTargetVariance.resize(eegCurrent.size());
@@ -1298,7 +1330,7 @@ void ResonanzEngine::engine_loop()
 bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 {
 	if(keywords.size() <= 0 || pictures.size() <= 0)
-		return false; // no loaded keywords of pictures
+		return false; // no loaded keywords or pictures
 
 	pictureModels.resize(pictures.size());
 
@@ -1342,9 +1374,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance,
 		float timestep_)
 {
-	int bestKeyword = -1;
-	int bestPicture = -1;
-	float bestError = std::numeric_limits<double>::infinity();
+	const unsigned int NUM_TOPRESULTS = 4;
+	std::multimap<float, int> bestKeyword;
+	std::multimap<float, int> bestPicture;
 
 	math::vertex<> target(eegTarget.size());
 	math::vertex<> targetVariance(eegTargetVariance.size());
@@ -1355,18 +1387,16 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		targetVariance[i] = eegTargetVariance[i];
 	}
 
+	std::vector< std::pair<float, int> > results(keywordData.size());
 
-	for(unsigned int index=0;index<keywordModels.size();index++){
-		whiteice::bayesian_nnetwork<>& model = keywordModels[index];
-
-		if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
-			logging.warn("skipping bad keyword prediction model");
-			continue; // bad model/data => ignore
-		}
+#pragma omp parallel for
+	for(unsigned int index=0;index<keywordData.size();index++){
 
 		math::vertex<> x(eegCurrent.size());
 		for(unsigned int i=0;i<x.size();i++)
 			x[i] = eegCurrent[i];
+
+		auto original = x;
 
 		if(keywordData[index].preprocess(0, x) == false){
 			logging.warn("skipping bad keyword prediction model");
@@ -1376,10 +1406,23 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		math::vertex<> m;
 		math::matrix<> cov;
 
-		if(model.calculate(x, m, cov) == false){
-			logging.warn("skipping bad keyword prediction model");
-			continue;
+		if(instantmodel){
+			engine_estimateNN(x, keywordData[index], m , cov);
 		}
+		else{
+			whiteice::bayesian_nnetwork<>& model = keywordModels[index];
+
+			if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
+				logging.warn("skipping bad keyword prediction model");
+				continue; // bad model/data => ignore
+			}
+
+			if(model.calculate(x, m, cov) == false){
+				logging.warn("skipping bad keyword prediction model");
+				continue;
+			}
+		}
+
 
 		if(keywordData[index].invpreprocess(1, m) == false){
 			logging.warn("skipping bad keyword prediction model");
@@ -1389,40 +1432,50 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
 
+		cov.zero();
+
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
 
-		auto delta = target - (m + x);
+		auto delta = target - (original + m);
 
 		for(unsigned int i=0;i<delta.size();i++){
-			delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
+			delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 			delta[i] /= targetVariance[i];
 		}
 
 		auto error = delta.norm();
 
-		if(error < bestError){
-			math::convert(bestError, error);
-			bestKeyword = index;
-		}
+		std::pair<float, int> p;
+		p.first = error.c[0];
+		p.second = index;
 
-		engine_pollEvents(); // polls for incoming events in case there are lots of models
+		results[index] = p;
+
+		// engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
 
+	for(auto& p : results)
+		bestKeyword.insert(p);
 
-	bestError = std::numeric_limits<double>::infinity();
+	while(bestKeyword.size() > NUM_TOPRESULTS){
+		auto i = bestKeyword.end(); i--;
+		bestKeyword.erase(i); // removes the largest element
+	}
 
-	for(unsigned int index=0;index<pictureModels.size();index++){
-		whiteice::bayesian_nnetwork<>& model = pictureModels[index];
+	engine_pollEvents();
 
-		if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
-			logging.warn("skipping bad picture prediction model");
-			continue; // bad model/data => ignore
-		}
+
+	results.resize(pictureData.size());
+
+#pragma omp parallel for
+	for(unsigned int index=0;index<pictureData.size();index++){
 
 		math::vertex<> x(eegCurrent.size());
 		for(unsigned int i=0;i<x.size();i++)
 			x[i] = eegCurrent[i];
+
+		auto original = x;
 
 		if(pictureData[index].preprocess(0, x) == false){
 			logging.warn("skipping bad picture prediction model");
@@ -1432,9 +1485,21 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		math::vertex<> m;
 		math::matrix<> cov;
 
-		if(model.calculate(x, m, cov) == false){
-			logging.warn("skipping bad picture prediction model");
-			continue;
+		if(instantmodel){
+			engine_estimateNN(x, pictureData[index], m , cov);
+		}
+		else{
+			whiteice::bayesian_nnetwork<>& model = pictureModels[index];
+
+			if(model.inputSize() != eegCurrent.size() || model.outputSize() != eegTarget.size()){
+				logging.warn("skipping bad picture prediction model");
+				continue; // bad model/data => ignore
+			}
+
+			if(model.calculate(x, m, cov) == false){
+				logging.warn("skipping bad picture prediction model");
+				continue;
+			}
 		}
 
 		if(pictureData[index].invpreprocess(1, m) == false){
@@ -1445,44 +1510,97 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
 
+		cov.zero();
+
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
 
-		auto delta = target - (m + x);
+		auto delta = target - (original + m);
 
 		for(unsigned int i=0;i<delta.size();i++){
-			delta[i] = math::abs(delta[i]) + math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
+			delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 			delta[i] /= targetVariance[i];
 		}
 
 		auto error = delta.norm();
 
-		if(error < bestError){
-			math::convert(bestError, error);
-			bestPicture = index;
-		}
+		std::pair<float, int> p;
+		p.first = error.c[0];
+		p.second = index;
 
-		engine_pollEvents(); // polls for incoming events in case there are lots of models
+		results[index] = p;
+
+		// engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
 
-	if(bestKeyword < 0 || bestPicture < 0){
+	for(auto& p : results)
+		bestPicture.insert(p);
+
+	while(bestPicture.size() > NUM_TOPRESULTS){
+		auto i = bestPicture.end(); i--;
+		bestPicture.erase(i); // removes the largest element
+	}
+
+	engine_pollEvents(); // polls for incoming events in case there are lots of models
+
+	if((bestKeyword.size() <= 0 && keywordData.size() > 0) || bestPicture.size() <= 0){
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
 		return false;
 	}
-	else{
+
+	unsigned int keyword = 0;
+	unsigned int picture = 0;
+
+	{
+		unsigned int elem = 0;
+
+		if(keywordData.size() > 0){
+			elem = rng.rand() % bestKeyword.size();
+			for(auto& k : bestKeyword){
+				if(elem <= 0){
+					keyword = k.second;
+					break;
+				}
+				else elem--;
+			}
+		}
+
+		elem = rng.rand() % bestPicture.size();
+		for(auto& p : bestPicture){
+			if(elem <= 0){
+				picture = p.second;
+				break;
+			}
+			else elem--;
+		}
+	}
+
+
+	if(keywordData.size() > 0)
+	{
 		char buffer[80];
 		snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
-				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
+				keywords[keyword].c_str(), pictures[picture].c_str());
+		logging.info(buffer);
+	}
+	else{
+		char buffer[80];
+		snprintf(buffer, 80, "prediction model selected best picture: %s",
+				pictures[picture].c_str());
 		logging.info(buffer);
 	}
 
 	// now we have best picture and keyword that is predicted
 	// to change users state to target value: show them
 
-	std::string message = keywords[bestKeyword];
-
-	engine_showScreen(message, bestPicture);
+	if(keywordData.size() > 0){
+		std::string message = keywords[keyword];
+		engine_showScreen(message, picture);
+	}
+	else{
+		engine_showScreen(" ", picture);
+	}
 
 	engine_updateScreen();
 	engine_pollEvents();
@@ -2084,6 +2202,60 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel, un
 
 
 
+// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation (distance)
+bool ResonanzEngine::engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,
+		whiteice::math::vertex<>& m, whiteice::math::matrix<>& cov)
+{
+	bool bad_data = false;
+
+	if(data.size() <= 1) bad_data = true;
+	if(data.getNumberOfClusters() != 2) bad_data = true;
+	if(bad_data == false){
+		if(data.size(0) != data.size(1))
+			bad_data = true;
+	}
+
+	if(bad_data){
+		m = x;
+		cov.resize(x.size(), x.size());
+		cov.identity();
+
+		return true;
+	}
+
+	m.resize(x.size());
+	m.zero();
+	cov.resize(x.size(),x.size());
+	cov.zero();
+	const float epsilon    = 1.0f;
+	math::blas_real<float> sumweights = 0.0f;
+
+	for(unsigned int i=0;i<data.size();i++){
+		char buffer[80];
+		snprintf(buffer, 80, "x size: %d data size: %d", x.size(), data.access(0,i).size());
+		logging.info(buffer);
+
+		auto delta = x - data.access(0, i);
+		auto w = math::blas_real<float>(1.0f / (epsilon + delta.norm().c[0]));
+
+		auto v = data.access(1, i);
+
+		m += w*v;
+		cov += w*v.outerproduct();
+
+		sumweights += w;
+	}
+
+	m /= sumweights;
+	cov /= sumweights;
+
+	cov -= m.outerproduct();
+
+	return true;
+}
+
+
+
 void ResonanzEngine::engine_setStatus(const std::string& msg) throw()
 {
 	try{
@@ -2277,11 +2449,15 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 		t2[i] = (eegAfter[i] - eegBefore[i])/delta; // stores aprox "derivate": dEEG/dt
 	}
 
-	keywordData[key].add(0, t1);
-	keywordData[key].add(1, t2);
+	if(key < keywordData.size()){
+		keywordData[key].add(0, t1);
+		keywordData[key].add(1, t2);
+	}
 
-	pictureData[pic].add(0, t1);
-	pictureData[pic].add(1, t2);
+	if(pic < pictureData.size()){
+		pictureData[pic].add(0, t1);
+		pictureData[pic].add(1, t2);
+	}
 
 	return true;
 }
@@ -2467,9 +2643,6 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 				images[picture] = scaled;
 			}
-			else{
-			        elementsDisplayed++;
-			}
 
 			if(scaled != NULL){
 			        logging.info("showscreen: scaled was created successsfully.");
@@ -2486,13 +2659,15 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 				if(SDL_BlitSurface(images[picture], NULL, surface, &imageRect) != 0)
 				  return false;
+
+				elementsDisplayed++;
 			}
 
 			if(image)
 				SDL_FreeSurface(image);
 		}
 		else{
-		       logging.info("showscreen: image was non null.");
+			logging.info("showscreen: image was non null.");
 
 			SDL_Rect imageRect;
 			SDL_Surface* scaled = 0;
@@ -2510,8 +2685,12 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			imageRect.x = (SCREEN_WIDTH - scaled->w)/2;
 			imageRect.y = (SCREEN_HEIGHT - scaled->h)/2;
 
+			logging.info("showscreen: image was non null: blitting..");
+
 			if(SDL_BlitSurface(images[picture], NULL, surface, &imageRect) != 0)
 			  return false;
+
+			elementsDisplayed++;
 		}
 	}
 
@@ -2530,6 +2709,8 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		if(bgcolor > 160)
 			color = black;
 
+		logging.info("showscreen: rendering message..");
+
 		SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message.c_str(), color);
 		
 		if(msg != NULL)
@@ -2542,6 +2723,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		messageRect.w = msg->w;
 		messageRect.h = msg->h;
 
+		logging.info("showscreen: blitting message..");
 
 		if(SDL_BlitSurface(msg, NULL, surface, &messageRect) != 0)
 		  return false;
@@ -2595,14 +2777,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	SDL_DisplayMode mode;
 
 	if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-	        if(fullscreen){
-		  SCREEN_WIDTH = mode.w;
-		  SCREEN_HEIGHT = mode.h;
-		}
-		else{
-		  SCREEN_WIDTH = mode.w/2;
-		  SCREEN_HEIGHT = mode.h/2;
-		}
+		SCREEN_WIDTH = mode.w;
+		SCREEN_HEIGHT = mode.h;
 	}
 	else{
 		return false; // something went wrong
@@ -3019,6 +3195,8 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	if(loadWords(keywordsFile, keywords) == false || loadPictures(pictureDir, pictureFiles) == false)
 		return "";
 
+	logging.info("A\n");
+
 	std::multimap<float, std::string> keywordDeltas;
 	std::multimap<float, std::string> pictureDeltas;
 	float mean_delta_keywords = 0.0f;
@@ -3029,8 +3207,13 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	float num_pictures = 0.0f;
 	float pca_preprocess = 0.0f;
 
+	unsigned int input_dimension = 0;
+	unsigned int output_dimension = 0;
+
 	// 2. loads dataset files (.ds) one by one if possible and calculates mean delta
 	whiteice::dataset<> data;
+
+	logging.info("B\n");
 
 	// loads databases into memory or initializes new ones
 	for(unsigned int i=0;i<keywords.size();i++){
@@ -3038,14 +3221,27 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 
 		data.clearAll();
 
+		logging.info("C\n");
+
 		if(data.load(dbFilename) == true){
 			if(data.getNumberOfClusters() == 2){
 				float delta = 0.0f;
+
+				logging.info("CC\n");
 
 				for(unsigned int j=0;j<data.size(0);j++){
 					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
+
+				logging.info("DD\n");
+
+				if(data.size(0) > 0){
+					input_dimension  = data.access(0, 0).size();
+					output_dimension = data.access(1, 0).size();
+				}
+
+				logging.info("DDD");
 
 				std::pair<float, std::string> p;
 				p.first  = -delta;
@@ -3067,8 +3263,12 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	var_delta_keywords  -= mean_delta_keywords*mean_delta_keywords;
 	var_delta_keywords  *= num_keywords/(num_keywords - 1.0f);
 
+	logging.info("E\n");
+
 	for(unsigned int i=0;i<pictureFiles.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictureFiles[i] + eeg->getDataSourceName()) + ".ds";
+
+		logging.info("F\n");
 
 		data.clearAll();
 
@@ -3076,10 +3276,21 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 			if(data.getNumberOfClusters() == 2){
 				float delta = 0.0f;
 
+				logging.info("G\n");
+
 				for(unsigned int j=0;j<data.size(0);j++){
 					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
+
+				logging.info("FF\n");
+
+				if(data.size(0) > 0){
+					input_dimension  = data.access(0, 0).size();
+					output_dimension = data.access(1, 0).size();
+				}
+
+				logging.info("FFF\n");
 
 				std::pair<float, std::string> p;
 				p.first  = -delta;
@@ -3109,9 +3320,13 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 
 	snprintf(buffer, BUFSIZE, "Picture delta: %.2f stdev(delta): %.2f\n", mean_delta_pictures, sqrt(var_delta_pictures));
 	report += buffer;
-	snprintf(buffer, BUFSIZE, "Keyword delta: %.2f stdev(delta): %.2f\n", mean_delta_keywords, sqrt(var_delta_keywords));
-	report += buffer;
+	if(keywords.size() > 0){
+		snprintf(buffer, BUFSIZE, "Keyword delta: %.2f stdev(delta): %.2f\n", mean_delta_keywords, sqrt(var_delta_keywords));
+		report += buffer;
+	}
 	snprintf(buffer, BUFSIZE, "PCA preprocessing: %.1f%% of elements\n", 100.0f*pca_preprocess/(num_pictures + num_keywords));
+	report += buffer;
+	snprintf(buffer, BUFSIZE, "Input dimension: %d Output dimension: %d\n", input_dimension, output_dimension);
 	report += buffer;
 	snprintf(buffer, BUFSIZE, "\n");
 	report += buffer;
@@ -3145,7 +3360,7 @@ std::string ResonanzEngine::executedProgramStatistics() const
 		float rms = programRMS / programRMS_N;
 
 		char buffer[80];
-		snprintf(buffer, 80, "Program performance (average error): %.2f.\n", rms);
+		snprintf(buffer, 80, "Program performance (average error): %.4f.\n", rms);
 		std::string result = buffer;
 
 		return result;

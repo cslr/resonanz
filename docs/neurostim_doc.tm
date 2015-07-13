@@ -487,15 +487,68 @@
 
   \;
 
-  \;
+  <with|font-series|bold|Brain Source Localization>
 
-  \;
+  Localization of the signal sources from the brain using measurements from
+  measurement points with known location on the surface of head
+  <math|\<b-l\><rsub|i>> is a tricky problem. Here is my simple approach to
+  the problem that I devided by myself. There are probably better methods
+  which one can find from a literature but this is a good starting point.
 
-  \;
+  Assume we measure power of the signal (FFT) in different frequencies
+  (frequency ranges) which only changes slowly unlike actual signal values.
+  This mean that for a short time period we can ignore time delays and we
+  have additive mixture of power based solely on distance between signal
+  source and the measurement location.
 
-  \;
+  <\center>
+    <\math>
+      s<rsub|i>=<big|sum>q<rsub|i*j>*<around*|(|\<b-l\><rsub|j>-\<b-l\><rsub|i>|)>p<rsub|j>\<nocomma\>\<nocomma\>\<nocomma\>
+    </math>
 
-  \;
+    <math|\<b-s\>=\<b-Q\>*\<b-p\>>
+  </center>
 
-  \;
+  If we assume that power spectras of the sources (at the chosen frequency
+  band, in practice we have a linear equation for each frequency band) are
+  independent variables from each other. Then we can use ICA to solve for
+  <math|\<b-p\>> values and we have following equation for the sources (each
+  assumed to have equal output power).\ 
+
+  <\center>
+    <\math>
+      <frac|1|4*\<pi\>*\|<around*|\||\<b-l\><rsub|j>-\<b-l\><rsub|i><rsub|>|\<\|\|\>><rsup|2>>=q<rsub|i*j>
+    </math>
+  </center>
+
+  This equation shows also that miximing matrix coefficients should be above
+  zero which constraint should be introduced into ICA somehow. We know the
+  measurement point coordinates <math|\<b-l\><rsub|i>> and can then use
+  gradient descent to find approximative solution for the problem. Let's
+  choose random coordinates with the convex area setup by measurement points
+  (we are measuring signals that originate inside from the brain.. hopefully)
+  and define error function:
+
+  <center|<math|E=<big|sum><rsub|f>w<rsub|f><big|sum><rsub|i.j><frac|1|2><around*|(|<frac|1|4*\<pi\>*q<rsup|<around*|(|f|)>><rsub|i*j>*>-<around*|\<\|\|\>|\<b-l\><rsub|j>-\<b-l\><rsub|i>|\<\|\|\>><rsup|2>|)><rsup|2>>,
+  where>
+
+  <math|p> is index for solutions at different frequency bands and
+  <math|w<rsub|f>> (<math|<big|sum>w<rsub|f>=1>) is a positive weight for
+  each frequency band when computing solution. It is then easy to calculate
+  gradient for <math|\<b-l\><rsub|j>>:
+
+  <center|<math|\<nabla\><rsub|\<b-l\><rsub|j>>E=2*<big|sum><rsub|f>w<rsub|f><big|sum><rsub|i><around*|(|<frac|1|4*\<pi\>*q<rsup|<around*|(|f|)>><rsub|i*j>*>-<around*|\<\|\|\>|\<b-l\><rsub|j>-\<b-l\><rsub|i>|\<\|\|\>><rsup|2>|)>**<around*|(|\<b-l\><rsub|j>-\<b-l\><rsub|i>|)>><strong|>>
+
+  This will lead to a local minima of source locations <math|\<b-l\><rsub|i>>
+  and from ICA solutions we also have each source <math|i>'s power spectrum:\ 
+
+  <center|<math|P<rsub|i>=<around*|[|p<rsup|<around*|(|f<rsub|0>|)>><rsub|i>,\<ldots\>,p<rsup|<around*|(|f<rsub|k>|)>><rsub|i>,\<ldots\>p<rsup|<around*|(|f<rsub|N>|)>><rsub|i>|]>>>
+
+  The number of sources to localize is equal to the number of measurement
+  points. Now, for customer-grade EEG measurement devices (Interaxon Muse,
+  Emotiv Insight) we have only something like 2-3 active measurement points
+  at any given time (signal contacts may go up and down and we lose couple of
+  signals). This means that we can hope to measure one or two major signal
+  sources from the brain and their locations. These locations can be then
+  used to estimate approximative power spectrum within brain areas.\ 
 </body>

@@ -131,12 +131,12 @@ bool NMCFile::getInterpolatedProgram(unsigned int index, std::vector<float>& pro
 }
 
 
-bool NMCFile::interpolateProgram(std::vector<float> program)
+bool NMCFile::interpolateProgram(std::vector<float>& program)
 {
 	// goes through the code program and finds the first positive point
 	unsigned int prevPoint = program.size();
 	for(unsigned int i=0;i<program.size();i++){
-		if(program[i] > 0.0f){ prevPoint = i; break; }
+		if(program[i] >= 0.0f){ prevPoint = i; break; }
 	}
 
 	if(prevPoint == program.size()){ // all points are negative
@@ -152,7 +152,7 @@ bool NMCFile::interpolateProgram(std::vector<float> program)
 	// once we have processed the first positive point, looks for the next one
 	while(prevPoint+1 < program.size()){
 		for(unsigned int p=prevPoint+1;p<program.size();p++){
-			if(program[p] > 0.0f){
+			if(program[p] >= 0.0f){
 				const float ratio = (program[p] - program[prevPoint])/(p - prevPoint);
 				for(unsigned int i=prevPoint+1;i<p;i++)
 					program[i] = program[prevPoint] + ratio*(i - prevPoint);

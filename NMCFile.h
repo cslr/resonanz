@@ -33,7 +33,7 @@ public:
 	bool getRawProgram(unsigned int index, std::vector<float>& program) const;
 	bool getInterpolatedProgram(unsigned int index, std::vector<float>& program) const;
 
-	static bool interpolateProgram(std::vector<float> program);
+	static bool interpolateProgram(std::vector<float>& program);
 
 private:
 	static const unsigned int NUMBER_OF_PROGRAMS = 2;

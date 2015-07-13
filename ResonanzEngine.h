@@ -197,10 +197,10 @@ private:
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
-	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
-	static const unsigned int MEASUREMODE_DELAY_MS = 200; // how long each screen is shown when measuring response
+	static const unsigned int TICK_MS = 250; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	static const unsigned int MEASUREMODE_DELAY_MS = 250; // how long each screen is shown when measuring response
 
-	// media resources
+	// media resource
 	std::vector<std::string> keywords;
 	std::vector<std::string> pictures;
 	std::vector<SDL_Surface*> images;
@@ -244,6 +244,11 @@ private:
 
 	std::vector< whiteice::bayesian_nnetwork<> > keywordModels;
 	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
+	bool instantmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
+
+	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
+	bool engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,
+			whiteice::math::vertex<>& m, whiteice::math::matrix<>& cov);
 
 	// for calculating program performance: RMS statistic
 	float programRMS = 0.0f;
@@ -261,6 +266,8 @@ private:
 	std::vector< std::vector<float> > measuredProgram;
 	std::vector< std::vector<float> > rawMeasuredSignals; // used internally
 
+
+	whiteice::RNG<> rng;
 };
 
 
