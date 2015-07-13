@@ -244,7 +244,7 @@ private:
 
 	std::vector< whiteice::bayesian_nnetwork<> > keywordModels;
 	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
-	bool instantmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
+	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 
 	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
 	bool engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,

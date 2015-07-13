@@ -493,6 +493,17 @@ bool ResonanzEngine::setParameter(const std::string& parameter, const std::strin
 		}
 		else return false;
 	}
+	else if(parameter == "use-data-rbf"){
+		if(value == "true"){
+			dataRBFmodel = true;
+			return true;
+		}
+		else if(value == "false"){
+			dataRBFmodel = false;
+			return true;
+		}
+		else return false;
+	}
 	else if(parameter == "fullscreen"){
 	        if(value == "true"){
 		        fullscreen = true;
@@ -865,7 +876,7 @@ void ResonanzEngine::engine_loop()
 				try{
 					engine_setStatus("resonanz-engine: loading prediction model..");
 
-					if(engine_loadModels(currentCommand.modelDir) == false && instantmodel == false){
+					if(engine_loadModels(currentCommand.modelDir) == false && dataRBFmodel == false){
 						logging.error("Couldn't load models from model dir: " + currentCommand.modelDir);
 						this->cmdStopCommand();
 						continue; // aborts initializing execute command
@@ -1406,7 +1417,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		math::vertex<> m;
 		math::matrix<> cov;
 
-		if(instantmodel){
+		if(dataRBFmodel){
 			engine_estimateNN(x, keywordData[index], m , cov);
 		}
 		else{
@@ -1431,8 +1442,6 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
-
-		cov.zero();
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
@@ -1485,7 +1494,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		math::vertex<> m;
 		math::matrix<> cov;
 
-		if(instantmodel){
+		if(dataRBFmodel){
 			engine_estimateNN(x, pictureData[index], m , cov);
 		}
 		else{
@@ -1509,8 +1518,6 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
-
-		cov.zero();
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
