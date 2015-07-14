@@ -51,8 +51,10 @@ ResonanzEngine::ResonanzEngine()
 
 	// initializes random number generation here (again) this is needed?
 	// so that JNI implementation gets different random numbers and experiments don't repeat each other..
-	srand(rng.rand());
-
+	
+	srand(rng.rand()); // initializes using RDRAND if availabe
+	                   // otherwise uses just another value from rand()
+	
 	engine_setStatus("resonanz-engine: starting..");
 
 	workerThread = nullptr;
@@ -732,7 +734,15 @@ void ResonanzEngine::engine_loop()
 
 				if(window != nullptr){
 					SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-
+					if(font) TTF_CloseFont(font);
+					double fontSize = 100.0*sqrt(((float)(SCREEN_WIDTH*SCREEN_HEIGHT))/(640.0*480.0));
+					unsigned int fs = (unsigned int)fontSize;
+					if(fs <= 0) fs = 10;
+					
+					font = 0;
+					font = TTF_OpenFont(fontname.c_str(), fs);
+				        
+					
 					SDL_Surface* icon = IMG_Load(iconFile.c_str());
 					if(icon != nullptr){
 						SDL_SetWindowIcon(window, icon);
@@ -770,6 +780,13 @@ void ResonanzEngine::engine_loop()
 
 				if(window != nullptr){
 					SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+					if(font) TTF_CloseFont(font);
+					double fontSize = 100.0*sqrt(((float)(SCREEN_WIDTH*SCREEN_HEIGHT))/(640.0*480.0));
+					unsigned int fs = (unsigned int)fontSize;
+					if(fs <= 0) fs = 10;
+					
+					font = 0;
+					font = TTF_OpenFont(fontname.c_str(), fs);
 
 					SDL_Surface* icon = IMG_Load(iconFile.c_str());
 					if(icon != nullptr){
@@ -2715,25 +2732,26 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		color = white;
 		if(bgcolor > 160)
 			color = black;
-
-		logging.info("showscreen: rendering message..");
-
-		SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message.c_str(), color);
 		
-		if(msg != NULL)
-		  elementsDisplayed++;
-
-		SDL_Rect messageRect;
-
-		messageRect.x = (SCREEN_WIDTH - msg->w)/2;
-		messageRect.y = (SCREEN_HEIGHT - msg->h)/2;
-		messageRect.w = msg->w;
-		messageRect.h = msg->h;
-
-		logging.info("showscreen: blitting message..");
-
-		if(SDL_BlitSurface(msg, NULL, surface, &messageRect) != 0)
-		  return false;
+		if(font != NULL){
+		  
+		  SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message.c_str(), color);
+		  
+		  if(msg != NULL)
+		    elementsDisplayed++;
+		  
+		  SDL_Rect messageRect;
+		  
+		  messageRect.x = (SCREEN_WIDTH - msg->w)/2;
+		  messageRect.y = (SCREEN_HEIGHT - msg->h)/2;
+		  messageRect.w = msg->w;
+		  messageRect.h = msg->h;
+		  
+		  if(SDL_BlitSurface(msg, NULL, surface, &messageRect) != 0)
+		    return false;
+		  
+		  SDL_FreeSurface(msg);
+		}
 
 		if(video && programStarted > 0){
 			auto t1 = std::chrono::system_clock::now().time_since_epoch();
@@ -2741,9 +2759,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 			video->insertFrame((t1ms - programStarted), surface);
 		}
-
-
-		SDL_FreeSurface(msg);
+		
 	}
 
 	return (elementsDisplayed > 0);
@@ -2823,12 +2839,14 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		throw std::runtime_error("Mix_Init() failed.");
 		*/
 	}
+	
+	font = 0;
 
+#if 0
 	double fontSize = 100.0*sqrt(((float)(SCREEN_WIDTH*SCREEN_HEIGHT))/(640.0*480.0));
 	unsigned int fs = (unsigned int)fontSize;
 	if(fs <= 0) fs = 10;
-
-	font = 0;
+	
 	font = TTF_OpenFont(fontname.c_str(), fs);
 
 	if(font == 0){
@@ -2839,6 +2857,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		Mix_Quit();
 		throw std::runtime_error("TTF_OpenFont() failed.");
 	}
+#endif
 
 	if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) == -1){
 		audioEnabled = false;
@@ -2856,7 +2875,11 @@ bool ResonanzEngine::engine_SDL_deinit()
 	if(audioEnabled)
 		SDL_CloseAudio();
 
-	TTF_CloseFont(font);
+	if(font){
+	  TTF_CloseFont(font);
+	  font = NULL;
+	}
+	
 	IMG_Quit();
 
 	if(audioEnabled)

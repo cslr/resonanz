@@ -183,6 +183,7 @@ int main(int argc, char** argv){
 	    
 	    engine.setParameter("use-bayesian-nnetwork", "false");
 	}
+
 	
 	
 	if(cmd.command == cmd.CMD_DO_RANDOM){
