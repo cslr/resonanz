@@ -31,7 +31,11 @@
 #include <SDL_mixer.h>
 
 #include <dinrhiw/dinrhiw.h>
+
 #include "DataSource.h"
+
+#include "SDLSoundSynthesis.h"
+
 #include "SDLTheora.h"
 
 namespace whiteice {
@@ -99,10 +103,13 @@ public:
 				const std::vector<std::string>& signalNames,
 				const unsigned int programLengthTicks) throw();
 
-	bool cmdExecuteProgram(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir,
-			const std::string& audioFile,
-			const std::vector<std::string>& targetSignal, const std::vector< std::vector<float> >& program,
-			bool blindMonteCarlo = false, bool saveVideo = false) throw();
+	bool cmdExecuteProgram(const std::string& pictureDir, 
+			       const std::string& keywordsFile, 
+			       const std::string& modelDir,
+			       const std::string& audioFile,
+			       const std::vector<std::string>& targetSignal, 
+			       const std::vector< std::vector<float> >& program,
+			       bool blindMonteCarlo = false, bool saveVideo = false) throw();
 
 
 	bool cmdStopCommand() throw();
@@ -139,6 +146,7 @@ public:
 	bool setEEGDeviceType(int deviceNumber);
 	int getEEGDeviceType();
 	void getEEGDeviceStatus(std::string& status);
+	const DataSource& getDevice() const;
 
 	// sets special configuration parameter of resonanz-engine
 	bool setParameter(const std::string& parameter, const std::string& value);
@@ -178,7 +186,9 @@ private:
 	bool measureColor(SDL_Surface* image, SDL_Color& averageColor);
 
 	bool engine_loadMedia(const std::string& picdir, const std::string& keyfile, bool loadData);
-	bool engine_showScreen(const std::string& message, unsigned int picture);
+	bool engine_showScreen(const std::string& message, 
+			       unsigned int picture,
+			       const std::vector<float>& synthparams);
 
 	bool engine_playAudioFile(const std::string& audioFile);
 	bool engine_stopAudioFile();
@@ -190,7 +200,7 @@ private:
 	SDL_Window* window = nullptr;
 	int SCREEN_WIDTH, SCREEN_HEIGHT;
 	TTF_Font* font = nullptr;
-	bool audioEnabled = true; // false if opening audio failed
+	bool audioEnabled = true; // false if using audiofiles is disabled
 	Mix_Music* music = nullptr;
 	bool fullscreen = false; // set to use fullscreen mode otherwise window
 
@@ -204,18 +214,26 @@ private:
 	std::vector<std::string> keywords;
 	std::vector<std::string> pictures;
 	std::vector<SDL_Surface*> images;
+	SDLSoundSynthesis* synth = nullptr;
 
 	bool loadWords(const std::string filename, std::vector<std::string>& words) const;
 	bool loadPictures(const std::string directory, std::vector<std::string>& pictures) const;
 
 
 	bool engine_loadDatabase(const std::string& modelDir);
-	bool engine_storeMeasurement(unsigned int pic, unsigned int key, const std::vector<float>& eegBefore, const std::vector<float>& eegAfter);
+	bool engine_storeMeasurement(unsigned int pic, unsigned int key, 
+				     const std::vector<float>& eegBefore, 
+				     const std::vector<float>& eegAfter,
+				     const std::vector<float>& synthBefore,
+				     const std::vector<float>& synthAfter);
+	
 	bool engine_saveDatabase(const std::string& modelDir);
 	std::string calculateHashName(const std::string& filename) const;
 
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
+	whiteice::dataset<>                synthData; // sound synthesis data
+	
 	std::mutex database_mutex; // mutex to synchronize I/O access to dataset files
 	bool pcaPreprocess = true; // should measured data be preprocessed using PCA
 
@@ -223,16 +241,18 @@ private:
 	DataSource* eeg = nullptr;
 	std::mutex eeg_mutex;
 	int eegDeviceType = RE_EEG_NO_DEVICE;
-
-	bool engine_optimizeModels(unsigned int& currentPictureModel, unsigned int& currentKeywordModel);
-
+	
+	bool engine_optimizeModels(unsigned int& currentPictureModel, 
+				   unsigned int& currentKeywordModel, 
+				   bool& soundModelCalculated);
+	
 	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
 	whiteice::nnetwork<>* nn = nullptr;
 	whiteice::bayesian_nnetwork<>* bnn = nullptr;
-	whiteice::HMC_convergence_check<>* bayes_optimizer = nullptr;
-	int neuralnetwork_complexity = 200; // values above 10 seem to make sense
+	whiteice::UHMC<>* bayes_optimizer = nullptr;
+	int neuralnetwork_complexity = 50; // values above 10 seem to make sense
 	bool use_bayesian_nnetwork = false;
-	const unsigned int BAYES_NUM_SAMPLES = 2500; // number of samples collected from "bayesian posterior" (what we really sample is MLE prior thought..)
+	const unsigned int BAYES_NUM_SAMPLES = 1000; // number of samples collected from "bayesian posterior" (what we really sample is MLE prior thought..)
 
 	bool engine_loadModels(const std::string& modelDir); // loads prediction models for program execution, returns false in case of failure
 	bool engine_executeProgram(const std::vector<float>& eegCurrent,
@@ -244,6 +264,7 @@ private:
 
 	std::vector< whiteice::bayesian_nnetwork<> > keywordModels;
 	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
+	whiteice::bayesian_nnetwork<>                synthModel;
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 
 	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
@@ -259,7 +280,7 @@ private:
 	const unsigned int MONTE_CARLO_SIZE = 1000; // number of samples used
 
 	long long programStarted; // 0 = program has not been started
-	SDLTheora* video; // used to encode program into video
+	SDLTheora* video = nullptr; // used to encode program into video
 
 
 	std::mutex measure_program_mutex;

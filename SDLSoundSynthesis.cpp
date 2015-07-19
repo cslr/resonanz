@@ -34,8 +34,10 @@ bool SDLSoundSynthesis::play()
     open_status = SDL_OpenAudio(&desired, &snd);
   }
   
-  if(open_status < 0)
+  if(open_status < 0){
+    printf("SDL Error: %s\n", SDL_GetError());
     return false;
+  }
   
   if(snd.format != AUDIO_S16SYS || snd.channels != 1){
     SDL_CloseAudio();

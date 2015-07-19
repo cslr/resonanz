@@ -13,7 +13,11 @@ public:
   FMSoundSynthesis();
   virtual ~FMSoundSynthesis();
   
+  virtual std::string getSynthesizerName();
+  
   virtual bool reset();
+  
+  virtual bool getParameters(std::vector<float>& p);
   
   virtual bool setParameters(const std::vector<float>& p);
   

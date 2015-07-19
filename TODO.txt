@@ -1,6 +1,6 @@
 TODO
 
-- write MuseOSC driver
+- sound synthesis modules (FM synthesis)
 
 - HMM based analysis and generation of N-step long probable stimulation sequences
   (sample N>2 HMM sequences and only generate model and try 
@@ -17,8 +17,5 @@ TODO
   
 - decode theora+ogg video+audio files when measuring programs
 
-- program RMS error: measure program RMS with random stimuli for comparision
 
-- neurodynamic re-inforcement learning when assigning credits
-  from multiple different stimuli
 

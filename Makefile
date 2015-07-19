@@ -15,7 +15,7 @@ CP = cp
 CFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
 CXXFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
 
-OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o 
+OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o
 
 SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp
 
@@ -43,6 +43,11 @@ MAXIMPACT_LIBS=`sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config S
 MAXIMPACT_OBJECTS=maximpact.o
 MAXIMPACT_TARGET=maximpact
 
+SOUND_LIBS=`sdl2-config --libs`
+SOUND_TEST_TARGET=fmsound
+SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o
+
+
 ############################################################
 
 all: $(OBJECTS) resonanz jnilib spectral_test
@@ -52,6 +57,9 @@ resonanz: $(RESONANZ_OBJECTS)
 
 jnilib: $(JNILIB_OBJECTS)
 # TODO build shared library for JNI class to link to
+
+sound: $(SOUND_TEST_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(SOUND_TEST_TARGET) $(SOUND_TEST_OBJECTS) $(SOUND_LIBS)
 
 spectral_test: $(SPECTRAL_TEST_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(SPECTRAL_TEST_TARGET) $(SPECTRAL_TEST_OBJECTS) $(LIBS)

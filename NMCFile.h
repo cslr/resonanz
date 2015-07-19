@@ -12,6 +12,8 @@
 #include <vector>
 #include <memory>
 
+#include "DataSource.h"
+
 namespace whiteice {
 namespace resonanz {
 
@@ -22,6 +24,14 @@ class NMCFile {
 public:
 	NMCFile();
 	virtual ~NMCFile();
+	
+	/**
+	 * creates program (length_secs seconds longs) 
+	 * which given target values
+	 */
+	bool createProgram(const DataSource& ds, 
+			   const std::vector<float>& target,
+			   unsigned int length_secs);
 
 	bool loadFile(const std::string& filename);
 	bool saveFile(const std::string& filename) const;

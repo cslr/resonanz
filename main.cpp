@@ -48,10 +48,13 @@ void print_usage()
 	printf("--picture-dir=   use picture source directory\n");
 	printf("--keyword-file=  source keywords file\n");
 	printf("--model-dir=     model directory for measurements and prediction models\n");
-	printf("--program-file=  sets NMC program file for emotiv insight values\n");
-	printf("--device=        sets measurement device: muse, [insight], random\n");
-	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
+	printf("--program-file=  sets NMC program file\n");
+	printf("--target=        sets measurement program targets (comma separated numbers)\n");
+	printf("--device=        sets measurement device: muse*, [insight], random\n");
+	printf("--method=        sets optimization method: rbf*, lbfgs\n");
 	printf("--pca            preprocess input data with pca if possible\n");
+	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
+	printf("--savevideo      save video to neurostim.ogv file\n");
 	printf("-v               verbose mode\n");	
 	printf("\n");
 	printf("This is alpha version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
@@ -72,13 +75,17 @@ int main(int argc, char** argv){
 	// process command line
 	bool hasCommand = false;
 	bool analyzeCommand = false;
-	whiteice::resonanz::ResonanzCommand cmd;
-	std::string programFile;
+	whiteice::resonanz::ResonanzCommand cmd;	
 	std::string device = "muse";
+	std::string optimizationMethod = "rbf";
 	bool usepca  = false;
 	bool fullscreen = false;
+	bool saveVideo = false;
 	bool verbose = false;
-
+	
+	std::string programFile;
+	std::vector<float> targets;
+	
 	for(int i=1;i<argc;i++){
 		if(strcmp(argv[i], "--random") == 0){
 			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_RANDOM;
@@ -129,8 +136,19 @@ int main(int argc, char** argv){
 	        char* p = &(argv[i][9]);
 	        if(strlen(p) > 0) device = p;
 	    }
+	    else if(strncmp(argv[i], "--method=", 9) == 0){
+	        char* p = &(argv[i][9]);
+	        if(strlen(p) > 0) optimizationMethod = p;
+	    }
+	    else if(strncmp(argv[i], "--target=", 9) == 0){
+	        char* p = &(argv[i][9]);
+		parse_float_vector(targets, p);
+	    }
 	    else if(strcmp(argv[i],"--fullscreen") == 0){
 	        fullscreen = true;
+	    } 
+	    else if(strcmp(argv[i],"--savevideo") == 0){
+	        saveVideo = true;
 	    } 
 	    else if(strcmp(argv[i],"--pca") == 0){
 	        usepca = true;
@@ -167,6 +185,18 @@ int main(int argc, char** argv){
 		printf("Hardware: Random pseudodevice\n");
 	    }
 	    
+	    engine.setParameter("use-bayesian-nnetwork", "true");
+	    engine.setParameter("use-data-rbf", "true");
+	    
+	    if(optimizationMethod == "rbf"){
+	      engine.setParameter("use-bayesian-nnetwork", "false");
+	      engine.setParameter("use-data-rbf", "true");
+	    }
+	    else if(optimizationMethod == "lbfgs"){
+	      engine.setParameter("use-bayesian-nnetwork", "true");
+	      engine.setParameter("use-data-rbf", "false");
+	    }
+	    
 	    if(usepca){
 	      engine.setParameter("pca-preprocess", "true");
 	    }
@@ -181,7 +211,7 @@ int main(int argc, char** argv){
 	      engine.setParameter("fullscreen", "false");
 	    }
 	    
-	    engine.setParameter("use-bayesian-nnetwork", "false");
+	    
 	}
 
 	
@@ -204,13 +234,21 @@ int main(int argc, char** argv){
 			return -1;
 		}
 	}
-#if 0 
-IMPLEMENT/FIX ME
 	else if(cmd.command == cmd.CMD_DO_EXECUTE){
 		whiteice::resonanz::NMCFile file;
-		if(file.loadFile(programFile) == false){
-			std::cout << "Loading program file: " << programFile << " failed." << std::endl;
-			return -1;
+		
+		if(targets.size() == 0){
+		  if(file.loadFile(programFile) == false){
+		    std::cout << "Loading program file: " 
+			      << programFile << " failed." << std::endl;
+		    return -1;
+		  }
+		}
+		else{
+		  if(file.createProgram(engine.getDevice(), targets, 120) == false){
+		    std::cout << "Creating neurostim program failed." << std::endl;
+		    return -1;
+		  }
 		}
 
 		std::vector<std::string> signalNames;
@@ -223,14 +261,18 @@ IMPLEMENT/FIX ME
 			file.getProgramSignalName(i, signalNames[i]);
 			file.getRawProgram(i, signalPrograms[i]);
 		}
+		
+		std::string audioFile = "";
 
-		if(engine.cmdExecuteProgram(cmd.pictureDir, cmd.keywordsFile, cmd.modelDir, signalNames, signalPrograms) == false){
+		if(engine.cmdExecuteProgram(cmd.pictureDir, cmd.keywordsFile, 
+					    cmd.modelDir, audioFile, 
+					    signalNames, signalPrograms,
+					    false, saveVideo) == false){
 			printf("ERROR: bad parameters\n");
 			return -1;
 		}
 
 	}
-#endif
 	else if(analyzeCommand == true){
 		std::string msg = engine.analyzeModel(cmd.modelDir);
 		std::cout << msg << std::endl;

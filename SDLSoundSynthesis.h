@@ -9,6 +9,7 @@
 #define SDLSOUNDSYNTHESIS_H_
 
 #include <vector>
+#include <string>
 #include <stdint.h>
 #include <SDL.h>
 
@@ -20,7 +21,11 @@ public:
   bool play();
   bool pause();
   
+  virtual std::string getSynthesizerName() = 0;
+  
   virtual bool reset() = 0;
+  
+  virtual bool getParameters(std::vector<float>& p) = 0;
   
   virtual bool setParameters(const std::vector<float>& p) = 0;
   

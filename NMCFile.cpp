@@ -18,6 +18,74 @@ NMCFile::NMCFile() {  }
 NMCFile::~NMCFile() {  }
 
 
+/**
+ * creates program (length_secs seconds longs) 
+ * which given target values
+ */
+bool NMCFile::createProgram(const DataSource& ds, 
+			    const std::vector<float>& target,
+			    unsigned int length_secs)
+{
+        if(target.size() != ds.getNumberOfSignals())
+	  return false;
+	
+	if(length_secs <= 0)
+	  return false;
+	
+	// finds first positive target values
+	int first_target = -1;
+	int second_target = -1;
+	
+	for(int i=0;i<target.size();i++){
+	  if(target[i] >= 0.0f){
+	    if(first_target == -1)
+	      first_target = i;
+	    else if(second_target == -1)
+	      second_target = i;
+	  }	   
+	}
+	
+	if(first_target == -1 && second_target == -1)
+	  return false;
+	
+	std::string names[NUMBER_OF_PROGRAMS];
+	std::vector<float> pvalues[NUMBER_OF_PROGRAMS];
+	
+	for(unsigned int i=0;i<NUMBER_OF_PROGRAMS;i++){
+	  names[i] = "N/A";
+	  pvalues[i].resize(length_secs);
+	  for(unsigned int s=0;s<length_secs;s++)
+	    pvalues[i][s] = -1.0f;
+	}
+	
+	std::vector<std::string> snames;
+	ds.getSignalNames(snames);
+	
+	if(first_target >= 0){
+	  names[0] = snames[first_target];
+	  pvalues[0].resize(length_secs);
+	  for(unsigned int s=0;s<length_secs;s++)
+	    pvalues[0][s] = target[first_target];
+	}
+	
+	if(second_target >= 0){
+	  names[1] = snames[second_target];
+	  pvalues[1].resize(length_secs);
+	  for(unsigned int s=0;s<length_secs;s++)
+	    pvalues[1][s] = target[second_target];
+	}
+	
+	// everything went ok
+	
+	for(unsigned int i=0;i<NUMBER_OF_PROGRAMS;i++){
+	  signalName[i] = names[i];
+	  program[i] = pvalues[i];
+	}
+	
+	return true;
+}
+  
+
 bool NMCFile::loadFile(const std::string& filename)
 {
 	FILE* handle = NULL;
