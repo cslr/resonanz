@@ -60,18 +60,27 @@ void print_usage()
 	printf("This is alpha version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
 }
 
+#define _GNU_SOURCE 1
+#include <fenv.h>
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
 	srand(time(0));
 
 	if(argc > 1){
 		printf("Resonanz engine v0.55\n");
 	}
 	else{
-		print_usage();
+	        print_usage();
 		return -1;
 	}
+	
+	// debugging enables floating point exceptions for NaNs
+	if(0){
+	  feenableexcept(FE_INVALID | FE_INEXACT);
+	}
 
+	
 	// process command line
 	bool hasCommand = false;
 	bool analyzeCommand = false;
@@ -170,7 +179,7 @@ int main(int argc, char** argv){
 	}
 
 	// starts resonanz engine
-	whiteice::resonanz::ResonanzEngine engine;
+	whiteice::resonanz::ResonanzEngine engine;	
 
 	// sets engine parameters
 	{
@@ -263,7 +272,8 @@ int main(int argc, char** argv){
 		}
 		
 		std::string audioFile = "";
-
+		
+		
 		if(engine.cmdExecuteProgram(cmd.pictureDir, cmd.keywordsFile, 
 					    cmd.modelDir, audioFile, 
 					    signalNames, signalPrograms,

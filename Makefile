@@ -2,8 +2,8 @@
 # (C) Copyright Tomas Ukkonen
 ############################################################
 
-CC = gcc
-CXX = g++
+CC = gcc-5
+CXX = g++-5
 MAKE = make
 MKDIR = mkdir
 AR = ar
@@ -50,7 +50,9 @@ SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o
 
 ############################################################
 
-all: $(OBJECTS) resonanz jnilib spectral_test
+all: $(OBJECTS) resonanz 
+
+# jnilib spectral_test
 
 resonanz: $(RESONANZ_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(RESONANZ_OBJECTS) $(LIBS)

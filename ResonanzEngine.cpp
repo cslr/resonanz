@@ -2818,7 +2818,8 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		  }
 		}
 		
-		keywordData[i].removeBadData();
+		if(keywordData[i].removeBadData() == false)
+		  logging.warn("keywordData: bad data removal failed");
 
 		{
 			if(pcaPreprocess){
@@ -2871,7 +2872,9 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		  }
 		}
 		
-		pictureData[i].removeBadData();
+		if(pictureData[i].removeBadData() == false)
+		  logging.warn("pictureData: bad data removal failed");
+		
 
 		{
 			if(pcaPreprocess){
@@ -2905,28 +2908,17 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		}
 	}
 	
-	logging.info("DEBUG: ABOUT TO LOAD SYNTH DATA");
-	
 	// loads synth parameters data into memory
 	if(synth){
-	  logging.info("DEBUG: HAS SYNTH");
-	  
 	  std::string dbFilename = modelDir + "/" + calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
 	  
 	  synthData.clear();
 	  
 	  if(synthData.load(dbFilename) == false){
-	    logging.info("DEBUG: SYNTH DATA LOAD FAILED");
-	    
 	    synthData.createCluster(name1, eeg->getNumberOfSignals() + 2*synth->getNumberOfParameters());
 	    synthData.createCluster(name2, eeg->getNumberOfSignals());
 	  }
 	  else{
-	    logging.info("DEBUG: SYNTH DATA LOAD OK");
-	    char buffer[100];
-	    snprintf(buffer, 100, "Synth data number of clusters: %d", synthData.getNumberOfClusters());
-	    logging.info(buffer);
-	    
 	    if(synthData.getNumberOfClusters() != 2){
 	      logging.error("Synth data wrong number of clusters or data corruption => reset database");
 	      synthData.clear();
@@ -2936,7 +2928,8 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 	  }
 	  
 	  
-	  synthData.removeBadData();
+	  if(synthData.removeBadData() == false)
+	    logging.warn("synthData: bad data removal failed");
 	  
 	  
 	  {
@@ -2957,7 +2950,7 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 	      synthData.convert(1);
 	    }
 	  }
-
+	  
 	}
 
 	return true;
@@ -3032,8 +3025,10 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	for(unsigned int i=0;i<keywordData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 		
-		keywordData[i].removeBadData();
-
+		if(keywordData[i].removeBadData() == false)
+		  logging.warn("keywordData: bad data removal failed");
+		
+		
 		{
 			if(pcaPreprocess){
 				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
@@ -3074,8 +3069,10 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	for(unsigned int i=0;i<pictureData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
 		
-		pictureData[i].removeBadData();
-
+		if(pictureData[i].removeBadData() == false)
+		  logging.warn("pictureData: bad data removal failed");
+		
+		
 		{
 			if(pcaPreprocess){
 				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
@@ -3115,7 +3112,8 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	if(synth){
 	  std::string dbFilename = modelDir + "/" + calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
 	  
-	  synthData.removeBadData();
+	  if(synthData.removeBadData() == false)
+	    logging.warn("synthData: bad data removal failed");
 	  
 	  {
 	    if(pcaPreprocess){
