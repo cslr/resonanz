@@ -208,7 +208,7 @@ private:
 	std::mutex keypress_mutex;
 
 	static const unsigned int TICK_MS = 250; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
-	static const unsigned int MEASUREMODE_DELAY_MS = 250; // how long each screen is shown when measuring response
+	static const unsigned int MEASUREMODE_DELAY_MS = 333; // how long each screen is shown when measuring response
 
 	// media resource
 	std::vector<std::string> keywords;
@@ -246,11 +246,15 @@ private:
 				   unsigned int& currentKeywordModel, 
 				   bool& soundModelCalculated);
 	
-	whiteice::LBFGS_nnetwork<>* optimizer = nullptr;
+	whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
+	const unsigned int NUM_OPTIMIZER_THREADS = 2;
+	const unsigned int NUM_OPTIMIZER_ITERATIONS = 100;
+	
 	whiteice::nnetwork<>* nn = nullptr;
+	whiteice::nnetwork<>* nnsynth = nullptr; // synth data neural network
 	whiteice::bayesian_nnetwork<>* bnn = nullptr;
 	whiteice::UHMC<>* bayes_optimizer = nullptr;
-	int neuralnetwork_complexity = 50; // values above 10 seem to make sense
+	int neuralnetwork_complexity = 25; // values above 10 seem to make sense
 	bool use_bayesian_nnetwork = false;
 	const unsigned int BAYES_NUM_SAMPLES = 1000; // number of samples collected from "bayesian posterior" (what we really sample is MLE prior thought..)
 
@@ -266,6 +270,9 @@ private:
 	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
 	whiteice::bayesian_nnetwork<>                synthModel;
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
+	
+	// number of parameters to test with synthModel before selecting the optimium one
+	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 1000;
 
 	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
 	bool engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,

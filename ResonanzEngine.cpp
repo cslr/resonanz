@@ -62,6 +62,7 @@ ResonanzEngine::ResonanzEngine()
 	
 	video = nullptr;
 	eeg   = nullptr;
+	synth = nullptr;
 
 	workerThread = nullptr;
 	thread_is_running = true;
@@ -85,8 +86,18 @@ ResonanzEngine::ResonanzEngine()
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
 		nn = new whiteice::nnetwork<>(nnArchitecture);
+		
+		// creates dummy synth neural network
+		const int synth_number_of_parameters = 6;
+		
+		nnArchitecture.clear();
+		nnArchitecture.push_back(eeg->getNumberOfSignals() + 2*synth_number_of_parameters);
+		nnArchitecture.push_back(neuralnetwork_complexity*(eeg->getNumberOfSignals() + 2*synth_number_of_parameters));
+		nnArchitecture.push_back(eeg->getNumberOfSignals());
+		
+		nnsynth = new whiteice::nnetwork<>(nnArchitecture);
 	}
-
+	
 	// starts updater thread thread
 	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
@@ -168,7 +179,7 @@ bool ResonanzEngine::reset() throw()
 
 bool ResonanzEngine::cmdDoNothing(bool showScreen)
 {
-	std::lock_guard<std::mutex> lock(command_mutex);
+        std::lock_guard<std::mutex> lock(command_mutex);
 	if(incomingCommand != nullptr) delete incomingCommand;
 	incomingCommand = new ResonanzCommand();
 
@@ -416,6 +427,36 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+						
+			
+			nnArchitecture.clear();
+			
+			if(synth){			  
+			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+						   2*synth->getNumberOfParameters());
+			  nnArchitecture.push_back(neuralnetwork_complexity*
+						   (eeg->getNumberOfSignals() + 
+						    2*synth->getNumberOfParameters()));
+			  nnArchitecture.push_back(eeg->getNumberOfSignals());
+			  
+			  if(nnsynth != nullptr) delete nnsynth;
+		
+			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			}
+			else{
+			  const int synth_number_of_parameters = 6;
+			  
+			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+						   2*synth_number_of_parameters);
+			  nnArchitecture.push_back(neuralnetwork_complexity*
+						   (eeg->getNumberOfSignals() + 
+						    2*synth_number_of_parameters));
+			  nnArchitecture.push_back(eeg->getNumberOfSignals());
+			  
+			  if(nnsynth != nullptr) delete nnsynth;
+			  
+			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			}
 		}
 
 		eegDeviceType = deviceNumber;
@@ -441,6 +482,35 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+			
+			nnArchitecture.clear();
+			
+			if(synth){			  
+			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+						   2*synth->getNumberOfParameters());
+			  nnArchitecture.push_back(neuralnetwork_complexity*
+						   (eeg->getNumberOfSignals() + 
+						    2*synth->getNumberOfParameters()));
+			  nnArchitecture.push_back(eeg->getNumberOfSignals());
+			  
+			  if(nnsynth != nullptr) delete nnsynth;
+		
+			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			}
+			else{
+			  const int synth_number_of_parameters = 6;
+			  
+			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+						   2*synth_number_of_parameters);
+			  nnArchitecture.push_back(neuralnetwork_complexity*
+						   (eeg->getNumberOfSignals() + 
+						    2*synth_number_of_parameters));
+			  nnArchitecture.push_back(eeg->getNumberOfSignals());
+			  
+			  if(nnsynth != nullptr) delete nnsynth;
+			  
+			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			}
 		}
 		
 		return false;
@@ -614,6 +684,7 @@ void ResonanzEngine::engine_loop()
 	std::vector< std::vector<float> > programVar;
 	programStarted = 0LL; // program has not been started
 	long long lastProgramSecond = 0LL;
+	unsigned int eegConnectionDownTime = 0;
 
 	std::vector<float> eegCurrent;
 
@@ -698,8 +769,7 @@ void ResonanzEngine::engine_loop()
 			else if(prevCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 				// stops computation if needed
 				if(optimizer != nullptr){
-					if(optimizer->isRunning())
-						optimizer->stopComputation();
+				        optimizer->stopComputation();
 					delete optimizer;
 					optimizer = nullptr;
 				}
@@ -1087,6 +1157,7 @@ void ResonanzEngine::engine_loop()
 				auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
 				programStarted = t0ms;
 				lastProgramSecond = -1;
+				eegConnectionDownTime = 0;
 
 				// currently just plays audio and shows blank screen
 				if(currentCommand.audioFile.length() > 0)
@@ -1159,15 +1230,22 @@ void ResonanzEngine::engine_loop()
 			engine_setStatus("resonanz-engine: measuring eeg-responses..");
 
 			if(eeg->connectionOk() == false){
-				logging.info("measure command: eeg connection failed => aborting measurements");
-
-				cmdDoNothing(false); // new command: stops and starts idling
-
+			        eegConnectionDownTime += TICK_MS;
+				
+				if(eegConnectionDownTime >= 2000){
+				  logging.info("measure command: eeg connection failed => aborting measurements");
+				  cmdDoNothing(false); // new command: stops and starts idling
+				}
+				  
 				engine_pollEvents(); // polls for events
 				engine_updateScreen(); // always updates window if it exists
 
 				continue;
 			}
+			else{
+			  eegConnectionDownTime = 0;
+			}
+			
 
 			engine_stopHibernation();
 
@@ -1471,6 +1549,11 @@ void ResonanzEngine::engine_loop()
 		delete nn;
 		nn = nullptr;
 	}
+	
+	if(nnsynth != nullptr){
+	        delete nnsynth;
+		nnsynth = nullptr;
+	}
 
 	if(bnn != nullptr){
 		delete bnn;
@@ -1496,6 +1579,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 	unsigned int pictureModelsLoaded = 0;
 	unsigned int keywordModelsLoaded = 0;
 
+#pragma omp parallel for
 	for(unsigned int i=0;i<pictureModels.size();i++){
 		std::string filename = calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
@@ -1512,6 +1596,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 
 	keywordModels.resize(keywords.size());
 
+#pragma omp parallel for
 	for(unsigned int i=0;i<keywordModels.size();i++){
 		std::string filename = calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
@@ -2076,20 +2161,20 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 	        // first model to be optimized (no need to store the previous result)
 		if(optimizer == nullptr && bayes_optimizer == nullptr){
 			whiteice::math::vertex<> w;
-
-			nn->randomize();
-			nn->exportdata(w);
-
-			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, synthData, false, false);
-			optimizer->minimize(w);
-
+			
+			nnsynth->randomize();
+			nnsynth->exportdata(w);
+			
 			{
-				char buffer[512];
-				snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
-						currentPictureModel, synthData.size(0));
-				logging.info(buffer);
+			  char buffer[512];
+			  snprintf(buffer, 512, "resonanz model optimization started: synth model. database size: %d %d",
+				   synthData.size(0), synthData.size(1));
+			  logging.info(buffer);
 			}
 
+
+			optimizer = new whiteice::pLBFGS_nnetwork<>(*nnsynth, synthData, false, false);
+			optimizer->minimize(NUM_OPTIMIZER_THREADS);
 		}
 		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
 
@@ -2099,22 +2184,37 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
 				optimizer->getSolution(w, error, iterations);
+				
+				{
+				  char buffer[512];
+				  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. synth model. iterations: %d error: %f",
+					   iterations, error.c[0]);
+				  logging.info(buffer);
+				}
 
-				nn->importdata(w);
+				nnsynth->importdata(w);
 
 				// switches to uncertainty analysis
 				const bool adaptive = true;
 
-				bayes_optimizer = new whiteice::UHMC<>(*nn, synthData, adaptive);
+				bayes_optimizer = new whiteice::UHMC<>(*nnsynth, synthData, adaptive);
 				bayes_optimizer->startSampler();
 
 				delete optimizer;
 				optimizer = nullptr;
+			}
+			else{
+				{
+				  char buffer[512];
+					snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d",
+						 optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
+					logging.info(buffer);
+				}
 			}
 
 		}
@@ -2147,7 +2247,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			else{
 			        unsigned int samples = bayes_optimizer->getNumberOfSamples();
 				
-				if((samples % 100) == 0){
+				{
 				  char buffer[512];
 					snprintf(buffer, 512, "resonanz bayes model optimization running. synth model. number of samples: %d/%d",
 						 bayes_optimizer->getNumberOfSamples(), BAYES_NUM_SAMPLES);
@@ -2163,7 +2263,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
@@ -2171,15 +2271,16 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 				{
 					char buffer[512];
-					snprintf(buffer, 512, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
-							currentPictureModel, iterations, error.c[0]);
+					snprintf(buffer, 512, "resonanz model optimization stopped. synth model. iterations: %d error: %f",
+						 iterations, error.c[0]);
 					logging.info(buffer);
 				}
-
+				
 				// saves optimization results to a file
-				std::string dbFilename = currentCommand.modelDir + "/" +
-						calculateHashName(pictures[currentPictureModel] + eeg->getDataSourceName()) + ".model";
-				nn->importdata(w);
+				std::string dbFilename = currentCommand.modelDir + "/" + 
+				  calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".model";
+
+				nnsynth->importdata(w);
 
 				bnn->importNetwork(*nn);
 
@@ -2189,22 +2290,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				delete optimizer;
 				optimizer = nullptr;
 
-				// starts new computation
-				currentPictureModel++;
-				if(currentPictureModel < pictures.size()){
-					nn->randomize();
-					nn->exportdata(w);
-
-					{
-						char buffer[512];
-						snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
-								currentPictureModel, pictureData[currentPictureModel].size(0));
-						logging.info(buffer);
-					}
-
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-					optimizer->minimize(w);
-				}
+				soundModelCalculated = true;
 			}
 		}
 	  
@@ -2219,8 +2305,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			nn->randomize();
 			nn->exportdata(w);
 
-			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-			optimizer->minimize(w);
+			optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+			optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
 			{
 				char buffer[512];
@@ -2238,11 +2324,18 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
 				optimizer->getSolution(w, error, iterations);
+				
+				{
+				  char buffer[512];
+				  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. picture model. iterations: %d error: %f",
+					   iterations, error.c[0]);
+				  logging.info(buffer);
+				}
 
 				nn->importdata(w);
 
@@ -2254,6 +2347,14 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 				delete optimizer;
 				optimizer = nullptr;
+			}
+			else{
+				{
+				  char buffer[512];
+					snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
+						 optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
+					logging.info(buffer);
+				}
 			}
 
 		}
@@ -2297,8 +2398,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 					nn->randomize();
 					nn->exportdata(w);
 
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-					optimizer->minimize(w);
+					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
 				}
 			}
@@ -2321,7 +2422,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
@@ -2360,8 +2461,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 						logging.info(buffer);
 					}
 
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-					optimizer->minimize(w);
+					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					optimizer->minimize(NUM_OPTIMIZER_THREADS);
 				}
 			}
 		}
@@ -2376,8 +2477,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			nn->randomize();
 			nn->exportdata(w);
 
-			optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-			optimizer->minimize(w);
+			optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+			optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
 			{
 				char buffer[512];
@@ -2395,11 +2496,18 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
 				optimizer->getSolution(w, error, iterations);
+				
+				{
+				  char buffer[512];
+				  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. keyword model. iterations: %d error: %f",
+					   iterations, error.c[0]);
+				  logging.info(buffer);
+				}
 
 				nn->importdata(w);
 
@@ -2412,32 +2520,13 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				delete optimizer;
 				optimizer = nullptr;
 			}
-
-		}
-		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
-
-			whiteice::math::blas_real<float> error = 1000.0f;
-			whiteice::math::vertex<> w;
-			unsigned int iterations = 0;
-
-			optimizer->getSolution(w, error, iterations);
-
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 5000){
-				// gets finished solution
-
-				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
-
-				nn->importdata(w);
-
-				// switches to bayesian optimizer
-				const bool adaptive = true;
-
-				bayes_optimizer = new whiteice::UHMC<>(*nn, keywordData[currentKeywordModel], adaptive);
-				bayes_optimizer->startSampler();
-
-				delete optimizer;
-				optimizer = nullptr;
+			else{
+				{
+				        char buffer[512];
+				        snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
+						 optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
+					logging.info(buffer);
+				}
 			}
 
 		}
@@ -2479,8 +2568,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 					nn->randomize();
 					nn->exportdata(w);
 
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-					optimizer->minimize(w);
+					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					optimizer->minimize(NUM_OPTIMIZER_THREADS);
 				}
 			}
 			else{
@@ -2502,7 +2591,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			optimizer->getSolution(w, error, iterations);
 
-			if(optimizer->isRunning() == false || optimizer->solutionConverged() == true || iterations >= 1000){
+			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
@@ -2543,8 +2632,8 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 						logging.info(buffer);
 					}
 
-					optimizer = new whiteice::LBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-					optimizer->minimize(w);
+					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					optimizer->minimize(NUM_OPTIMIZER_THREADS);
 				}
 			}
 		}
@@ -2636,12 +2725,13 @@ void ResonanzEngine::engine_sleep(int msecs)
 bool ResonanzEngine::engine_checkIncomingCommand()
 {
 	logging.info("checking command");
-
+	
 	if(incomingCommand == nullptr) return false;
-
+	
 	std::lock_guard<std::mutex> lock(command_mutex);
 
-	if(incomingCommand == nullptr) return false; // incomingCommand changed while acquiring mutex..
+	if(incomingCommand == nullptr) 
+	  return false; // incomingCommand changed while acquiring mutex..
 
 	currentCommand = *incomingCommand;
 
@@ -2719,6 +2809,16 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 			keywordData[i].createCluster(name1, eeg->getNumberOfSignals());
 			keywordData[i].createCluster(name2, eeg->getNumberOfSignals());
 		}
+		else{
+		  if(keywordData[i].getNumberOfClusters() != 2){
+		    logging.error("Keyword data wrong number of clusters or data corruption => reset database");
+		    keywordData[i].clear();
+		    keywordData[i].createCluster(name1, eeg->getNumberOfSignals());
+		    keywordData[i].createCluster(name2, eeg->getNumberOfSignals());
+		  }
+		}
+		
+		keywordData[i].removeBadData();
 
 		{
 			if(pcaPreprocess){
@@ -2762,7 +2862,16 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 			pictureData[i].createCluster(name1, eeg->getNumberOfSignals());
 			pictureData[i].createCluster(name2, eeg->getNumberOfSignals());
 		}
-
+		else{
+		  if(pictureData[i].getNumberOfClusters() != 2){
+		    logging.error("Picture data wrong number of clusters or data corruption => reset database");
+		    pictureData[i].clear();
+		    pictureData[i].createCluster(name1, eeg->getNumberOfSignals());
+		    pictureData[i].createCluster(name2, eeg->getNumberOfSignals());
+		  }
+		}
+		
+		pictureData[i].removeBadData();
 
 		{
 			if(pcaPreprocess){
@@ -2796,17 +2905,38 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		}
 	}
 	
+	logging.info("DEBUG: ABOUT TO LOAD SYNTH DATA");
 	
 	// loads synth parameters data into memory
 	if(synth){
+	  logging.info("DEBUG: HAS SYNTH");
+	  
 	  std::string dbFilename = modelDir + "/" + calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
 	  
 	  synthData.clear();
 	  
 	  if(synthData.load(dbFilename) == false){
+	    logging.info("DEBUG: SYNTH DATA LOAD FAILED");
+	    
 	    synthData.createCluster(name1, eeg->getNumberOfSignals() + 2*synth->getNumberOfParameters());
 	    synthData.createCluster(name2, eeg->getNumberOfSignals());
 	  }
+	  else{
+	    logging.info("DEBUG: SYNTH DATA LOAD OK");
+	    char buffer[100];
+	    snprintf(buffer, 100, "Synth data number of clusters: %d", synthData.getNumberOfClusters());
+	    logging.info(buffer);
+	    
+	    if(synthData.getNumberOfClusters() != 2){
+	      logging.error("Synth data wrong number of clusters or data corruption => reset database");
+	      synthData.clear();
+	      synthData.createCluster(name1, eeg->getNumberOfSignals() + 2*synth->getNumberOfParameters());
+	      synthData.createCluster(name2, eeg->getNumberOfSignals());
+	    }
+	  }
+	  
+	  
+	  synthData.removeBadData();
 	  
 	  
 	  {
@@ -2855,13 +2985,13 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 	}
 
 	if(key < keywordData.size()){
-		keywordData[key].add(0, t1);
-		keywordData[key].add(1, t2);
+	  if(keywordData[key].add(0, t1) == false || keywordData[key].add(1, t2) == false)
+	    logging.warn("Adding new keyword data FAILED");
 	}
 
 	if(pic < pictureData.size()){
-		pictureData[pic].add(0, t1);
-		pictureData[pic].add(1, t2);
+	  if(pictureData[pic].add(0, t1) == false || pictureData[pic].add(1, t2) == false)
+	    logging.warn("Adding new picture data FAILED");
 	}
 	
 	if(synth){
@@ -2886,8 +3016,8 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 	    output[i] = (eegAfter[i] - eegBefore[i])/delta; // dEEG/dt
 	  }
 	  
-	  synthData.add(0, input);
-	  synthData.add(1, output);
+	  if(synthData.add(0, input) == false || synthData.add(1, output) == false)
+	    logging.warn("Adding new synth data FAILED");
 	}
 
 	return true;
@@ -2901,6 +3031,8 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	// saves databases from memory
 	for(unsigned int i=0;i<keywordData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
+		
+		keywordData[i].removeBadData();
 
 		{
 			if(pcaPreprocess){
@@ -2941,6 +3073,8 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 
 	for(unsigned int i=0;i<pictureData.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".ds";
+		
+		pictureData[i].removeBadData();
 
 		{
 			if(pcaPreprocess){
@@ -2981,7 +3115,7 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	if(synth){
 	  std::string dbFilename = modelDir + "/" + calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
 	  
-	  synthData.clear();
+	  synthData.removeBadData();
 	  
 	  {
 	    if(pcaPreprocess){
@@ -3002,8 +3136,10 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 	    }
 	  }
 	  
-	  if(synthData.save(dbFilename) == false)
+	  if(synthData.save(dbFilename) == false){
+	    logging.info("Saving synth data failed");
 	    return false;
+	  }
 	}
 
 
@@ -3079,9 +3215,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 
 			if(image != 0){
-			        logging.info("showscreen: image is loaded successsfully.");
-			  
-				if((image->w) > (image->h)){
+			        if((image->w) > (image->h)){
 					double wscale = ((double)SCREEN_WIDTH)/((double)image->w);
 					// scaled = zoomSurface(image, wscale, wscale, SMOOTHING_ON);
 
@@ -3107,9 +3241,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			}
 
 			if(scaled != NULL){
-			        logging.info("showscreen: scaled was created successsfully.");
-
-				SDL_Color averageColor;
+			        SDL_Color averageColor;
 				measureColor(scaled, averageColor);
 
 				bgcolor = (int)(averageColor.r + averageColor.g + averageColor.b)/3;
@@ -3129,9 +3261,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 				SDL_FreeSurface(image);
 		}
 		else{
-			logging.info("showscreen: image was non null.");
-
-			SDL_Rect imageRect;
+		        SDL_Rect imageRect;
 			SDL_Surface* scaled = 0;
 
 			scaled = images[picture];
@@ -3146,8 +3276,6 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			imageRect.h = scaled->h;
 			imageRect.x = (SCREEN_WIDTH - scaled->w)/2;
 			imageRect.y = (SCREEN_HEIGHT - scaled->h)/2;
-
-			logging.info("showscreen: image was non null: blitting..");
 
 			if(SDL_BlitSurface(images[picture], NULL, surface, &imageRect) != 0)
 			  return false;
@@ -3202,9 +3330,12 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	
 	///////////////////////////////////////////////////////////////////////
 	// plays sound
+	if(synth)
 	{
-	  if(synth->setParameters(synthParams) == true)
+	  if(synth->setParameters(synthParams) == true){
+	    synth->reset();
 	    elementsDisplayed++;
+	  }
 	}
 
 	return (elementsDisplayed > 0);
@@ -3271,6 +3402,40 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	audioEnabled = false;
 	synth = new FMSoundSynthesis(); // curretly just supports single synthesizer type
 	synth->pause(); // no sounds
+	
+	{
+	  // we get the mutex so eeg cannot change below us..
+	  std::lock_guard<std::mutex> lock(eeg_mutex); 
+	  
+	  std::vector<unsigned int> nnArchitecture;
+	  
+	  if(synth){			  
+	    nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+				     2*synth->getNumberOfParameters());
+	    nnArchitecture.push_back(neuralnetwork_complexity*
+				     (eeg->getNumberOfSignals() + 
+				      2*synth->getNumberOfParameters()));
+	    nnArchitecture.push_back(eeg->getNumberOfSignals());
+	    
+	    if(nnsynth != nullptr) delete nnsynth;
+	    
+	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	  }
+	  else{
+	    const int synth_number_of_parameters = 6;
+	    
+	    nnArchitecture.push_back(eeg->getNumberOfSignals() + 
+				     2*synth_number_of_parameters);
+	    nnArchitecture.push_back(neuralnetwork_complexity*
+				     (eeg->getNumberOfSignals() + 
+				      2*synth_number_of_parameters));
+	    nnArchitecture.push_back(eeg->getNumberOfSignals());
+	    
+	    if(nnsynth != nullptr) delete nnsynth;
+	    
+	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	  }
+	}
 	
 #if 0
 	if(Mix_Init(flags) != flags){

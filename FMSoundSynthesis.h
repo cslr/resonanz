@@ -24,12 +24,25 @@ public:
   virtual int getNumberOfParameters();
   
  protected:
+  // milliseconds since epoch
+  unsigned long long getMilliseconds();
+  
+  
   double tbase;
+  double old_tbase;
   
   double A;  // amplitude/volume
   double Fc; // carrier frequency
   double Fm; // modulating frequency
   double d;  // delta of frequency
+  
+  unsigned long long resetTime;
+  double fadeoutTime;
+  
+  double oldA;
+  double oldFc;
+  double oldFm;
+  double oldd;
   
   virtual bool synthesize(int16_t* buffer, int samples);
   
