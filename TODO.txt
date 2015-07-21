@@ -17,5 +17,12 @@ TODO
   
 - decode theora+ogg video+audio files when measuring programs
 
+- picture Stacked RBM autoencoder synthesis/linear interpolation in feature space
+  (or non-linear using Hermite splines)
+  => requires implementation in Dinrhiw2 
+     [GB-RBM and BB-RBM + stackedRBM implementation => Autoencoder]
+
+- name change: Resonanz => "Renaissance"
+
 
 

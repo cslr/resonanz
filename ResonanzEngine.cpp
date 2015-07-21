@@ -1047,7 +1047,7 @@ void ResonanzEngine::engine_loop()
 			
 			if(currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
 				try{
-					engine_setStatus("resonanz-engine: loading prediction model..");
+				        engine_setStatus("resonanz-engine: loading prediction model..");
 
 					if(engine_loadModels(currentCommand.modelDir) == false && dataRBFmodel == false){
 						logging.error("Couldn't load models from model dir: " + currentCommand.modelDir);
@@ -1601,14 +1601,17 @@ void ResonanzEngine::engine_loop()
 bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 {
 	if(keywords.size() <= 0 || pictures.size() <= 0)
-		return false; // no loaded keywords or pictures
+		return false; // no loaded keywords or pictures       	
 
 	pictureModels.resize(pictures.size());
+	
+	whiteice::linear_ETA<float> loadtimeETA;
+	loadtimeETA.start(0.0f, 1.0f);
 
 	unsigned int pictureModelsLoaded = 0;
 	unsigned int keywordModelsLoaded = 0;
 
-#pragma omp parallel for
+	// #pragma omp parallel for
 	for(unsigned int i=0;i<pictureModels.size();i++){
 		std::string filename = calculateHashName(pictures[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
@@ -1618,14 +1621,28 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 			continue;
 		}
 		
+		
 		pictureModels[i].downsample(100); // keeps only 100 random models
 
 		pictureModelsLoaded++;
+		
+		{
+		  char buffer[100];
+		  const float percentage = (i)/((float)(keywords.size()+pictures.size()+1));
+		  
+		  loadtimeETA.update(percentage);
+
+		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%d%%) [ETA %.2f mins]..", 
+			   percentage, loadtimeETA.estimate()/60.0f);
+		
+		  engine_setStatus(buffer);
+		}
+
 	}
 
 	keywordModels.resize(keywords.size());
 
-#pragma omp parallel for
+	// #pragma omp parallel for
 	for(unsigned int i=0;i<keywordModels.size();i++){
 		std::string filename = calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".model";
 		filename = modelDir + "/" + filename;
@@ -1638,6 +1655,19 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 		keywordModels[i].downsample(100); // keeps only 100 random models
 
 		keywordModelsLoaded++;
+		
+		{
+		  char buffer[100];
+		  const float percentage = 
+		    (i + pictures.size())/((float)(keywords.size()+pictures.size()+1));
+		  
+		  loadtimeETA.update(percentage);
+		  
+		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%d%%) [ETA %.2f mins]..", 
+			   percentage, loadtimeETA.estimate()/60.0f);
+		  
+		  engine_setStatus(buffer);
+		}
 	}
 	
 	
