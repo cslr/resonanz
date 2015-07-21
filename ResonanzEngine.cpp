@@ -626,6 +626,17 @@ bool ResonanzEngine::setParameter(const std::string& parameter, const std::strin
 		}
 		else return false;
 	}
+	else if(parameter == "loop"){
+	        if(value == "true"){
+		        loopMode = true;
+			return true;
+		}
+		else if(value == "false"){
+		        loopMode = false;
+			return true;
+		}
+		else return false;
+	}
 	else{
 		return false;
 	}
@@ -1348,6 +1359,20 @@ void ResonanzEngine::engine_loop()
 
 			long long currentSecond = (long long)
 					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
+			
+			
+			if(loopMode){
+
+			  if(currentSecond >= program[0].size()){ // => restarts program
+			    currentSecond = 0;
+			    lastProgramSecond = -1;
+			    
+			    auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			    auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+			    
+			    programStarted = (long long)t1ms;
+			  }
+			}
 
 			if(currentSecond > lastProgramSecond && lastProgramSecond >= 0){
 				eeg->data(eegCurrent);
@@ -1631,8 +1656,9 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 // shows picture/keyword which model predicts to give closest match to target
 // minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
-		const std::vector<float>& eegTarget, const std::vector<float>& eegTargetVariance,
-		float timestep_)
+					   const std::vector<float>& eegTarget, 
+					   const std::vector<float>& eegTargetVariance,
+					   float timestep_)
 {
 	const unsigned int NUM_TOPRESULTS = 4;
 	std::multimap<float, int> bestKeyword;
@@ -1803,13 +1829,133 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	
 	
 	if(synth){
-	  // FIXME: find optimium sound parameters based on model
-	  
-	  // now just plays random sounds
+	  // initial sound parameters are random
 	  soundParameters.resize(synth->getNumberOfParameters());
 	  for(unsigned int i=0;i<soundParameters.size();i++)
 	    soundParameters[i] = rng.uniform().c[0];
+	  
+	  math::vertex<> input(synthModel.inputSize());
+	  std::vector<float> synthBefore;
+	  std::vector<float> synthTest;
+	  
+	  synth->getParameters(synthBefore);
+	  synthTest.resize(synthBefore.size());
+	  
+	  for(unsigned int i=0;i<synthBefore.size();i++){
+	    input[i] = synthBefore[i];
+	  }
+	 
+	  for(unsigned int i=0;i<eegCurrent.size();i++){
+	    input[2*synthBefore.size() + i] = eegCurrent[i];
+	  }
+	  
+	  math::vertex<> original(eegCurrent.size());
+	  
+	  for(unsigned int i=0;i<original.size();i++)
+	    original[i] = eegCurrent[i];
+	  
+	  std::vector< std::pair<float, std::vector<float> > > errors;
+	  errors.resize(SYNTH_NUM_GENERATED_PARAMS);
+	  
+	  // generates synth parameters randomly and selects parameter
+	  // with smallest predicted error to target state
+#pragma omp parallel for
+	  for(unsigned int param=0;param<SYNTH_NUM_GENERATED_PARAMS;param++){
+
+	    /*
+	    if((rand() & 1) == 0){
+	      // generates random parameters [random search]
+	      for(unsigned int i=0;i<synthTest.size();i++)
+		synthTest[i] = rng.uniform().c[0];
+	    }
+	    else
+	    */
+	    {
+	      // or: adds gaussian noise to current parameters 
+	      //     [random jumps around neighbourhood]
+	      for(unsigned int i=0;i<synthTest.size();i++){
+		synthTest[i] = synthBefore[i] + rng.normal().c[0]*0.1f;
+		if(synthTest[i] <= 0.0f) synthTest[i] = 0.0f;
+		else if(synthTest[i] >= 1.0f) synthTest[i] = 1.0f;
+	      }
+	      
+	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
+	    }
+	    
+	    // copies parameters to input vector
+	    for(unsigned int i=0;i<synthTest.size();i++){
+	      input[synthBefore.size()+i] = synthTest[i];
+	    }
+	    
+	    // calculates approximated response
+	    auto x = input;
+	    
+	    if(synthData.preprocess(0, x) == false){
+	      logging.warn("skipping bad synth prediction");
+	      continue;
+	    }
+
+	    math::vertex<> m;
+	    math::matrix<> cov;
+
+	    if(dataRBFmodel){
+	      engine_estimateNN(x, synthData, m , cov);
+	    }
+	    else{
+	      auto& model = synthModel;
+
+	      if(model.inputSize() != x.size() || model.outputSize() != eegTarget.size()){
+		logging.warn("skipping bad synth prediction model");
+		continue; // bad model/data => ignore
+	      }
+
+	      if(model.calculate(x, m, cov) == false){
+		logging.warn("skipping bad synth prediction model");
+		continue;
+	      }
+	    }
+
+	    if(synthData.invpreprocess(1, m) == false){
+	      logging.warn("skipping bad picture prediction model");
+	      continue;
+	    }
+
+	    m *= timestep; // corrects delta to given timelength
+	    cov *= timestep*timestep;
+
+	    // now we have prediction m to the response to the given keyword
+	    // calculates error (weighted distance to the target state)
+
+	    auto delta = target - (original + m);
+
+	    for(unsigned int i=0;i<delta.size();i++){
+	      delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
+	      delta[i] /= targetVariance[i];
+	    }
+
+	    auto error = delta.norm();
+	    
+	    std::pair<float, std::vector<float> > p;
+	    p.first = error.c[0];
+	    p.second = synthTest;
+	    
+	    errors[param] = p;
+	  }
+	  
+	  // finds the best error
+	  float best_error = 10e20;
+	  for(unsigned int i=0;i<errors.size();i++){
+	    if(errors[i].first < best_error){
+	      soundParameters = synthTest;
+	    }
+	  }
+	  
 	}
+	  
+	  
+
+		
+		
 	
 
 	if((bestKeyword.size() <= 0 && keywordData.size() > 0) || bestPicture.size() <= 0){

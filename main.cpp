@@ -53,6 +53,7 @@ void print_usage()
 	printf("--device=        sets measurement device: muse*, [insight], random\n");
 	printf("--method=        sets optimization method: rbf*, lbfgs\n");
 	printf("--pca            preprocess input data with pca if possible\n");
+	printf("--loop           loops program forever\n");
 	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
 	printf("--savevideo      save video to neurostim.ogv file\n");
 	printf("-v               verbose mode\n");	
@@ -89,6 +90,7 @@ int main(int argc, char** argv)
 	std::string optimizationMethod = "rbf";
 	bool usepca  = false;
 	bool fullscreen = false;
+	bool loop = false;
 	bool saveVideo = false;
 	bool verbose = false;
 	
@@ -156,6 +158,9 @@ int main(int argc, char** argv)
 	    else if(strcmp(argv[i],"--fullscreen") == 0){
 	        fullscreen = true;
 	    } 
+	    else if(strcmp(argv[i],"--loop") == 0){
+	        loop = true;
+	    } 
 	    else if(strcmp(argv[i],"--savevideo") == 0){
 	        saveVideo = true;
 	    } 
@@ -218,6 +223,13 @@ int main(int argc, char** argv)
 	    }
 	    else{
 	      engine.setParameter("fullscreen", "false");
+	    }
+	    
+	    if(loop){
+	      engine.setParameter("loop", "true");
+	    }
+	    else{
+	      engine.setParameter("loop", "false");
 	    }
 	    
 	    

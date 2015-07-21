@@ -265,6 +265,8 @@ private:
 	// executes program blindly based on Monte Carlo sampling and prediction models
 	bool engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
 			const std::vector<float>& eegTargetVariance, float timedelta);
+	
+	bool loopMode = false; // loop program forever
 
 	std::vector< whiteice::bayesian_nnetwork<> > keywordModels;
 	std::vector< whiteice::bayesian_nnetwork<> > pictureModels;
@@ -272,7 +274,7 @@ private:
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 	
 	// number of parameters to test with synthModel before selecting the optimium one
-	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 1000;
+	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 500;
 
 	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
 	bool engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,
