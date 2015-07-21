@@ -31,14 +31,18 @@ public:
   
   virtual int getNumberOfParameters() = 0;
   
- protected:
+  // recommended time it takes to synthesize sound: 
+  // it is not good idea to change parameters faster than this
+  virtual unsigned long long getSoundSynthesisSpeedMS() = 0;
+  
+ protected:  
   SDL_AudioSpec snd;
   
   virtual bool synthesize(int16_t* buffer, int samples) = 0;
   
  private:
+  SDL_AudioDeviceID dev;
   SDL_AudioSpec desired;
-  int open_status;
   
   friend void __sdl_soundsynthesis_mixaudio(void* unused, Uint8* stream, int len);
   

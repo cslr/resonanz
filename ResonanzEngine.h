@@ -208,7 +208,7 @@ private:
 	std::mutex keypress_mutex;
 
 	static const unsigned int TICK_MS = 250; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
-	static const unsigned int MEASUREMODE_DELAY_MS = 333; // how long each screen is shown when measuring response
+	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
 	// media resource
 	std::vector<std::string> keywords;
@@ -275,6 +275,8 @@ private:
 	
 	// number of parameters to test with synthModel before selecting the optimium one
 	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 500;
+	
+	unsigned long long synthParametersChangedTime = 0ULL;
 
 	// estimate output value N(m,cov) for x given dataset data uses nearest neighbourhood estimation
 	bool engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,

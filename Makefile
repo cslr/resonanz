@@ -2,8 +2,8 @@
 # (C) Copyright Tomas Ukkonen
 ############################################################
 
-CC = gcc-5
-CXX = g++-5
+CC = gcc
+CXX = g++
 MAKE = make
 MKDIR = mkdir
 AR = ar
@@ -12,8 +12,8 @@ RM = rm -f
 MV = mv
 CP = cp
 
-CFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
-CXXFLAGS = -std=c++11 -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
+CFLAGS = -std=c++1y -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
+CXXFLAGS = -std=c++1y -O3 -g -fopenmp `sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o
 

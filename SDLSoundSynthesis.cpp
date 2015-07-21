@@ -9,44 +9,47 @@
 
 SDLSoundSynthesis::SDLSoundSynthesis()
 {
-  desired.freq = 48000;
+  SDL_zero(desired);
+  SDL_zero(snd);
+  
+  desired.freq = 44100;
   desired.format = AUDIO_S16SYS;
   desired.channels = 1; // use mono sound for now
-  desired.samples = 2048;
+  desired.samples = 4096;
   desired.callback = __sdl_soundsynthesis_mixaudio;
   desired.userdata = this;
   
-  open_status = -1;
+  dev = 0;
   
 }
 
 SDLSoundSynthesis::~SDLSoundSynthesis() {
-  if(open_status >= 0)
-    SDL_CloseAudio();
+  if(dev != 0){
+    SDL_CloseAudioDevice(dev);
+    dev = 0;
+  }
   
-  open_status = -1;
 }
 
 
 bool SDLSoundSynthesis::play()
 {
-  if(open_status < 0){
-    open_status = SDL_OpenAudio(&desired, &snd);
+  if(dev == 0){
+    dev = SDL_OpenAudioDevice(NULL, 0, &desired, &snd, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
   }
   
-  if(open_status < 0){
+  if(dev == 0){
     printf("SDL Error: %s\n", SDL_GetError());
     return false;
   }
   
   if(snd.format != AUDIO_S16SYS || snd.channels != 1){
-    SDL_CloseAudio();
-    open_status = -1;
+    SDL_CloseAudioDevice(dev);
+    dev = 0;
     return false;
   }
   
-  
-  SDL_PauseAudio(0);
+  SDL_PauseAudioDevice(dev, 0);
   
   return true;
 }
@@ -54,8 +57,10 @@ bool SDLSoundSynthesis::play()
 
 bool SDLSoundSynthesis::pause()
 {
-  if(open_status >= 0)
-    SDL_PauseAudio(1);
+  if(dev != 0)
+    SDL_PauseAudioDevice(dev, 1);
+  else
+    return false;
   
   return true;
 }

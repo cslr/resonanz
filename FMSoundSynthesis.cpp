@@ -12,20 +12,19 @@
 FMSoundSynthesis::FMSoundSynthesis() {
   
   // default parameters: silence
-  A  = 0.0;
+  Ac = 0.0;
   Fc = 440.0;
   Fm = 440.0;
-  d  = 1.0;
+  Am = 1.0;
   
-  oldA  = 0.0;
+  oldAc = 0.0;
   oldFc = 440.0;
   oldFm = 440.0;
-  oldd  = 1.0;
+  oldAm = 1.0;
 
-  old_tbase = 0.0;
   tbase = 0.0;
   
-  fadeoutTime = 100.0; // 100ms fade out between parameter changes
+  fadeoutTime = 1000.0; // 1000ms fade out between parameter changes
 }
 
 
@@ -36,13 +35,12 @@ FMSoundSynthesis::~FMSoundSynthesis() {
 
 std::string FMSoundSynthesis::getSynthesizerName()
 {
-  return "SDL FM Sound Synthesis";
+  return "SDL FM Sound Synthesis (Space noise)";
 }
 
 bool FMSoundSynthesis::reset()
 {
   // resets sound generation (timer)
-  old_tbase = 0.0;
   tbase = 0.0;
   return true;
 }
@@ -52,7 +50,7 @@ bool FMSoundSynthesis::getParameters(std::vector<float>& p)
 {
   p.resize(4);
   
-  p[0] = A;
+  p[0] = Ac;
   p[1] = Fc / 5000.0f;
   
   if(Fc > 0.0){
@@ -63,7 +61,7 @@ bool FMSoundSynthesis::getParameters(std::vector<float>& p)
   }
   
   if(Fm > 0.0){
-    p[3] = d/Fm;  // modulation index;
+    p[3] = Am/Fm;  // modulation index;
   }
   else{
     p[3] = 0.0;
@@ -85,13 +83,13 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
     if(p[i] > 1.0f) p[i] = 1.0f;
   }
   
-  oldA  = A;
+  oldAc = Ac;
   oldFc = Fc;
   oldFm = Fm;
-  oldd  = d;
+  oldAm = Am;
   
-  A  = p[0];
-
+  Ac = p[0];
+  
   // sound base frquency: [220, 1760 Hz] => note interval: A-3 - A-6
   float f = 440.0;
 #if 0
@@ -106,8 +104,10 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
 #else
   {
     // converts [0,1] to note [each note is equally probable]
-    const unsigned int NOTES = 36; // note interval: (A-3 - A-6) [36 notes]
-    int note = (int)round(p[1]*NOTES - 12.0); // note = 0 => A-4
+    const int NOTES = 24; // note interval: (A-3 - A-5) [24 notes]
+    double note = round(p[1]*NOTES) - 12.0; // note = 0 => A-4
+    
+    // printf("note = %f\n", note); fflush(stdout);
     
     f = 440.0*pow(2.0, note/12.0); // converts note to frequency
   }
@@ -117,9 +117,12 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   Fc = f;
   
   {
-    // harmonicity ratio: Fm/Fc [0,1] => [1,4] values possible
-    float h = (1.0 + p[2]*3.0);
-    h = round(h)*Fc; // [1, 2, 3, 4]
+    // harmonicity ratio: Fm/Fc [0,1] => [0,3] values possible
+    float h = floor(p[2]*3.999999);
+    
+    // printf("harmonicity = %f\n", h); fflush(stdout);
+    
+    h = round(h)*Fc; // [0, 1, 2, 3]
     
     Fm = h;
   }
@@ -128,13 +131,13 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
     // modulation index: Am/Fm
     float m = p[3];
     
-    m = 0.1*p[3];
+    m = 0.005*p[3]*p[3]*p[3]*p[3];
     
-    d = m*Fm;
+    Am = m*Fm;
   }
   
-  // old_tbase = tbase;
   resetTime = getMilliseconds();
+  // tbase = 0.0;
   
   // std::cout << "A  = " << A << std::endl;
   // std::cout << "Fc = " << Fc << std::endl;
@@ -150,6 +153,12 @@ int FMSoundSynthesis::getNumberOfParameters(){
 }
 
 
+unsigned long long FMSoundSynthesis::getSoundSynthesisSpeedMS()
+{
+  return fadeoutTime;
+}
+
+
 // milliseconds since epoch
 unsigned long long FMSoundSynthesis::getMilliseconds()
 {
@@ -161,33 +170,57 @@ unsigned long long FMSoundSynthesis::getMilliseconds()
 
 bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
 {
-  double hz = snd.freq;
+  double hz = (double)snd.freq;
   
   double timeSinceReset = (double)(getMilliseconds() - resetTime);
   
   for(int i=0;i<samples;i++){
-    double dt = ((double)i)/hz;
-    double t = tbase + dt;
-    double old_t = old_tbase + dt;
+    const double dt = ((double)i)/hz;
+    const double t = tbase + dt;
     
-    double F = (d*cos(Fm*t) + Fc);
-    double value = A*cos(F*t);
-  
-    double oldF = (oldd*cos(oldFm*t) + oldFc);
-    double old_value = oldA*cos(oldF*t);
+    const double now = timeSinceReset + dt*1000.0;
     
-    double now = timeSinceReset + dt/1000.0;
+    double Fc_ = Fc;
+    double oldFc_ = oldFc;
+    
+    double Fm_ = Fm;
+    double oldFm_ = oldFm;
+    
+    double Am_ = Am;
+    double oldAm_ = oldAm;
     
     if(now < fadeoutTime){
-      double c = (now - resetTime)/fadeoutTime;
-      value = c*value + (1.0 - c)*old_value;
+      double c = now/fadeoutTime;
+      double f = c*Fc_ + (1.0 - c)*oldFc_;
+      Fc_ = f;
+      oldFc_ = f;
+
+#if 1
+      double fm = c*Fm_ + (1.0 - c)*oldFm_;
+      Fm_ = fm;
+      oldFm_ = fm;
+
+      double am = c*Am_ + (1.0 - c)*oldAm_;
+      Am_ = am;
+      oldAm_ = am;
+#endif
     }
     
-    buffer[i] = (int16_t)( value*(0x7FFF - 1) );
+    double F = (Am_*cos(2.0*M_PI*Fm_*t) + Fc_);
+    double value = Ac*cos(2.0*M_PI*F*t);
+    
+    double oldF = (oldAm_*cos(2.0*M_PI*oldFm_*t) + oldFc_);
+    double oldvalue = oldAc*cos(2.0*M_PI*oldF*t);
+
+    if(now < fadeoutTime){
+      double c = now/fadeoutTime;
+      value  = c*value  + (1.0 - c)*oldvalue;
+    }
+    
+    buffer[i] = (int16_t)( value*32767 );
   }
   
   tbase += ((double)samples)/hz;
-  old_tbase += ((double)samples)/hz;
   
   return true;
 }

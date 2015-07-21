@@ -5,10 +5,14 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
+#include <SDL.h>
 
 int main(int argc, char**argv)
 {
   printf("Mini FM sound synthesis test\n");
+  
+  SDL_Init(SDL_INIT_AUDIO);
+  atexit(SDL_Quit);
   
   srand(time(0));
   
@@ -29,7 +33,8 @@ int main(int argc, char**argv)
     for(unsigned int i=0;i<p.size();i++){
       do {
 	float v = ((float)rand()) / ((float)RAND_MAX);
-	p[i] = p[i] + 0.1f*(v - 0.5f);
+	p[i] = v;
+	
 	if(p[i] < 0.0f)
 	  p[i] = 0.0f;
 	else if(p[i] > 1.0f)
@@ -38,16 +43,15 @@ int main(int argc, char**argv)
       while(p[i] <= 0.0f);
     }
     
-    p[3] = 1.0f;
-    
     if(snd.setParameters(p) == false)
       std::cout << "set parameters failed." << std::endl;
     
-    snd.reset();
+    // snd.reset();
     
-    sleep(1);
+    SDL_Delay(1000);
   }
   
+  SDL_Quit();
   
   return 0;
 }

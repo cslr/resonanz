@@ -1183,8 +1183,12 @@ void ResonanzEngine::engine_loop()
 				engine_setStatus("resonanz-engine: starting sound synthesis..");
 				
 				if(synth){
-				  if(synth->play() == false)
+				  if(synth->play() == false){
 				    logging.error("starting sound synthesis failed");
+				  }
+				  else{
+				    logging.info("starting sound synthesis..OK");
+				  }
 				}
 			}
 			
@@ -1844,7 +1848,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  for(unsigned int i=0;i<synthBefore.size();i++){
 	    input[i] = synthBefore[i];
 	  }
-	 
+	  
 	  for(unsigned int i=0;i<eegCurrent.size();i++){
 	    input[2*synthBefore.size() + i] = eegCurrent[i];
 	  }
@@ -1859,9 +1863,10 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  
 	  // generates synth parameters randomly and selects parameter
 	  // with smallest predicted error to target state
-#pragma omp parallel for
-	  for(unsigned int param=0;param<SYNTH_NUM_GENERATED_PARAMS;param++){
 
+#pragma omp parallel for shared(errors)
+	  for(unsigned int param=0;param<SYNTH_NUM_GENERATED_PARAMS;param++){
+	    
 	    {
 	      // generates random parameters [random search]
 	      for(unsigned int i=0;i<synthTest.size();i++)
@@ -1869,7 +1874,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	      
 	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
 	    }
-
+	    
 #if 0
 	    {
 	      // or: adds gaussian noise to current parameters 
@@ -1896,45 +1901,45 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	      logging.warn("skipping bad synth prediction");
 	      continue;
 	    }
-
+	    
 	    math::vertex<> m;
 	    math::matrix<> cov;
-
+	    
 	    if(dataRBFmodel){
 	      engine_estimateNN(x, synthData, m , cov);
 	    }
 	    else{
 	      auto& model = synthModel;
-
+	      
 	      if(model.inputSize() != x.size() || model.outputSize() != eegTarget.size()){
 		logging.warn("skipping bad synth prediction model");
 		continue; // bad model/data => ignore
 	      }
-
+	      
 	      if(model.calculate(x, m, cov) == false){
 		logging.warn("skipping bad synth prediction model");
 		continue;
 	      }
 	    }
-
+	    
 	    if(synthData.invpreprocess(1, m) == false){
 	      logging.warn("skipping bad picture prediction model");
 	      continue;
 	    }
-
+	    
 	    m *= timestep; // corrects delta to given timelength
 	    cov *= timestep*timestep;
-
+	    
 	    // now we have prediction m to the response to the given keyword
 	    // calculates error (weighted distance to the target state)
-
+	    
 	    auto delta = target - (original + m);
-
+	    
 	    for(unsigned int i=0;i<delta.size();i++){
 	      delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
 	      delta[i] /= targetVariance[i];
 	    }
-
+	    
 	    auto error = delta.norm();
 	    
 	    std::pair<float, std::vector<float> > p;
@@ -1953,13 +1958,8 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  }
 	  
 	}
-	  
-	  
-
-		
-		
 	
-
+	
 	if((bestKeyword.size() <= 0 && keywordData.size() > 0) || bestPicture.size() <= 0){
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
@@ -3478,9 +3478,21 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	// plays sound
 	if(synth)
 	{
-	  if(synth->setParameters(synthParams) == true){
-	    // synth->reset();
-	    elementsDisplayed++;
+	  // changes synth parameters only as fast sound synthesis can generate
+	  // meaningful sounds (sound has time to evolve)
+	  
+	  auto t1 = std::chrono::system_clock::now().time_since_epoch();
+	  auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+	  unsigned long long now = (unsigned long long)t1ms;
+	  
+	  if(now - synthParametersChangedTime >= MEASUREMODE_DELAY_MS){
+	    synthParametersChangedTime = now;
+	    
+	    if(synth->setParameters(synthParams) == true){
+	      elementsDisplayed++;
+	    }
+	    else
+	      logging.warn("synth setParameters FAILED");
 	  }
 	}
 
@@ -3611,14 +3623,14 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 bool ResonanzEngine::engine_SDL_deinit()
 {
-	if(audioEnabled)
-		SDL_CloseAudio();
-	
 	if(synth){
 	  synth->pause();
 	  delete synth;
 	  synth = nullptr;
 	}
+
+	if(audioEnabled)
+	  SDL_CloseAudio();
 
 	if(font){
 	  TTF_CloseFont(font);

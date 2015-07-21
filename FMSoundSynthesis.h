@@ -23,26 +23,26 @@ public:
   
   virtual int getNumberOfParameters();
   
+  virtual unsigned long long getSoundSynthesisSpeedMS();
+  
  protected:
   // milliseconds since epoch
   unsigned long long getMilliseconds();
   
-  
   double tbase;
-  double old_tbase;
   
-  double A;  // amplitude/volume
+  double Ac; // amplitude/volume of carrier
   double Fc; // carrier frequency
   double Fm; // modulating frequency
-  double d;  // delta of frequency
+  double Am; // amplitude of modulator: delta of frequency
   
-  unsigned long long resetTime;
+  unsigned long long resetTime = 0ULL;
   double fadeoutTime;
   
-  double oldA;
+  double oldAc;
   double oldFc;
   double oldFm;
-  double oldd;
+  double oldAm;
   
   virtual bool synthesize(int16_t* buffer, int samples);
   
