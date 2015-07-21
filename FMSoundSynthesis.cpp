@@ -25,7 +25,7 @@ FMSoundSynthesis::FMSoundSynthesis() {
   old_tbase = 0.0;
   tbase = 0.0;
   
-  fadeoutTime = 100.0; // 100ms fade out between parameters
+  fadeoutTime = 100.0; // 100ms fade out between parameter changes
 }
 
 
@@ -41,8 +41,8 @@ std::string FMSoundSynthesis::getSynthesizerName()
 
 bool FMSoundSynthesis::reset()
 {
-  // there is minor sound synthesis glitch possibility
-  old_tbase = tbase;
+  // resets sound generation (timer)
+  old_tbase = 0.0;
   tbase = 0.0;
   return true;
 }
@@ -92,7 +92,29 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   
   A  = p[0];
 
-  Fc = p[1]*5000.0; // sound base frquency: [0, 5 kHz]
+  // sound base frquency: [220, 1760 Hz] => note interval: A-3 - A-6
+  float f = 440.0;
+#if 0
+  {
+    // converts [0,1] to frequency interval [higher frequency notes more probable]
+    f = 220.0 + (1760 - 220.0)*p[1];
+    
+    // converts to note value (440Hz centered equally tempered)
+    int note = (int)round(12.0*log2(f/440.0)); // rounds to nearest note
+    f = 440.0*pow(2.0, note/12.0);
+  }
+#else
+  {
+    // converts [0,1] to note [each note is equally probable]
+    const unsigned int NOTES = 36; // note interval: (A-3 - A-6) [36 notes]
+    int note = (int)round(p[1]*NOTES - 12.0); // note = 0 => A-4
+    
+    f = 440.0*pow(2.0, note/12.0); // converts note to frequency
+  }
+#endif
+  
+  
+  Fc = f;
   
   {
     // harmonicity ratio: Fm/Fc [0,1] => [1,4] values possible
@@ -111,7 +133,7 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
     d = m*Fm;
   }
   
-  old_tbase = tbase;
+  // old_tbase = tbase;
   resetTime = getMilliseconds();
   
   // std::cout << "A  = " << A << std::endl;

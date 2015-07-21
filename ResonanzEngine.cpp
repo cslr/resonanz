@@ -1862,14 +1862,15 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 #pragma omp parallel for
 	  for(unsigned int param=0;param<SYNTH_NUM_GENERATED_PARAMS;param++){
 
-	    /*
-	    if((rand() & 1) == 0){
+	    {
 	      // generates random parameters [random search]
 	      for(unsigned int i=0;i<synthTest.size();i++)
 		synthTest[i] = rng.uniform().c[0];
+	      
+	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
 	    }
-	    else
-	    */
+
+#if 0
 	    {
 	      // or: adds gaussian noise to current parameters 
 	      //     [random jumps around neighbourhood]
@@ -1881,6 +1882,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	      
 	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
 	    }
+#endif
 	    
 	    // copies parameters to input vector
 	    for(unsigned int i=0;i<synthTest.size();i++){
@@ -3477,7 +3479,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	if(synth)
 	{
 	  if(synth->setParameters(synthParams) == true){
-	    synth->reset();
+	    // synth->reset();
 	    elementsDisplayed++;
 	  }
 	}
