@@ -1632,12 +1632,12 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 		
 		{
 		  char buffer[100];
-		  const float percentage = (i)/((float)(keywords.size()+pictures.size()+1));
+		  const float percentage = ((float)i)/((float)(keywords.size()+pictures.size()+1));
 		  
 		  loadtimeETA.update(percentage);
 
-		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%d%%) [ETA %.2f mins]..", 
-			   percentage, loadtimeETA.estimate()/60.0f);
+		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%.1f%%) [ETA %.2f mins]..", 
+			   100.0f*percentage, loadtimeETA.estimate()/60.0f);
 		
 		  engine_setStatus(buffer);
 		}
@@ -1663,12 +1663,12 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 		{
 		  char buffer[100];
 		  const float percentage = 
-		    (i + pictures.size())/((float)(keywords.size()+pictures.size()+1));
+		    ((float)(i + pictures.size()))/((float)(keywords.size()+pictures.size()+1));
 		  
 		  loadtimeETA.update(percentage);
 		  
-		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%d%%) [ETA %.2f mins]..", 
-			   percentage, loadtimeETA.estimate()/60.0f);
+		  snprintf(buffer, 100, "resonanz-engine: loading prediction model (%.1f%%) [ETA %.2f mins]..", 
+			   100.0f*percentage, loadtimeETA.estimate()/60.0f);
 		  
 		  engine_setStatus(buffer);
 		}
@@ -3032,13 +3032,25 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 		  for(unsigned int i=0;i<synthParams.size();i++)
 		    synthParams[i] = 0.0f;
 		}
-
+		
+		
 		for(unsigned int i=0;i<images.size();i++){
 			images[i] = nullptr;
+			
+			char buffer[80];
+			
+			snprintf(buffer, 80, "resonanz-engine: loading media files (%.1f%%)..",
+				 100.0f*(((float)i)/((float)images.size())));
+			engine_setStatus(buffer);
+			
 			engine_showScreen("Loading..", i, synthParams);
+			
 			engine_pollEvents();
 			engine_updateScreen();
 		}
+		
+		engine_pollEvents();
+		engine_updateScreen();
 	}
 	else{
 		images.clear();
@@ -3057,6 +3069,10 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 	std::string name1 = "input";
 	std::string name2 = "output";
+	
+	float keyword_num_samples = 0.0f;
+	float picture_num_samples = 0.0f;
+	float synth_num_samples   = 0.0f;
 
 	// loads databases into memory or initializes new ones
 	for(unsigned int i=0;i<keywords.size();i++){
@@ -3077,8 +3093,19 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		  }
 		}
 		
+		const unsigned int datasize = keywordData[i].size(0);
+		
 		if(keywordData[i].removeBadData() == false)
 		  logging.warn("keywordData: bad data removal failed");
+		
+		if(datasize != keywordData[i].size(0)){
+		  char buffer[80];
+		  snprintf(buffer, 80, "Keyword %d: bad data removal reduced data: %d => %d\n",
+			   i, datasize, keywordData[i].size(0));
+		  logging.warn(buffer);
+		}
+		
+		keyword_num_samples += keywordData[i].size(0);
 
 		{
 			if(pcaPreprocess){
@@ -3110,7 +3137,11 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 			// keywordData[i].convert(1); // removes all preprocessings from output
 		}
+		
 	}
+	
+	logging.info("keywords measurement database loaded");
+
 
 
 	for(unsigned int i=0;i<pictures.size();i++){
@@ -3131,8 +3162,19 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		  }
 		}
 		
+		const unsigned int datasize = pictureData[i].size(0);
+		
 		if(pictureData[i].removeBadData() == false)
 		  logging.warn("pictureData: bad data removal failed");
+		
+		if(datasize != pictureData[i].size(0)){
+		  char buffer[80];
+		  snprintf(buffer, 80, "Picture %d: bad data removal reduced data: %d => %d\n",
+			   i, datasize, pictureData[i].size(0));
+		  logging.warn(buffer);
+		}
+		
+		picture_num_samples += pictureData[i].size(0);
 		
 
 		{
@@ -3167,6 +3209,8 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		}
 	}
 	
+	logging.info("picture measurement database loaded");
+	
 	// loads synth parameters data into memory
 	if(synth){
 	  std::string dbFilename = modelDir + "/" + calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
@@ -3186,10 +3230,19 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 	    }
 	  }
 	  
+	  const unsigned int datasize = synthData.size(0);
 	  
 	  if(synthData.removeBadData() == false)
 	    logging.warn("synthData: bad data removal failed");
 	  
+	  if(datasize != synthData.size(0)){
+	    char buffer[80];
+	    snprintf(buffer, 80, "Synth data: bad data removal reduced data: %d => %d\n",
+		     datasize, synthData.size(0));
+	    logging.warn(buffer);
+	  }
+	  
+	  synth_num_samples += synthData.size(0);
 	  
 	  {
 	    if(pcaPreprocess){
@@ -3210,7 +3263,24 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 	    }
 	  }
 	  
+	  logging.info("synth measurement database loaded");
 	}
+	
+	
+	// reports average samples in each dataset
+	{
+	  keyword_num_samples /= keywordData.size();
+	  picture_num_samples /= pictureData.size();
+	  synth_num_samples   /= 1;
+	  
+	  char buffer[128];
+	  snprintf(buffer, 128, 
+		   "measurements database loaded: %.1f [samples/picture] %.1f [samples/keyword] %.1f [synth samples]", picture_num_samples, keyword_num_samples, synth_num_samples);
+	  
+	  logging.info(buffer);
+	}
+	
+	
 
 	return true;
 }
