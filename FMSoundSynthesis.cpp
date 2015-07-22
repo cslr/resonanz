@@ -12,16 +12,22 @@
 FMSoundSynthesis::FMSoundSynthesis() {
   
   // default parameters: silence
-  Ac = 0.0;
-  Fc = 440.0;
-  Fm = 440.0;
-  Am = 1.0;
+  std::vector<float> p;
+  p.resize(4);
+  p[0] = 0.0f;
+  p[1] = 0.0f;
+  p[2] = 0.0f;
+  p[3] = 0.0f;
   
-  oldAc = 0.0;
-  oldFc = 440.0;
-  oldFm = 440.0;
-  oldAm = 1.0;
-
+  currentp.resize(4);
+  currentp[0] = 0.0f;
+  currentp[1] = 0.0f;
+  currentp[2] = 0.0f;
+  currentp[3] = 0.0f;
+  
+  setParameters(p);
+  setParameters(p);
+  
   tbase = 0.0;
   
   fadeoutTime = 1000.0; // 1000ms fade out between parameter changes
@@ -48,24 +54,7 @@ bool FMSoundSynthesis::reset()
 
 bool FMSoundSynthesis::getParameters(std::vector<float>& p)
 {
-  p.resize(4);
-  
-  p[0] = Ac;
-  p[1] = Fc / 5000.0f;
-  
-  if(Fc > 0.0){
-    p[2] = Fm/Fc; // harmonicity ratio
-  }
-  else{
-    p[2] = 0.0;
-  }
-  
-  if(Fm > 0.0){
-    p[3] = Am/Fm;  // modulation index;
-  }
-  else{
-    p[3] = 0.0;
-  }
+  p = currentp;
   
   return true;
 }
@@ -76,6 +65,8 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   auto p = p_;
   
   if(p.size() != 4) return false;
+  
+  currentp = p; // copies values for getParameters()
   
   // limit parameters to [0,1] range
   for(unsigned int i=0;i<p.size();i++){
@@ -92,26 +83,15 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   
   // sound base frquency: [220, 1760 Hz] => note interval: A-3 - A-6
   float f = 440.0;
-#if 0
-  {
-    // converts [0,1] to frequency interval [higher frequency notes more probable]
-    f = 220.0 + (1760 - 220.0)*p[1];
-    
-    // converts to note value (440Hz centered equally tempered)
-    int note = (int)round(12.0*log2(f/440.0)); // rounds to nearest note
-    f = 440.0*pow(2.0, note/12.0);
-  }
-#else
   {
     // converts [0,1] to note [each note is equally probable]
-    const int NOTES = 24; // note interval: (A-3 - A-5) [24 notes]
-    double note = round(p[1]*NOTES) - 12.0; // note = 0 => A-4
+    const float NOTES = 24.9999; // note interval: (A-3 - A-5) [24 notes]
+    double note = floor(p[1]*NOTES) - 12.0; // note = 0 => A-4
     
     // printf("note = %f\n", note); fflush(stdout);
     
     f = 440.0*pow(2.0, note/12.0); // converts note to frequency
   }
-#endif
   
   
   Fc = f;

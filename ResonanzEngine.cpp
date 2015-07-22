@@ -1278,8 +1278,21 @@ void ResonanzEngine::engine_loop()
 				  synth->getParameters(synthBefore);
 				  
 				  synthCurrent.resize(synth->getNumberOfParameters());
-				  for(unsigned int i=0;i<synthCurrent.size();i++)
-				    synthCurrent[i] = rng.uniform().c[0];
+				  
+				  if(rng.uniform() < 0.50f){
+				    // total random sound
+				    for(unsigned int i=0;i<synthCurrent.size();i++)
+				      synthCurrent[i] = rng.uniform().c[0];
+				  }
+				  else{
+				    // generates something similar (adds random noise to current parameters)
+				    for(unsigned int i=0;i<synthCurrent.size();i++){
+				      synthCurrent[i] = synthBefore[i] + rng.normal().c[0]*0.1f;
+				      if(synthCurrent[i] <= 0.0f) synthCurrent[i] = 0.0f;
+				      else if(synthCurrent[i] >= 1.0f) synthCurrent[i] = 1.0f;
+				    }
+				  }
+				  
 				}
 				
 				eeg->data(eegBefore);
@@ -1308,8 +1321,20 @@ void ResonanzEngine::engine_loop()
 				  synth->getParameters(synthBefore);
 				  
 				  synthCurrent.resize(synth->getNumberOfParameters());
-				  for(unsigned int i=0;i<synthCurrent.size();i++)
-				    synthCurrent[i] = rng.uniform().c[0];
+				  
+				  if(rng.uniform() < 0.50f){
+				    // total random sound
+				    for(unsigned int i=0;i<synthCurrent.size();i++)
+				      synthCurrent[i] = rng.uniform().c[0];
+				  }
+				  else{
+				    // generates something similar (adds random noise to current parameters)
+				    for(unsigned int i=0;i<synthCurrent.size();i++){
+				      synthCurrent[i] = synthBefore[i] + rng.normal().c[0]*0.1f;
+				      if(synthCurrent[i] <= 0.0f) synthCurrent[i] = 0.0f;
+				      else if(synthCurrent[i] >= 1.0f) synthCurrent[i] = 1.0f;
+				    }
+				  }
 				}
 				
 				eeg->data(eegBefore);
@@ -1993,6 +2018,11 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	    if(dataRBFmodel){
 	      // engine_estimateNN(x, synthData, m , cov);
 	      // NOT SUPPORTED YET...
+	      
+	      // now change high variance output
+	      m = x;
+	      cov.resize(x.size(), x.size());
+	      cov.identity(); 
 	    }
 	    else{
 	      auto& model = synthModel;

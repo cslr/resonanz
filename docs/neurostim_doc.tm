@@ -579,8 +579,8 @@
   response.
 
   Program results with 1000ms long measurements of complex interpolating FM
-  sounds were bad. Number of samples were low, only 150. Try to get more
-  samples to test if 1000ms pad like interpolating FM sounds are good
+  sounds were bad. Number of samples were low, only 150 (851?). Try to get
+  more samples to test if 1000ms pad like interpolating FM sounds are good
   stimulation elements. Model error was order of 0.01 indicating overfitting
   to too little data.
 

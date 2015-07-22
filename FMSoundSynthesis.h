@@ -7,6 +7,8 @@
 #define FMSOUNDSYNTHESIS_H_
 
 #include "SDLSoundSynthesis.h"
+#include <vector>
+
 
 class FMSoundSynthesis: public SDLSoundSynthesis {
 public:
@@ -35,6 +37,8 @@ public:
   double Fc; // carrier frequency
   double Fm; // modulating frequency
   double Am; // amplitude of modulator: delta of frequency
+  
+  std::vector<float> currentp;
   
   unsigned long long resetTime = 0ULL;
   double fadeoutTime;
