@@ -1405,8 +1405,12 @@ void ResonanzEngine::engine_loop()
 					
 					rms = sqrt(rms);
 					
-					std::cout << "PROGRAM RMS ERROR: " << rms << std::endl;
-
+					{
+					  char buffer[80];
+					  snprintf(buffer, 80, "Program current RMS error: %.2f (average RMS error: %.2f)",
+						   rms, programRMS/programRMS_N);
+					}
+					
 					// adds current rms to the global RMS
 					programRMS += rms;
 					programRMS_N++;
@@ -1710,6 +1714,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	}
 
 	std::vector< std::pair<float, int> > results(keywordData.size());
+	std::vector< float > model_error_ratio(keywordData.size());
 
 #pragma omp parallel for
 	for(unsigned int index=0;index<keywordData.size();index++){
@@ -1758,10 +1763,19 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		// calculates error (weighted distance to the target state)
 
 		auto delta = target - (original + m);
-
+		auto stdev = m;
+		
+		for(unsigned int i=0;i<stdev.size();i++){
+		  stdev[i] = math::sqrt(math::abs(cov(i,i)));
+		}
+		
+		// calculates average stdev/delta ratio
+		auto ratio = stdev.norm()/m.norm();
+		model_error_ratio[index] = ratio.c[0];
+		
 		for(unsigned int i=0;i<delta.size();i++){
-		        delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
-			delta[i] /= targetVariance[i];
+		  delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
+		  delta[i] /= targetVariance[i];
 		}
 
 		auto error = delta.norm();
@@ -1774,6 +1788,24 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		// engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
+	
+	
+	// estimates quality of results
+	{
+	  float mean_ratio = 0.0f;
+	  for(auto& r : model_error_ratio)
+	    mean_ratio += r;
+	  mean_ratio /= model_error_ratio.size();
+	  
+	  if(mean_ratio > 1.0f){
+	    char buffer[80];
+	    snprintf(buffer, 80, "Optimizing program: KEYWORD PREDICTOR ERROR LARGER THAN OUTPUT (%.2fx larger)", mean_ratio);
+	    logging.warn(buffer);	    
+	  }
+	}
+	
+	
+	// selects the best result
 
 	for(auto& p : results)
 		bestKeyword.insert(p);
@@ -1787,6 +1819,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 
 	results.resize(pictureData.size());
+	model_error_ratio.resize(pictureData.size());
 
 #pragma omp parallel for
 	for(unsigned int index=0;index<pictureData.size();index++){
@@ -1832,12 +1865,21 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
-
+		
 		auto delta = target - (original + m);
+		auto stdev = m;
+		
+		for(unsigned int i=0;i<stdev.size();i++){
+		  stdev[i] = math::sqrt(math::abs(cov(i,i)));
+		}
 
+		// calculates average stdev/delta ratio
+		auto ratio = stdev.norm()/m.norm();
+		model_error_ratio[index] = ratio.c[0];
+		
 		for(unsigned int i=0;i<delta.size();i++){
-		        delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
-			delta[i] /= targetVariance[i];
+		  delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
+		  delta[i] /= targetVariance[i];
 		}
 
 		auto error = delta.norm();
@@ -1850,7 +1892,23 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		// engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
-
+	
+	
+	// estimates quality of results
+	{
+	  float mean_ratio = 0.0f;
+	  for(auto& r : model_error_ratio)
+	    mean_ratio += r;
+	  mean_ratio /= model_error_ratio.size();
+	  
+	  if(mean_ratio > 1.0f){
+	    char buffer[80];
+	    snprintf(buffer, 80, "Optimizing program: PICTURE PREDICTOR ERROR LARGER THAN OUTPUT (%.2fx larger)", mean_ratio);
+	    logging.warn(buffer);	    
+	  }
+	}
+	
+	
 	for(auto& p : results)
 		bestPicture.insert(p);
 
@@ -1891,21 +1949,21 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  std::vector< std::pair<float, std::vector<float> > > errors;
 	  errors.resize(SYNTH_NUM_GENERATED_PARAMS);
 	  
+	  model_error_ratio.resize(SYNTH_NUM_GENERATED_PARAMS);
+	  
 	  // generates synth parameters randomly and selects parameter
 	  // with smallest predicted error to target state
 
 #pragma omp parallel for shared(errors)
 	  for(unsigned int param=0;param<SYNTH_NUM_GENERATED_PARAMS;param++){
 	    
+	    if(rng.uniform() < 0.5f)
 	    {
 	      // generates random parameters [random search]
 	      for(unsigned int i=0;i<synthTest.size();i++)
 		synthTest[i] = rng.uniform().c[0];
-	      
-	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
 	    }
-	    
-#if 0
+	    else
 	    {
 	      // or: adds gaussian noise to current parameters 
 	      //     [random jumps around neighbourhood]
@@ -1914,10 +1972,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		if(synthTest[i] <= 0.0f) synthTest[i] = 0.0f;
 		else if(synthTest[i] >= 1.0f) synthTest[i] = 1.0f;
 	      }
-	      
-	      synthTest[0] = 0.5f; // keeps volume amplitude at constant 0.5
 	    }
-#endif
 	    
 	    // copies parameters to input vector
 	    for(unsigned int i=0;i<synthTest.size();i++){
@@ -1936,7 +1991,8 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	    math::matrix<> cov;
 	    
 	    if(dataRBFmodel){
-	      engine_estimateNN(x, synthData, m , cov);
+	      // engine_estimateNN(x, synthData, m , cov);
+	      // NOT SUPPORTED YET...
 	    }
 	    else{
 	      auto& model = synthModel;
@@ -1964,9 +2020,18 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	    // calculates error (weighted distance to the target state)
 	    
 	    auto delta = target - (original + m);
+	    auto stdev = m;
+		
+	    for(unsigned int i=0;i<stdev.size();i++){
+	      stdev[i] = math::sqrt(math::abs(cov(i,i)));
+	    }
+	    
+	    // calculates average stdev/delta ratio
+	    auto ratio = stdev.norm()/m.norm();
+	    model_error_ratio[param] = ratio.c[0];
 	    
 	    for(unsigned int i=0;i<delta.size();i++){
-	      delta[i] = math::abs(delta[i]) + 0.5f*math::sqrt(cov(i,i)); // Var[x - y] = Var[x] + Var[y]
+	      delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
 	      delta[i] /= targetVariance[i];
 	    }
 	    
@@ -1978,6 +2043,22 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	    
 	    errors[param] = p;
 	  }
+	  
+	  
+	  // estimates quality of results
+	  {
+	    float mean_ratio = 0.0f;
+	    for(auto& r : model_error_ratio)
+	      mean_ratio += r;
+	    mean_ratio /= model_error_ratio.size();
+	    
+	    if(mean_ratio > 1.0f){
+	      char buffer[80];
+	      snprintf(buffer, 80, "Optimizing program: SYNTH PREDICTOR ERROR LARGER THAN OUTPUT (%.2fx larger)", mean_ratio);
+	      logging.warn(buffer);	    
+	    }
+	  }
+	  
 	  
 	  // finds the best error
 	  float best_error = 10e20;
@@ -4012,14 +4093,14 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	if(loadWords(keywordsFile, keywords) == false || loadPictures(pictureDir, pictureFiles) == false)
 		return "";
 
-	logging.info("A\n");
-
 	std::multimap<float, std::string> keywordDeltas;
 	std::multimap<float, std::string> pictureDeltas;
 	float mean_delta_keywords = 0.0f;
 	float var_delta_keywords  = 0.0f;
 	float mean_delta_pictures = 0.0f;
 	float var_delta_pictures  = 0.0f;
+	float mean_delta_synth    = 0.0f;
+	float var_delta_synth     = 0.0f;
 	float num_keywords = 0.0f;
 	float num_pictures = 0.0f;
 	float pca_preprocess = 0.0f;
@@ -4030,39 +4111,35 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	// 2. loads dataset files (.ds) one by one if possible and calculates mean delta
 	whiteice::dataset<> data;
 
-	logging.info("B\n");
-
 	// loads databases into memory or initializes new ones
 	for(unsigned int i=0;i<keywords.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(keywords[i] + eeg->getDataSourceName()) + ".ds";
 
 		data.clearAll();
 
-		logging.info("C\n");
-
 		if(data.load(dbFilename) == true){
 			if(data.getNumberOfClusters() == 2){
 				float delta = 0.0f;
-
-				logging.info("CC\n");
 
 				for(unsigned int j=0;j<data.size(0);j++){
 					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
 
-				logging.info("DD\n");
-
 				if(data.size(0) > 0){
 					input_dimension  = data.access(0, 0).size();
 					output_dimension = data.access(1, 0).size();
 				}
 
-				logging.info("DDD");
-
 				std::pair<float, std::string> p;
 				p.first  = -delta;
-				p.second = keywords[i];
+				
+				char buffer[128];
+				snprintf(buffer, 128, "%s (N = %d)", 
+					 keywords[i].c_str(), data.size(0));
+				std::string msg = buffer;
+				
+				p.second = msg;
 				keywordDeltas.insert(p);
 
 				mean_delta_keywords += delta;
@@ -4080,12 +4157,8 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	var_delta_keywords  -= mean_delta_keywords*mean_delta_keywords;
 	var_delta_keywords  *= num_keywords/(num_keywords - 1.0f);
 
-	logging.info("E\n");
-
 	for(unsigned int i=0;i<pictureFiles.size();i++){
 		std::string dbFilename = modelDir + "/" + calculateHashName(pictureFiles[i] + eeg->getDataSourceName()) + ".ds";
-
-		logging.info("F\n");
 
 		data.clearAll();
 
@@ -4093,25 +4166,25 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 			if(data.getNumberOfClusters() == 2){
 				float delta = 0.0f;
 
-				logging.info("G\n");
-
 				for(unsigned int j=0;j<data.size(0);j++){
 					auto d = data.access(1, j);
 					delta += d.norm().c[0] / data.size(0);
 				}
-
-				logging.info("FF\n");
 
 				if(data.size(0) > 0){
 					input_dimension  = data.access(0, 0).size();
 					output_dimension = data.access(1, 0).size();
 				}
 
-				logging.info("FFF\n");
-
 				std::pair<float, std::string> p;
 				p.first  = -delta;
-				p.second = pictureFiles[i];
+
+				char buffer[128];
+				snprintf(buffer, 128, "%s (N = %d)", 
+					 pictureFiles[i].c_str(), data.size(0));
+				std::string msg = buffer;
+				
+				p.second = msg;
 				pictureDeltas.insert(p);
 
 				mean_delta_pictures += delta;
@@ -4128,6 +4201,37 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 	var_delta_pictures  /= num_pictures;
 	var_delta_pictures  -= mean_delta_pictures*mean_delta_pictures;
 	var_delta_pictures  *= num_pictures/(num_pictures - 1.0f);
+	
+
+	unsigned int synth_N = 0;
+	
+	// calculates synth delta statistics
+	if(synth){
+	  std::string dbFilename = modelDir + "/" + 
+	    calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".ds";
+	  
+	  data.clearAll();
+
+	  if(data.load(dbFilename) == true){
+	    if(data.getNumberOfClusters() == 2){
+	      
+	      float delta = 0.0f;
+
+	      for(unsigned int j=0;j<data.size(0);j++){
+		auto d = data.access(1, j);
+		delta += d.norm().c[0] / data.size(0);
+	      }
+	      
+	      synth_N = data.size(0);
+	      
+	      mean_delta_synth += delta;
+	      var_delta_synth  += delta*delta;
+	    }
+	  }
+	  
+	}
+	
+	var_delta_synth -= mean_delta_synth*mean_delta_synth;
 
 	// 3. sorts deltas/keyword delta/picture (use <multimap> for automatic ordering) and prints the results
 
@@ -4137,10 +4241,15 @@ std::string ResonanzEngine::deltaStatistics(const std::string& pictureDir, const
 
 	snprintf(buffer, BUFSIZE, "Picture delta: %.2f stdev(delta): %.2f\n", mean_delta_pictures, sqrt(var_delta_pictures));
 	report += buffer;
+	
 	if(keywords.size() > 0){
 		snprintf(buffer, BUFSIZE, "Keyword delta: %.2f stdev(delta): %.2f\n", mean_delta_keywords, sqrt(var_delta_keywords));
 		report += buffer;
 	}
+	
+	snprintf(buffer, BUFSIZE, "Synth delta: %.2f stdev(delta): %.2f (N = %d)\n", mean_delta_synth, sqrt(var_delta_synth), synth_N);
+	report += buffer;
+	
 	snprintf(buffer, BUFSIZE, "PCA preprocessing: %.1f%% of elements\n", 100.0f*pca_preprocess/(num_pictures + num_keywords));
 	report += buffer;
 	snprintf(buffer, BUFSIZE, "Input dimension: %d Output dimension: %d\n", input_dimension, output_dimension);

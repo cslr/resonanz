@@ -298,7 +298,11 @@ int main(int argc, char** argv)
 	else if(analyzeCommand == true){
 		std::string msg = engine.analyzeModel(cmd.modelDir);
 		std::cout << msg << std::endl;
-
+		
+		msg = engine.deltaStatistics(cmd.pictureDir, cmd.keywordsFile,
+					     cmd.modelDir);
+		std::cout << msg << std::endl;
+		
 		return 0;
 	}
 
@@ -313,6 +317,12 @@ int main(int argc, char** argv)
 
 	engine.cmdStopCommand();
 	sleep(1);
+	
+	// reports average RMS of executed program
+	if(cmd.command == cmd.CMD_DO_EXECUTE){
+	  std::string msg = engine.executedProgramStatistics();
+	  std::cout << msg << std::endl;
+	}
 
 
 	return 0;

@@ -1,4 +1,4 @@
-<TeXmacs|1.99.2>
+<TeXmacs|1.0.7.18>
 
 <style|<tuple|generic|finnish>>
 
@@ -551,4 +551,38 @@
   signals). This means that we can hope to measure one or two major signal
   sources from the brain and their locations. These locations can be then
   used to estimate approximative power spectrum within brain areas.\ 
+
+  <with|font-series|bold|Measurement results>
+
+  Some generic notes about measurement results.\ 
+
+  Time interval: 333-1000ms. Brain has a reaction time and too short
+  stimulation time periods mean brain don't have time to properly process
+  stimulation and reactions are based to shapes, colors and forms and not
+  content.
+
+  Number of measurements needed is 200-250 or more per element. Lower numbers
+  lead to problems.
+
+  Neural network complexity <math|C> is 10-50. (N-C*N-N single layer neural
+  network). Output of neural network should be approximated gradient of EEG,
+  dEEG/dt.
+
+  Measument delta output variance of EEG is order of 0.20. (measurement
+  variance). Model error is order of 0.4 (pictures and keywords) [100
+  samples] and 0.20 (sounds simple FM synthesis) [2000 samples]. These
+  results were done using 333ms stimulation time. FM sound prediction uses
+  also previous synthesis state as a input (previous fm params, next fm
+  params, current eeg state) meaning that 1) either sound is much better way
+  to alter eeg than visual stimuli or 2) models which take a previously
+  chosen stimulation element into account are much better predicting
+  response.
+
+  Program results with 1000ms long measurements of complex interpolating FM
+  sounds were bad. Number of samples were low, only 150. Try to get more
+  samples to test if 1000ms pad like interpolating FM sounds are good
+  stimulation elements. Model error was order of 0.01 indicating overfitting
+  to too little data.
+
+  \;
 </body>
