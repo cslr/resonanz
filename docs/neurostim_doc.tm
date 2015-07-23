@@ -568,21 +568,100 @@
   network). Output of neural network should be approximated gradient of EEG,
   dEEG/dt.
 
-  Measument delta output variance of EEG is order of 0.20. (measurement
-  variance). Model error is order of 0.4 (pictures and keywords) [100
-  samples] and 0.20 (sounds simple FM synthesis) [2000 samples]. These
-  results were done using 333ms stimulation time. FM sound prediction uses
-  also previous synthesis state as a input (previous fm params, next fm
-  params, current eeg state) meaning that 1) either sound is much better way
-  to alter eeg than visual stimuli or 2) models which take a previously
-  chosen stimulation element into account are much better predicting
-  response.
+  Measurement delta output values of EEG are order of 0.34 (EEG mean delta
+  during measurement period). Model expection error (with incorrectly
+  measured data) was 0.20 with sounds (FM synthesis) and 0.30-0.40 with
+  pictures and keywords. The stimulation time used was 333ms. FM sound
+  response prediction uses also previous synthesis state as a input (previous
+  fm params, next fm params, current eeg state) meaning that
 
-  Program results with 1000ms long measurements of complex interpolating FM
-  sounds were bad. Number of samples were low, only 150 (851?). Try to get
-  more samples to test if 1000ms pad like interpolating FM sounds are good
-  stimulation elements. Model error was order of 0.01 indicating overfitting
-  to too little data.
+  <\enumerate-numeric>
+    <item>either sound is much better way to alter eeg than visual stimuli
+    or..
 
-  \;
+    <item>models which take a previously chosen stimulation element into
+    account are much better predicting response. (50% decrese in model error)
+
+    <item>large number of measuremens (thousands) are needed to for
+    meaningful prediction instead of aprox. 100 which is used now for
+    prediction stimulation element response.
+
+    <item>Model calculation code is working incorrectly.
+  </enumerate-numeric>
+
+  Cases 2 and 3 mean that picture stimulation must use picture synthesis code
+  (in development) through parameters instead of showing individual pictures.
+
+  <with|font-series|bold|Current Sound Stimulation Implementation>
+
+  Sound is synthesized by forcing fundamental frequency to notes between A-4
+  to A-5. After this FM synthesis parameters are constantly glided between
+  previous and current configuration so that full glide happens in one
+  seconds. Values of FM synthesizer are changed every 1 second meaning that
+  FM synthesis parameters are in constant glide.
+
+  Neural network model uses previous and current synthesizer parameters and
+  current eeg state as input parameters and tries to predict the next eeg
+  state. The neural network is 2-layer feedforward neural network which uses
+  complexity parameter 25. This means the network architecture is
+  13-325-325-6. The learning code is multistart L-BFGS with 150 iterations
+  after which maximum data likelihood distribution
+  <math|p<around*|(|data<around*|\||neural network params|\<nobracket\>>|)>>
+  is sampled using HMC sampler for 500 samples which are used to predict
+  uncertainty of the output using monte carlo integration.
+
+  <with|font-shape|italic|Selection of stimulation sound.> Currently, the
+  method generates random gaussian noise around current synthesis parameters
+  (80%-90%) and completely random synthesis parameters (10-20%). [1000 tries]
+  Neural network model is then used to predict the response and stimulation
+  with the smallest risk-adjusted distance\ 
+
+  <center|<math|d<around*|(|\<b-x\>|)>=E<around*|[|\<b-t\>-NN<around*|(|\<b-x\>|)>|]>+0.5<sqrt|Var<around*|[|\<b-t\>-NN<around*|(|\<b-x\>|)>|]>>*>>
+
+  to the target state <math|\<b-t\>> is selected.
+
+  <with|font-shape|italic|Improved selection of sound parameters (?).>
+  Instead of using directly generated random parameters <math|\<b-x\>>, a
+  gradient descent to the nearest local minima should be used. This can be
+  done by simply minimizing error function
+
+  <center|<math|e<around*|(|\<b-x\>|)>=<frac|1|2><around*|\<\|\|\>|\<b-t\>-NN<around*|(|\<b-x\>|)>|\<\|\|\>><rsup|2>>,
+  <math|\<nabla\><rsub|\<b-x\>>*e<around*|(|\<b-x\>|)>=<around*|(|NN<around*|(|\<b-x\>|)>-\<b-t\>|)><rsup|T>\<nabla\><rsub|\<b-x\>>NN<around*|(|\<b-x\>|)>>>
+
+  \ by doing iterative line search into decreasing gradient direction until
+  convergence. The gradient of <math|NN<around*|(|\<b-x\>|)>*>is easy to
+  calculate using chain rule. The only problem is increasing computational
+  burden because instead of one function we now have
+  <math|p<around*|(|\<b-omega\>|)>> distribution of 100 samples of neural
+  network parameters which must be used to estimate gradient and error
+  function value. <with|font-series|bold|Only problem with gradient descent
+  to local minima is that this method cannot be easily parallelized. While it
+  is easy to generate and evaluate random samples in parallel, gradient
+  descent algorithm is sequential and requires sophisticated computation.>
+
+  However, this removes the need to generate 600+ samples with gaussian noise
+  around current synth parameters in order to find best local next step. If
+  the method converges in 20 steps requiring 30 evaluations of neural network
+  formula the method has about same speed. Additionally, unlike random
+  search, gradient descent scales to large number of sound synthesizer input
+  parameters. The only problem with gradient descent is that it cannot find
+  global minimum and if neural network model is overfitting, gradient descent
+  goes to its local optima which may very well be artificial noise of the
+  neural network model.
+
+  Optimization result with multistart L-BFGS 500 iterations, 13-325-325-6
+  architecture and 5327 examples in training set (optimization divides in
+  <math|\<sim\>2650> samples training set for L-BFGS). UHMC sampler, on the
+  other hand, uses all 5327 samples when sampling maximum data likelihood
+  parameters.
+
+  13-325-6 (2600 examples) =\<gtr\> LBFGS <math|0.06> error
+
+  13-325-325-6 (5327 examples) =\<gtr\> LBFGS <math|\<sim\>0.07> error, bayes
+  error: 0.30.
+
+  <with|font-series|bold|There is some bug in UHMC code. Error values for
+  prediction are too high.>
+
+  PCA 13-325-325-6 (5327 examples) =\<gtr\> LBFGS x error, bayes error:\ 
 </body>

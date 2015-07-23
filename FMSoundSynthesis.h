@@ -48,6 +48,9 @@ public:
   double oldFm;
   double oldAm;
   
+  static const unsigned int NBUFFERS = 10;
+  std::vector<int16_t> prevbuffer[NBUFFERS];
+  
   virtual bool synthesize(int16_t* buffer, int samples);
   
 };

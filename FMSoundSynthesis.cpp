@@ -7,26 +7,26 @@
 #include <iostream>
 #include <chrono>
 #include <math.h>
+#include <vector>
 
 
 FMSoundSynthesis::FMSoundSynthesis() {
   
   // default parameters: silence
-  std::vector<float> p;
-  p.resize(4);
-  p[0] = 0.0f;
-  p[1] = 0.0f;
-  p[2] = 0.0f;
-  p[3] = 0.0f;
+  currentp.resize(3);
   
-  currentp.resize(4);
-  currentp[0] = 0.0f;
-  currentp[1] = 0.0f;
-  currentp[2] = 0.0f;
-  currentp[3] = 0.0f;
+  for(auto& pi : currentp)
+    pi = 0.0f;
   
-  setParameters(p);
-  setParameters(p);
+  Ac = 0.0;
+  Fc = 0.0;
+  Fm = 0.0;
+  Am = 0.0;
+  
+  oldAc = 0.0;
+  oldFc = 0.0;
+  oldFm = 0.0;
+  oldAm = 0.0;
   
   tbase = 0.0;
   
@@ -64,15 +64,15 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
 {
   auto p = p_;
   
-  if(p.size() != 4) return false;
-  
-  currentp = p; // copies values for getParameters()
+  if(p.size() != 3) return false;
   
   // limit parameters to [0,1] range
-  for(unsigned int i=0;i<p.size();i++){
-    if(p[i] < 0.0f) p[i] = 0.0f;
-    if(p[i] > 1.0f) p[i] = 1.0f;
+  for(auto& pi : p){
+    if(pi < 0.0f) pi = 0.0f;
+    if(pi > 1.0f) pi = 1.0f;
   }
+  
+  currentp = p; // copies values for getParameters()
   
   oldAc = Ac;
   oldFc = Fc;
@@ -98,10 +98,9 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   
   {
     // harmonicity ratio: Fm/Fc [0,1] => [0,3] values possible
-    float h = floor(p[2]*3.999999);
+    // float h = floor(p[2]*3.999999);
     
-    // printf("harmonicity = %f\n", h); fflush(stdout);
-    
+    float h = 1.0f;
     h = round(h)*Fc; // [0, 1, 2, 3]
     
     Fm = h;
@@ -109,9 +108,9 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   
   {
     // modulation index: Am/Fm
-    float m = p[3];
+    float m = p[2];
     
-    m = 0.005*p[3]*p[3]*p[3]*p[3];
+    m = (10e-7)*p[2]*p[2]; // sets maximum value explicitly
     
     Am = m*Fm;
   }
@@ -119,17 +118,17 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   resetTime = getMilliseconds();
   // tbase = 0.0;
   
-  // std::cout << "A  = " << A << std::endl;
-  // std::cout << "Fc = " << Fc << std::endl;
-  // std::cout << "Fm/Fc = " << Fm/Fc << std::endl;
-  // std::cout << "Am/Fm = " << d/Fm << std::endl;
+  std::cout << "Ac  = " << Ac << std::endl;
+  std::cout << "Fc = " << Fc << std::endl;
+  std::cout << "Fm/Fc = " << Fm/Fc << std::endl;
+  std::cout << "Am/Fm = " << Am/Fm << std::endl;
   
   return true;
 }
 
 
 int FMSoundSynthesis::getNumberOfParameters(){
-  return 4;
+  return 3;
 }
 
 
@@ -169,13 +168,15 @@ bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
     double Am_ = Am;
     double oldAm_ = oldAm;
     
+    double delayF = Fc_;
+    
     if(now < fadeoutTime){
       double c = now/fadeoutTime;
       double f = c*Fc_ + (1.0 - c)*oldFc_;
-      Fc_ = f;
-      oldFc_ = f;
+      delayF;
+      // Fc_ = f;
+      // oldFc_ = f;
 
-#if 1
       double fm = c*Fm_ + (1.0 - c)*oldFm_;
       Fm_ = fm;
       oldFm_ = fm;
@@ -183,21 +184,92 @@ bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
       double am = c*Am_ + (1.0 - c)*oldAm_;
       Am_ = am;
       oldAm_ = am;
-#endif
     }
     
     double F = (Am_*cos(2.0*M_PI*Fm_*t) + Fc_);
     double value = Ac*cos(2.0*M_PI*F*t);
-    
+
     double oldF = (oldAm_*cos(2.0*M_PI*oldFm_*t) + oldFc_);
     double oldvalue = oldAc*cos(2.0*M_PI*oldF*t);
+    
+    double NOTE_FADEOUT_TIME = 1000.0;
 
-    if(now < fadeoutTime){
-      double c = now/fadeoutTime;
-      value  = c*value  + (1.0 - c)*oldvalue;
+    if(now < NOTE_FADEOUT_TIME){
+      double c = now/NOTE_FADEOUT_TIME;
+      double r = (1.0 - c);
+      value  = value  + r*r*r*r*oldvalue;
     }
     
+    // delay
+    {
+      std::vector<double> delay;
+      std::vector<double> delayA;
+      
+      // delay.push_back(25.3/delayF);
+      // delay.push_back(50.7/delayF);
+      // delay.push_back(75.0/delayF);
+      
+      delay.push_back(100/1000.0);
+      delay.push_back(200/1000.0);
+      delay.push_back(300/1000.0);
+      delayA.push_back(-0.50);
+      delayA.push_back(+0.05);
+      delayA.push_back(-0.01);
+      
+      
+      for(unsigned int efx=0;efx<delay.size();efx++){
+	int delaysamples = int(hz*delay[efx]);
+	int index = i - delaysamples;
+	
+	if(index >= 0)
+	  value += delayA[efx]*buffer[i - delaysamples]/32767.0;
+	else{
+	  for(unsigned int b=0;b<NBUFFERS;b++){
+	    index += prevbuffer[b].size();
+	    if(index >= 0 && index < prevbuffer[b].size()){
+	      value += delayA[efx]*prevbuffer[b][index]/32767.0;
+	      break;
+	    }
+	  }
+	}
+      }
+    }
+    
+    if(value <= -1.0) value = -1.0;
+    else if(value >= 1.0) value = 1.0;
+    
+    value = value; // non-sinusoid..
+    
     buffer[i] = (int16_t)( value*32767 );
+  }
+  
+  for(int i=(NBUFFERS-2);i>=0;i--){ // should swap pointers instead..    
+    prevbuffer[i+1] = prevbuffer[i];
+  }
+  
+  prevbuffer[0].resize(samples);
+  
+  for(int i=0;i<samples;i++){
+    prevbuffer[0][i] = buffer[i];
+#if 0
+    // does simple low pass filtering take sum of recent samples
+    int sum = 0;
+    for(int j=0;j<10;j++){
+      if(i-j >= 0){
+	sum += ((int)buffer[i-j]);
+      }
+      else{
+	int index = i-j+prevbuffer[1].size();
+	
+	if(index >= 0){
+	  sum += (int)prevbuffer[1][index];
+	}
+      }
+    }
+    sum /= 10;
+    
+    prevbuffer[0][i] = sum;
+#endif
   }
   
   tbase += ((double)samples)/hz;

@@ -41,8 +41,9 @@ void print_usage()
 	printf("--random         display random stimulation\n");
 	printf("--measure        measure brainwave responses to pictures/keywords\n");
 	printf("--optimize       optimize prediction model for targeted stimulation\n");
-	printf("--analyze        measurement database statistics and model performance analysis\n");
 	printf("--program        programmed stimulation sequences towards target values\n");
+	printf("--analyze        measurement database statistics and model performance analysis\n");
+	printf("--dumpdata       dumps measurement database to ascii files\n");
 	printf("--help           shows command line help\n");
 	printf("\n");
 	printf("--picture-dir=   use picture source directory\n");
@@ -56,7 +57,8 @@ void print_usage()
 	printf("--loop           loops program forever\n");
 	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
 	printf("--savevideo      save video to neurostim.ogv file\n");
-	printf("-v               verbose mode\n");	
+	printf("--optimize-synth only optimize synth model when optimizing\n");
+	printf("-v               verbose mode\n");
 	printf("\n");
 	printf("This is alpha version. Report bugs to Tomas Ukkonen <nop@iki.fi>\n");
 }
@@ -85,6 +87,7 @@ int main(int argc, char** argv)
 	// process command line
 	bool hasCommand = false;
 	bool analyzeCommand = false;
+	bool dumpAsciiCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;	
 	std::string device = "muse";
 	std::string optimizationMethod = "rbf";
@@ -92,6 +95,7 @@ int main(int argc, char** argv)
 	bool fullscreen = false;
 	bool loop = false;
 	bool saveVideo = false;
+	bool optimizeSynthOnly = false;
 	bool verbose = false;
 	
 	std::string programFile;
@@ -118,6 +122,11 @@ int main(int argc, char** argv)
 			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_NOTHING;
 			hasCommand = true;
 			analyzeCommand = true;
+		}
+		else if(strcmp(argv[i], "--dumpdata") == 0){
+		        cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_NOTHING;
+			hasCommand = true;
+			dumpAsciiCommand = true;
 		}
 		else if(strcmp(argv[i], "--help") == 0){
 			print_usage();
@@ -154,6 +163,9 @@ int main(int argc, char** argv)
 	    else if(strncmp(argv[i], "--target=", 9) == 0){
 	        char* p = &(argv[i][9]);
 		parse_float_vector(targets, p);
+	    }
+	    else if(strcmp(argv[i], "--optimize-synth") == 0){
+	      optimizeSynthOnly = true;
 	    }
 	    else if(strcmp(argv[i],"--fullscreen") == 0){
 	        fullscreen = true;
@@ -232,7 +244,12 @@ int main(int argc, char** argv)
 	      engine.setParameter("loop", "false");
 	    }
 	    
-	    
+	    if(optimizeSynthOnly){
+	      engine.setParameter("optimize-synth-only", "true");
+	    }
+	    else{
+	      engine.setParameter("optimize-synth-only", "false");
+	    }
 	}
 
 	
@@ -296,7 +313,11 @@ int main(int argc, char** argv)
 
 	}
 	else if(analyzeCommand == true){
+	        sleep(5); // gives engine time to initialize synth object
 		std::string msg = engine.analyzeModel(cmd.modelDir);
+		std::cout << msg << std::endl;
+		msg = engine.analyzeModel2(cmd.pictureDir, cmd.keywordsFile,
+					   cmd.modelDir);
 		std::cout << msg << std::endl;
 		
 		msg = engine.deltaStatistics(cmd.pictureDir, cmd.keywordsFile,
@@ -304,6 +325,20 @@ int main(int argc, char** argv)
 		std::cout << msg << std::endl;
 		
 		return 0;
+	}
+	else if(dumpAsciiCommand == true){
+	        sleep(5); // gives engine time to initialize synth object
+		
+		if(engine.exportDataAscii(cmd.pictureDir, cmd.keywordsFile,
+					  cmd.modelDir)){
+		  std::cout << "Exporting measurements data to ascii format FAILED." << std::endl;
+		  return -1;
+		}
+		else{
+		  std::cout << "Measurements data exported to ascii format." << std::endl;
+		  return 0;
+		}
+		
 	}
 
 

@@ -124,14 +124,26 @@ public:
 	bool getMeasuredProgram(std::vector< std::vector<float> >& program);
 
 	// analyzes given measurements database and model performance
-	std::string analyzeModel(const std::string& modelDir);
+	std::string analyzeModel(const std::string& modelDir) const;
+	
+	// analyzes given measurements database and model performance more accurately
+	std::string analyzeModel2(const std::string& pictureDir, 
+				  const std::string& keywordsFile, 
+				  const std::string& modelDir) const;
 
 	// calculates delta statistics from the measurements [with currently selected EEG]
-	std::string deltaStatistics(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) const;
+	std::string deltaStatistics(const std::string& pictureDir, 
+				    const std::string& keywordsFile, 
+				    const std::string& modelDir) const;
 
 	// returns collected program performance statistics [program weighted RMS]
 	std::string executedProgramStatistics() const;
-
+	
+	// exports data to ASCII format files (.txt files)
+	bool exportDataAscii(const std::string& pictureDir, 
+			     const std::string& keywordsFile, 
+			     const std::string& modelDir) const;
+	
 	bool deleteModelData(const std::string& modelDir);
 
 	// sets and gets EEG device information [note: engine must be in "doNothing" state
@@ -207,7 +219,7 @@ private:
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
-	static const unsigned int TICK_MS = 250; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
 	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
 	// media resource
@@ -247,8 +259,9 @@ private:
 				   bool& soundModelCalculated);
 	
 	whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
-	const unsigned int NUM_OPTIMIZER_THREADS = 2;
-	const unsigned int NUM_OPTIMIZER_ITERATIONS = 100;
+	const unsigned int NUM_OPTIMIZER_THREADS = 1;
+	const unsigned int NUM_OPTIMIZER_ITERATIONS = 150; // [just 20 for testing]
+	bool optimizeSynthOnly = false;
 	
 	whiteice::nnetwork<>* nn = nullptr;
 	whiteice::nnetwork<>* nnsynth = nullptr; // synth data neural network
@@ -274,7 +287,7 @@ private:
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 	
 	// number of parameters to test with synthModel before selecting the optimium one
-	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 500;
+	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 100;
 	
 	unsigned long long synthParametersChangedTime = 0ULL;
 
