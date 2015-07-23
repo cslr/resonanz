@@ -89,7 +89,7 @@ ResonanzEngine::ResonanzEngine()
 		nn = new whiteice::nnetwork<>(nnArchitecture);
 		
 		// creates dummy synth neural network
-		const int synth_number_of_parameters = 6;
+		const int synth_number_of_parameters = 3;
 		
 		nnArchitecture.clear();
 		nnArchitecture.push_back(eeg->getNumberOfSignals() + 2*synth_number_of_parameters);
@@ -100,9 +100,18 @@ ResonanzEngine::ResonanzEngine()
 		nnsynth = new whiteice::nnetwork<>(nnArchitecture);
 	}
 	
+	
+	thread_initialized = false;
+	
 	// starts updater thread thread
 	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
+	
+	// waits for thread to initialize itself properly
+	while(thread_initialized == false){
+	  std::chrono::milliseconds duration(100); // 1000ms (thread sleep/working period is something like < 100ms)
+	  std::this_thread::sleep_for(duration);
+	}
 }
 
 ResonanzEngine::~ResonanzEngine()
@@ -745,9 +754,14 @@ void ResonanzEngine::engine_loop()
 
 		if(thread_is_running == false){
 			if(initialized) engine_SDL_deinit();
+			thread_initialized = true; // should never happen/be needed..
 			return;
 		}
 	}
+	
+
+	// thread has started successfully
+	thread_initialized = true;
 
 
 	while(thread_is_running){
@@ -1751,7 +1765,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 					   const std::vector<float>& eegTargetVariance,
 					   float timestep_)
 {
-	const unsigned int NUM_TOPRESULTS = 4;
+	const unsigned int NUM_TOPRESULTS = 1;
 	std::multimap<float, int> bestKeyword;
 	std::multimap<float, int> bestPicture;
 	
@@ -1979,7 +1993,10 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  for(unsigned int i=0;i<soundParameters.size();i++)
 	    soundParameters[i] = rng.uniform().c[0];
 	  
-	  math::vertex<> input(synthModel.inputSize());
+	  math::vertex<> input;
+	  input.resize(synthModel.inputSize());
+	  input.zero();
+	  
 	  std::vector<float> synthBefore;
 	  std::vector<float> synthTest;
 	  
@@ -2605,20 +2622,34 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				}
 				
 				// saves optimization results to a file
-				std::string dbFilename = currentCommand.modelDir + "/" + 
+				std::string modelFilename = currentCommand.modelDir + "/" + 
 				  calculateHashName(eeg->getDataSourceName() + synth->getSynthesizerName()) + ".model";
 
 				nnsynth->importdata(w);
 
-				bnn->importNetwork(*nn);
+				bnn->importNetwork(*nnsynth);
 
-				if(bnn->save(dbFilename) == false)
+				if(bnn->save(modelFilename) == false)
 					logging.error("saving nn configuration file failed");
 
 				delete optimizer;
 				optimizer = nullptr;
 
 				soundModelCalculated = true;
+			}
+			else{
+			  {
+			    math::vertex< math::blas_real<float> > w;
+			    math::blas_real<float> error;
+			    unsigned int iterations = 0;
+			    
+			    optimizer->getSolution(w, error, iterations);
+			    
+			    char buffer[512];
+			    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d. error: %f",
+				     iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
+			    logging.info(buffer);
+			  }
 			}
 		}
 	  
@@ -2794,6 +2825,21 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				}
 			}
 		}
+		else{
+		  {
+		    math::vertex< math::blas_real<float> > w;
+		    math::blas_real<float> error;
+		    unsigned int iterations = 0;
+		    
+		    optimizer->getSolution(w, error, iterations);
+		    
+		    char buffer[512];
+		    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model %d/%d. number of iterations: %d/%d. error: %f",
+			     currentPictureModel, pictures.size(), 
+			     iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
+		    logging.info(buffer);
+		  }
+		}
 
 	}
 	else if(currentKeywordModel < keywords.size() && optimizeSynthOnly == false){
@@ -2965,6 +3011,21 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				}
 			}
 		}
+		else{
+		  {
+		    math::vertex< math::blas_real<float> > w;
+		    math::blas_real<float> error;
+		    unsigned int iterations = 0;
+		    
+		    optimizer->getSolution(w, error, iterations);
+		    
+		    char buffer[512];
+		    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model %d/%d. number of iterations: %d/%d. error: %f",
+			     currentKeywordModel, keywords.size(), 
+			     iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
+		    logging.info(buffer);
+		  }
+		}
 	}
 	else{ // both synth, picture and keyword models has been computed or
 	      // optimizeSynthOnly == true and only synth model has been computed => stop
@@ -3076,13 +3137,19 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 	std::vector<std::string> tempKeywords;
 
 	// first we get picture names from directories and keywords from keyfile
-	if(this->loadWords(keyfile, tempKeywords) == false)
-		return false;
+	if(this->loadWords(keyfile, tempKeywords) == false){
+	  logging.error("loading keyword file FAILED.");
+	  return false;
+	}
+		
 
 	std::vector<std::string> tempPictures;
 
-	if(this->loadPictures(picdir, tempPictures) == false)
-		return false;
+	if(this->loadPictures(picdir, tempPictures) == false){
+	  logging.error("loading picture filenames FAILED.");
+	  return false;
+	}
+		
 
 	pictures = tempPictures;
 	keywords = tempKeywords;
@@ -4447,8 +4514,10 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	error /= num;
 	
 	char buffer[256];
-	snprintf(buffer, 256, "Synth %s model error: %f (N=%d)\n", 
-		 synth->getSynthesizerName().c_str(), error, (int)num);
+	snprintf(buffer, 256, "Synth %s model [dim(%d) -> dim(%d)] error: %f (N=%d)\n", 
+		 synth->getSynthesizerName().c_str(), 
+		 bnn.inputSize(), bnn.outputSize(), 
+		 error, (int)num);
 	
 	report += buffer;	
       }

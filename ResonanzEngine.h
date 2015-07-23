@@ -169,6 +169,7 @@ private:
 	const std::string iconFile = "brain.png";
 
 	volatile bool thread_is_running;
+	volatile bool thread_initialized = false;
 	std::thread* workerThread;
 	std::mutex   thread_mutex;
 
@@ -260,7 +261,7 @@ private:
 	
 	whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
 	const unsigned int NUM_OPTIMIZER_THREADS = 1;
-	const unsigned int NUM_OPTIMIZER_ITERATIONS = 150; // [just 20 for testing]
+	const unsigned int NUM_OPTIMIZER_ITERATIONS = 150;
 	bool optimizeSynthOnly = false;
 	
 	whiteice::nnetwork<>* nn = nullptr;
@@ -287,7 +288,7 @@ private:
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 	
 	// number of parameters to test with synthModel before selecting the optimium one
-	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 100;
+	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 2000;
 	
 	unsigned long long synthParametersChangedTime = 0ULL;
 

@@ -52,7 +52,7 @@ void print_usage()
 	printf("--program-file=  sets NMC program file\n");
 	printf("--target=        sets measurement program targets (comma separated numbers)\n");
 	printf("--device=        sets measurement device: muse*, [insight], random\n");
-	printf("--method=        sets optimization method: rbf*, lbfgs\n");
+	printf("--method=        sets optimization method: rbf, lbfgs*, bayes\n");
 	printf("--pca            preprocess input data with pca if possible\n");
 	printf("--loop           loops program forever\n");
 	printf("--fullscreen     fullscreen mode instead of windowed mode\n");
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 	bool dumpAsciiCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;	
 	std::string device = "muse";
-	std::string optimizationMethod = "rbf";
+	std::string optimizationMethod = "lbfgs";
 	bool usepca  = false;
 	bool fullscreen = false;
 	bool loop = false;
@@ -100,6 +100,11 @@ int main(int argc, char** argv)
 	
 	std::string programFile;
 	std::vector<float> targets;
+	
+	cmd.pictureDir = "pics";
+	cmd.keywordsFile = "keywords.txt";
+	cmd.modelDir = "model";
+	
 	
 	for(int i=1;i<argc;i++){
 		if(strcmp(argv[i], "--random") == 0){
@@ -219,8 +224,12 @@ int main(int argc, char** argv)
 	      engine.setParameter("use-data-rbf", "true");
 	    }
 	    else if(optimizationMethod == "lbfgs"){
-	      engine.setParameter("use-bayesian-nnetwork", "true");
+	      engine.setParameter("use-bayesian-nnetwork", "false");
 	      engine.setParameter("use-data-rbf", "false");
+	    }
+	    else if(optimizationMethod == "bayes"){
+	      engine.setParameter("use-bayesian-nnetwork", "true");
+	      engine.setParameter("use-data-rbf", "false");	      
 	    }
 	    
 	    if(usepca){

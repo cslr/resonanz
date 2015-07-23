@@ -118,10 +118,10 @@ bool FMSoundSynthesis::setParameters(const std::vector<float>& p_)
   resetTime = getMilliseconds();
   // tbase = 0.0;
   
-  std::cout << "Ac  = " << Ac << std::endl;
-  std::cout << "Fc = " << Fc << std::endl;
-  std::cout << "Fm/Fc = " << Fm/Fc << std::endl;
-  std::cout << "Am/Fm = " << Am/Fm << std::endl;
+  // std::cout << "Ac  = " << Ac << std::endl;
+  // std::cout << "Fc = " << Fc << std::endl;
+  // std::cout << "Fm/Fc = " << Fm/Fc << std::endl;
+  // std::cout << "Am/Fm = " << Am/Fm << std::endl;
   
   return true;
 }
