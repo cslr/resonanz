@@ -41,6 +41,8 @@
 
 #include "SDLTheora.h"
 
+#include "hermitecurve.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -3733,7 +3735,7 @@ std::string ResonanzEngine::calculateHashName(const std::string& filename) const
 bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int picture,
 				       const std::vector<float>& synthParams)
 {
-	SDL_Surface* surface = SDL_GetWindowSurface(window);
+        SDL_Surface* surface = SDL_GetWindowSurface(window);
 	if(surface == nullptr)
 		return false;
 
@@ -3870,6 +3872,33 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 			video->insertFrame((t1ms - programStarted), surface);
 		}
 		
+	}
+
+
+	///////////////////////////////////////////////////////////////////////
+	// displays random curve (5 random points)
+
+	{
+	  std::vector< math::vertex< math::blas_real<double> > > curve;
+	  
+	  createHermiteCurve(curve, 5, 2, 10000);
+
+	  for(const auto& p : curve){
+	    int x = 0;
+	    double scalingx = SCREEN_WIDTH/4;
+	    math::convert(x, scalingx*p[0] + SCREEN_WIDTH/2);
+	    int y = 0;
+	    double scalingy = SCREEN_HEIGHT/4;
+	    math::convert(y, scalingy*p[1] + SCREEN_HEIGHT/2);
+
+	    if(x>=0 && x<SCREEN_WIDTH && y>=0 && y<SCREEN_HEIGHT){
+	      Uint8 * pixel = (Uint8*)surface->pixels;
+	      pixel += (y * surface->pitch) + (x * sizeof(Uint32));
+	      *((Uint32*)pixel) = 0x00000000; // black
+	    }
+	    
+	  }
+ 
 	}
 	
 	///////////////////////////////////////////////////////////////////////

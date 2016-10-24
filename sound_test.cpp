@@ -42,6 +42,8 @@ int main(int argc, char**argv)
       }
       while(p[i] <= 0.0f);
     }
+
+    p[0] = 0.8;
     
     if(snd.setParameters(p) == false)
       std::cout << "set parameters failed." << std::endl;

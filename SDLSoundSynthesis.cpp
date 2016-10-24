@@ -40,6 +40,16 @@ bool SDLSoundSynthesis::play()
   
   if(dev == 0){
     printf("SDL Error: %s\n", SDL_GetError());
+    
+    // prints audio devices
+    const int numDevices = SDL_GetNumAudioDevices(0);
+    if(numDevices >= 0)
+      printf("Number of audio devices: %ḍn", numDevices);
+    
+    for(int i=0;i<numDevices;i++){
+      printf("Audio device %d: %s\n", i, SDL_GetAudioDeviceName(i, 0));
+    }
+    
     return false;
   }
   
