@@ -35,6 +35,7 @@
 #include "DataSource.h"
 
 #include "SDLSoundSynthesis.h"
+#include "SDLMicrophoneListener.h"
 
 #include "SDLTheora.h"
 
@@ -93,7 +94,7 @@ public:
 
 	bool cmdDoNothing(bool showScreen);
 
-	bool cmdRandom(const std::string& pictureDir, const std::string& keywordsFile) throw();
+	bool cmdRandom(const std::string& pictureDir, const std::string& keywordsFile, bool saveVideo) throw();
 
 	bool cmdMeasure(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
@@ -230,6 +231,7 @@ private:
 	std::vector<std::string> pictures;
 	std::vector<SDL_Surface*> images;
 	SDLSoundSynthesis* synth = nullptr;
+	SDLMicListener* mic = nullptr;
 
 	bool loadWords(const std::string filename, std::vector<std::string>& words) const;
 	bool loadPictures(const std::string directory, std::vector<std::string>& pictures) const;

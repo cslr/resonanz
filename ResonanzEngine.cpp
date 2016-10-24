@@ -66,6 +66,7 @@ ResonanzEngine::ResonanzEngine()
 	video = nullptr;
 	eeg   = nullptr;
 	synth = nullptr;
+	mic   = nullptr;
 
 	workerThread = nullptr;
 	thread_is_running = true;
@@ -206,7 +207,8 @@ bool ResonanzEngine::cmdDoNothing(bool showScreen)
 }
 
 
-bool ResonanzEngine::cmdRandom(const std::string& pictureDir, const std::string& keywordsFile) throw()
+bool ResonanzEngine::cmdRandom(const std::string& pictureDir, const std::string& keywordsFile,
+			       bool saveVideo) throw()
 {
 	if(pictureDir.length() <= 0 || keywordsFile.length() <= 0)
 		return false;
@@ -222,6 +224,7 @@ bool ResonanzEngine::cmdRandom(const std::string& pictureDir, const std::string&
 	incomingCommand->pictureDir = pictureDir;
 	incomingCommand->keywordsFile = keywordsFile;
 	incomingCommand->modelDir = "";
+	incomingCommand->saveVideo = true;
 
 	return true;
 }
@@ -796,7 +799,20 @@ void ResonanzEngine::engine_loop()
 			    synth->pause();
 			    synth->reset();
 			  }
+
+			  // stops encoding if needed
+			  if(video != nullptr){
+			    auto t1 = std::chrono::system_clock::now().time_since_epoch();
+			    auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+			    logging.info("stopping theora video encoding.");
 			    
+			    video->stopEncoding(t1ms - programStarted);
+			    delete video;
+			    video = nullptr;
+			    programStarted = 0;
+			  }
+			  
 			}
 			else if(prevCommand.command == ResonanzCommand::CMD_DO_MEASURE){
 			        // stop playing sound
@@ -865,6 +881,8 @@ void ResonanzEngine::engine_loop()
 				if(video != nullptr){
 					auto t1 = std::chrono::system_clock::now().time_since_epoch();
 					auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+					logging.info("stopping theora video encoding.");
 
 					video->stopEncoding(t1ms - programStarted);
 					delete video;
@@ -1140,20 +1158,7 @@ void ResonanzEngine::engine_loop()
 						}
 					}
 
-					if(currentCommand.saveVideo){
-						// starts video encoder
-						video = new SDLTheora(0.50f); // 50% quality
-
-						if(video->startEncoding("neurostim.ogv", SCREEN_WIDTH, SCREEN_HEIGHT) == false)
-							logging.error("starting theora video encoder failed");
-						else
-							logging.info("started theora video encoding");
-					}
-					else{
-						// do not save video
-						video = nullptr;
-					}
-
+					
 					if(currentCommand.audioFile.length() > 0)
 						engine_playAudioFile(currentCommand.audioFile);
 
@@ -1231,10 +1236,32 @@ void ResonanzEngine::engine_loop()
 				  }
 				}
 			}
-			
 
-			
 
+			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
+			  if(currentCommand.saveVideo){
+			    // starts video encoder
+			    video = new SDLTheora(0.50f); // 50% quality
+			    
+			    if(video->startEncoding("neurostim.ogv", SCREEN_WIDTH, SCREEN_HEIGHT) == false)
+			      logging.error("starting theora video encoder failed");
+			    else
+			      logging.info("started theora video encoding");
+			  }
+			  else{
+			    // do not save video
+			    video = nullptr;
+			  }
+			}
+
+
+			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM){
+			  auto t0 = std::chrono::system_clock::now().time_since_epoch();
+			  auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
+			  programStarted = t0ms;
+			  lastProgramSecond = -1;
+			}
+			
 		}
 		
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1522,6 +1549,8 @@ void ResonanzEngine::engine_loop()
 				if(video){
 					auto t1 = std::chrono::system_clock::now().time_since_epoch();
 					auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+					logging.info("stopping theora video encoding.");
 
 					video->stopEncoding(t1ms - programStarted);
 					delete video;
@@ -3850,10 +3879,10 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	  // mean dbel value
 	  {
 	    for(unsigned int i=latestTickCurveDrawn+1;i<=tick;i++){
-	      historyPower.push_back(synth->getSynthPower());
+	      historyPower.push_back(mic->getInputPower());
 	    }
 
-	    while(historyPower.size() > 2*TICKSPERCURVE)
+	    while(historyPower.size() > TICKSPERCURVE)
 	      historyPower.pop_front();
 
 	    auto m = 0.0, v = 0.0;
@@ -3866,7 +3895,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	    v -= m*m;
 	    v = sqrt(v);
 
-	    stdev = synth->getSynthPower()/v;
+	    stdev = (mic->getInputPower())/(v + 0.01*m);
 	  }
 	  
 	  
@@ -3907,7 +3936,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	  }
 	  
 	  // creates curve that goes through points
-	  createHermiteCurve(curve, points, 0.02*stdev/3.0, 10000);
+	  createHermiteCurve(curve, points, 0.001 + 0.01*stdev/4.0, 10000);
 
 	  for(const auto& p : curve){
 	    int x = 0;
@@ -3963,13 +3992,21 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		  SDL_FreeSurface(msg);
 		}
 
-		if(video && programStarted > 0){
-			auto t1 = std::chrono::system_clock::now().time_since_epoch();
-			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+	}
 
-			video->insertFrame((t1ms - programStarted), surface);
-		}
-		
+	
+	///////////////////////////////////////////////////////////////////////
+	// video encoding (if activated)
+	{
+	  if(video && programStarted > 0){
+	    auto t1 = std::chrono::system_clock::now().time_since_epoch();
+	    auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+
+	    logging.info("adding frame to theora encoding queue");
+	    
+	    if(video->insertFrame((t1ms - programStarted), surface) == false)
+	      logging.error("inserting frame FAILED");
+	  }
 	}
 
 
@@ -4060,7 +4097,11 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 
 	audioEnabled = false;
 	synth = new FMSoundSynthesis(); // curretly just supports single synthesizer type
+	mic   = new SDLMicListener();   // records single input channel
 	synth->pause(); // no sounds
+	
+	if(mic->listen() == false)      // tries to start recording audio
+	  logging.error("starting SDL sound capture failed");
 	
 	{
 	  // we get the mutex so eeg cannot change below us..
@@ -4137,7 +4178,12 @@ bool ResonanzEngine::engine_SDL_deinit()
 	if(synth){
 	  synth->pause();
 	  delete synth;
-	  synth = nullptr;
+	  synth = nullptr;	  
+	}
+
+	if(mic){
+	  delete mic;
+	  mic = nullptr;
 	}
 
 	if(audioEnabled)

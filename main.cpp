@@ -264,7 +264,7 @@ int main(int argc, char** argv)
 	
 	
 	if(cmd.command == cmd.CMD_DO_RANDOM){
-		if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile) == false){
+ 	        if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile, saveVideo) == false){
 			printf("ERROR: bad parameters\n");
 			return -1;
 		}

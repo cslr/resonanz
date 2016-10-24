@@ -2,14 +2,16 @@
 #include <stdio.h>
 #include <iostream>
 #include "FMSoundSynthesis.h"
+#include "SDLMicrophoneListener.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 #include <SDL.h>
 
+
 int main(int argc, char**argv)
 {
-  printf("Mini FM sound synthesis test\n");
+  printf("Mini FM sound synthesis and capture test\n");
   
   SDL_Init(SDL_INIT_AUDIO);
   atexit(SDL_Quit);
@@ -17,11 +19,18 @@ int main(int argc, char**argv)
   srand(time(0));
   
   FMSoundSynthesis snd;
+  SDLMicListener mic;
   
   if(snd.play() == false){
     printf("Cannot start playback.\n");
     return -1;
   }
+
+  if(mic.listen() == false){
+    printf("Cannot start audio capture.\n");
+    return -1;
+  }
+			   
   
   std::vector<float> p;
   p.resize(snd.getNumberOfParameters());
@@ -48,7 +57,7 @@ int main(int argc, char**argv)
     if(snd.setParameters(p) == false)
       std::cout << "set parameters failed." << std::endl;
 
-    std::cout << "SIGNAL POWER: " << snd.getSynthPower() << std::endl;
+    std::cout << "SIGNAL POWER: " << mic.getInputPower() << std::endl;
     
     // snd.reset();
     
