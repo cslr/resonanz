@@ -7,7 +7,9 @@ using namespace whiteice;;
 
 
 void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >& samples,
-			const unsigned int NPOINTS, const unsigned int DIMENSION,
+			std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > points,
+			double noise_stdev, // 0.02
+			// const unsigned int NPOINTS, const unsigned int DIMENSION,
 			const unsigned int NSAMPLES)
 {
   // const unsigned int NPOINTS = 5;
@@ -16,6 +18,8 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
 	
   {
     // std::cout << "Generating d-dimensional curve dataset for learning.." << std::endl;
+
+    if(points.size() <= 2) return; // need at least 2 points to interpolate between
     
     // pick N random points from DIMENSION dimensional space [-10,10]^D (initially N=5, DIMENSION=2)
     // calculate hermite curve interpolation between N points and generate data
@@ -24,19 +28,9 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
     
     {
       whiteice::math::hermite< math::vertex< math::blas_real<double> >, math::blas_real<double> > curve;
-      
       whiteice::RNG< whiteice::math::blas_real<double> > rng;
       
-      std::vector< whiteice::math::vertex< math::blas_real<double> > > points;
-      points.resize(NPOINTS);
-      
-      for(auto& p : points){
-	p.resize(DIMENSION);
-	for(unsigned int d=0;d<DIMENSION;d++){
-	  p[d] = rng.uniform()*2.0f - 1.0f; // [-1,1]
-	}
-	
-      }
+      // std::vector< whiteice::math::vertex< math::blas_real<double> > > points;
 
       curve.calculate(points, (int)NSAMPLES);
 
@@ -44,7 +38,7 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
 	auto& m = curve[s];
 	auto  n = m;
 	rng.normal(n);
-	whiteice::math::blas_real<double> stdev = 0.025;
+	whiteice::math::blas_real<double> stdev = noise_stdev*rng.uniform();
 	n = m + n*stdev;
 	
 	samples.push_back(n);
@@ -55,6 +49,7 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
     {
       // normalizes mean and variance for each dimension
       whiteice::math::vertex< whiteice::math::blas_real<double> > m, v;
+      const unsigned int DIMENSION = points[0].size();
       m.resize(DIMENSION);
       v.resize(DIMENSION);
       m.zero();

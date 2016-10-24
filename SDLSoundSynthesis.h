@@ -34,6 +34,9 @@ public:
   // recommended time it takes to synthesize sound: 
   // it is not good idea to change parameters faster than this
   virtual unsigned long long getSoundSynthesisSpeedMS() = 0;
+
+  // return current signal power of synthesized sound in DECIBELs
+  virtual double getSynthPower() = 0; 
   
  protected:  
   SDL_AudioSpec snd;

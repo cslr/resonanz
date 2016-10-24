@@ -707,8 +707,7 @@ void ResonanzEngine::engine_loop()
 	}
 
 	long long lastTickProcessed = -1;
-	long long tick = 0;
-
+	tick = 0;
 
 	// later autodetected to good values based on display screen resolution
 	SCREEN_WIDTH  = 800;
@@ -3830,6 +3829,105 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 		}
 	}
 
+
+	///////////////////////////////////////////////////////////////////////
+	// displays random curve (5 random points) [eye candy (for now)]
+
+	
+	if(showCurve)
+	{
+	  std::vector< math::vertex< math::blas_real<double> > > curve;
+	  std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > points;
+	  const unsigned int NPOINTS = 5;
+	  const unsigned int DIMENSION = 2;
+
+	  const double TICKSPERCURVE = CURVETIME/(TICK_MS/1000.0);
+	  curveParameter = (tick - latestTickCurveDrawn)/TICKSPERCURVE;
+	  double stdev = 0.0;
+
+	  // estimates sound dbel variance during latest CURVETIME and 
+	  // scales curve noise/stddev according to distances from
+	  // mean dbel value
+	  {
+	    for(unsigned int i=latestTickCurveDrawn+1;i<=tick;i++){
+	      historyPower.push_back(synth->getSynthPower());
+	    }
+
+	    while(historyPower.size() > 2*TICKSPERCURVE)
+	      historyPower.pop_front();
+
+	    auto m = 0.0, v = 0.0;
+
+	    for(auto h : historyPower){
+	      m += h/historyPower.size();
+	      v += h*h/historyPower.size();
+	    }
+
+	    v -= m*m;
+	    v = sqrt(v);
+
+	    stdev = synth->getSynthPower()/v;
+	  }
+	  
+	  
+	  if(curveParameter > 1.0)
+	  {
+	    points.resize(NPOINTS);
+	    
+	    for(auto& p : points){
+	      p.resize(DIMENSION);
+	      
+	      for(unsigned int d=0;d<DIMENSION;d++){
+		whiteice::math::blas_real<float> value = rng.uniform()*2.0f - 1.0f; // [-1,1]
+		p[d] = value.c[0];
+	      }
+	      
+	    }
+
+	    startPoint = endPoint;
+	    endPoint = points;
+
+	    if(startPoint.size() == 0)
+	      startPoint = points;
+
+	    latestTickCurveDrawn = tick;
+	    curveParameter = (tick - latestTickCurveDrawn)/TICKSPERCURVE;
+	  }
+	  
+	  {
+	    points.resize(NPOINTS);
+	    
+	    for(unsigned int j=0;j<points.size();j++){
+	      points[j].resize(DIMENSION);
+	      for(unsigned int d=0;d<DIMENSION;d++){
+		points[j][d] = (1.0 - curveParameter)*startPoint[j][d] + curveParameter*endPoint[j][d];
+	      }
+	      
+	    }
+	  }
+	  
+	  // creates curve that goes through points
+	  createHermiteCurve(curve, points, 0.02*stdev/3.0, 10000);
+
+	  for(const auto& p : curve){
+	    int x = 0;
+	    double scalingx = SCREEN_WIDTH/4;
+	    math::convert(x, scalingx*p[0] + SCREEN_WIDTH/2);
+	    int y = 0;
+	    double scalingy = SCREEN_HEIGHT/4;
+	    math::convert(y, scalingy*p[1] + SCREEN_HEIGHT/2);
+
+	    if(x>=0 && x<SCREEN_WIDTH && y>=0 && y<SCREEN_HEIGHT){
+	      Uint8 * pixel = (Uint8*)surface->pixels;
+	      pixel += (y * surface->pitch) + (x * sizeof(Uint32));
+	      *((Uint32*)pixel) = 0x00000000; // black
+	    }
+	    
+	  }
+ 
+	}
+
+	
 	///////////////////////////////////////////////////////////////////////
 	// displays a text
 
@@ -3875,32 +3973,6 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	}
 
 
-	///////////////////////////////////////////////////////////////////////
-	// displays random curve (5 random points)
-
-	{
-	  std::vector< math::vertex< math::blas_real<double> > > curve;
-	  
-	  createHermiteCurve(curve, 5, 2, 10000);
-
-	  for(const auto& p : curve){
-	    int x = 0;
-	    double scalingx = SCREEN_WIDTH/4;
-	    math::convert(x, scalingx*p[0] + SCREEN_WIDTH/2);
-	    int y = 0;
-	    double scalingy = SCREEN_HEIGHT/4;
-	    math::convert(y, scalingy*p[1] + SCREEN_HEIGHT/2);
-
-	    if(x>=0 && x<SCREEN_WIDTH && y>=0 && y<SCREEN_HEIGHT){
-	      Uint8 * pixel = (Uint8*)surface->pixels;
-	      pixel += (y * surface->pitch) + (x * sizeof(Uint32));
-	      *((Uint32*)pixel) = 0x00000000; // black
-	    }
-	    
-	  }
- 
-	}
-	
 	///////////////////////////////////////////////////////////////////////
 	// plays sound
 	if(synth)

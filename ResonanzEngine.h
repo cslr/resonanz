@@ -220,6 +220,8 @@ private:
 	bool keypressed = false;
 	std::mutex keypress_mutex;
 
+	long long tick = 0; // current engine tick (one tick is TICK_MS long)
+
 	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
 	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
@@ -312,6 +314,14 @@ private:
 	std::vector< std::vector<float> > measuredProgram;
 	std::vector< std::vector<float> > rawMeasuredSignals; // used internally
 
+	// display curve parameters	
+	bool showCurve = true;
+	double CURVETIME = 5.0; // show single curve for 2.5 seconds (interpolation time)
+	std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > startPoint;
+	std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > endPoint;
+	double curveParameter = 1.0;
+	long long latestTickCurveDrawn = -100000000;
+	std::list<double> historyPower;
 
 	whiteice::RNG<> rng;
 };

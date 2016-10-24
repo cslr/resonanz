@@ -26,6 +26,8 @@ public:
   virtual int getNumberOfParameters();
   
   virtual unsigned long long getSoundSynthesisSpeedMS();
+
+  virtual double getSynthPower();
   
  protected:
   // milliseconds since epoch
@@ -52,6 +54,9 @@ public:
   std::vector<int16_t> prevbuffer[NBUFFERS];
   
   virtual bool synthesize(int16_t* buffer, int samples);
+
+
+  double currentPower = 0.0; // current output signal power
   
 };
 

@@ -147,6 +147,15 @@ unsigned long long FMSoundSynthesis::getMilliseconds()
 }
 
 
+double FMSoundSynthesis::getSynthPower()
+{
+  // returns values as negative decibels
+  double Pref = 32767.0*32767.0;
+  double dbel = 10.0*log10(currentPower/Pref);
+  return dbel;
+}
+
+
 bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
 {
   double hz = (double)snd.freq;
@@ -248,9 +257,14 @@ bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
   }
   
   prevbuffer[0].resize(samples);
-  
+
+  double power;
+
   for(int i=0;i<samples;i++){
     prevbuffer[0][i] = buffer[i];
+
+    power += ((double)buffer[i])*((double)buffer[i])/((double)samples);
+    
 #if 0
     // does simple low pass filtering take sum of recent samples
     int sum = 0;
@@ -271,6 +285,8 @@ bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
     prevbuffer[0][i] = sum;
 #endif
   }
+
+  currentPower = power;
   
   tbase += ((double)samples)/hz;
   

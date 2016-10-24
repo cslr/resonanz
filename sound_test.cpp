@@ -47,6 +47,8 @@ int main(int argc, char**argv)
     
     if(snd.setParameters(p) == false)
       std::cout << "set parameters failed." << std::endl;
+
+    std::cout << "SIGNAL POWER: " << snd.getSynthPower() << std::endl;
     
     // snd.reset();
     
