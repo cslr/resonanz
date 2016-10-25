@@ -21,7 +21,7 @@ namespace whiteice {
 namespace resonanz {
 
 SDLTheora::SDLTheora(float q) :
-		FPS(5), MSECS_PER_FRAME(1000/5) // currently only saves at 5 frames per second
+		FPS(25), MSECS_PER_FRAME(1000/25) // currently saves at 25 frames per second
 {
 	if(q >= 0.0f && q <= 1.0f)
 		quality = q;

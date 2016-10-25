@@ -94,7 +94,9 @@ public:
 
 	bool cmdDoNothing(bool showScreen);
 
-	bool cmdRandom(const std::string& pictureDir, const std::string& keywordsFile, bool saveVideo) throw();
+	bool cmdRandom(const std::string& pictureDir, const std::string& keywordsFile,
+		       const std::string& audioFile,
+		       bool saveVideo) throw();
 
 	bool cmdMeasure(const std::string& pictureDir, const std::string& keywordsFile, const std::string& modelDir) throw();
 
@@ -223,7 +225,8 @@ private:
 
 	long long tick = 0; // current engine tick (one tick is TICK_MS long)
 
-	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	// was 100ms
+	static const unsigned int TICK_MS = 50; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
 	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
 	// media resource
@@ -232,6 +235,12 @@ private:
 	std::vector<SDL_Surface*> images;
 	SDLSoundSynthesis* synth = nullptr;
 	SDLMicListener* mic = nullptr;
+
+	// used currently by random image/picture viewer
+	unsigned int currentKey = 0;
+	unsigned int currentPic = 0;
+	long long SHOWTIME_TICKS = (long long)(0.5 / (TICK_MS/1000.0));
+        long long latestKeyPicChangeTick = -SHOWTIME_TICKS;
 
 	bool loadWords(const std::string filename, std::vector<std::string>& words) const;
 	bool loadPictures(const std::string directory, std::vector<std::string>& pictures) const;
@@ -316,15 +325,16 @@ private:
 	std::vector< std::vector<float> > measuredProgram;
 	std::vector< std::vector<float> > rawMeasuredSignals; // used internally
 
-	// display curve parameters	
-	bool showCurve = true;
-	double CURVETIME = 5.0; // show single curve for 2.5 seconds (interpolation time)
+	// display curve parameters (only works in random mode??)
+	bool showCurve = false;
+	double CURVETIME = 5.0; // show single curve for 1.0 seconds (interpolation time)
 	std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > startPoint;
 	std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > endPoint;
 	double curveParameter = 1.0;
 	long long latestTickCurveDrawn = -100000000;
 	std::list<double> historyPower;
 
+	
 	whiteice::RNG<> rng;
 };
 

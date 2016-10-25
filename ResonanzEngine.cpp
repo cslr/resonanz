@@ -208,6 +208,7 @@ bool ResonanzEngine::cmdDoNothing(bool showScreen)
 
 
 bool ResonanzEngine::cmdRandom(const std::string& pictureDir, const std::string& keywordsFile,
+			       const std::string& audioFile,
 			       bool saveVideo) throw()
 {
 	if(pictureDir.length() <= 0 || keywordsFile.length() <= 0)
@@ -224,7 +225,9 @@ bool ResonanzEngine::cmdRandom(const std::string& pictureDir, const std::string&
 	incomingCommand->pictureDir = pictureDir;
 	incomingCommand->keywordsFile = keywordsFile;
 	incomingCommand->modelDir = "";
-	incomingCommand->saveVideo = true;
+	incomingCommand->saveVideo = saveVideo;
+	incomingCommand->audioFile = audioFile;
+	
 
 	return true;
 }
@@ -796,8 +799,15 @@ void ResonanzEngine::engine_loop()
 			if(prevCommand.command == ResonanzCommand::CMD_DO_RANDOM){
 			  // stop playing sound
 			  if(synth){
+			    logging.info("stop synth");
 			    synth->pause();
 			    synth->reset();
+			  }
+
+			  // stop playing audio if needed
+			  if(prevCommand.audioFile.length() > 0){
+			    logging.info("stop audio file playback");
+			    engine_stopAudioFile();
 			  }
 
 			  // stops encoding if needed
@@ -819,6 +829,7 @@ void ResonanzEngine::engine_loop()
 			        if(synth){
 				  synth->pause();
 				  synth->reset();
+				  logging.info("stop synth");
 			        }
 			  
 			        engine_setStatus("resonanz-engine: saving database..");
@@ -871,8 +882,10 @@ void ResonanzEngine::engine_loop()
 				keywordModels.clear();
 				pictureModels.clear();
 
-				if(prevCommand.audioFile.length() > 0)
+				if(prevCommand.audioFile.length() > 0){
+				        logging.info("stop audio file playback");
 					engine_stopAudioFile();
+				}
 
 				if(mcsamples.size() > 0)
 					mcsamples.clear();
@@ -1159,8 +1172,10 @@ void ResonanzEngine::engine_loop()
 					}
 
 					
-					if(currentCommand.audioFile.length() > 0)
+					if(currentCommand.audioFile.length() > 0){
+					        logging.info("play audio file");
 						engine_playAudioFile(currentCommand.audioFile);
+					}
 
 					// starts measuring time for the execution of the program
 
@@ -1180,7 +1195,6 @@ void ResonanzEngine::engine_loop()
 
 				}
 			}
-
 			if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
 				// checks command signal names maps to some eeg signals
 				std::vector<std::string> names;
@@ -1226,13 +1240,15 @@ void ResonanzEngine::engine_loop()
 			if(currentCommand.command == ResonanzCommand::CMD_DO_RANDOM || currentCommand.command == ResonanzCommand::CMD_DO_MEASURE ||
 			   currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
 				engine_setStatus("resonanz-engine: starting sound synthesis..");
-				
-				if(synth){
-				  if(synth->play() == false){
-				    logging.error("starting sound synthesis failed");
-				  }
-				  else{
-				    logging.info("starting sound synthesis..OK");
+
+				if(currentCommand.audioFile.length() <= 0){
+				  if(synth){
+				    if(synth->play() == false){
+				      logging.error("starting sound synthesis failed");
+				    }
+				    else{
+				      logging.info("starting sound synthesis..OK");
+				    }
 				  }
 				}
 			}
@@ -1260,6 +1276,11 @@ void ResonanzEngine::engine_loop()
 			  auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
 			  programStarted = t0ms;
 			  lastProgramSecond = -1;
+
+			  if(currentCommand.audioFile.length() > 0){
+			    logging.info("play audio file");
+			    engine_playAudioFile(currentCommand.audioFile);
+			  }
 			}
 			
 		}
@@ -1281,8 +1302,15 @@ void ResonanzEngine::engine_loop()
 
 			if(pictures.size() > 0){
 				if(keywords.size() > 0){
-					unsigned int key = rng.rand() % keywords.size();
-					unsigned int pic = rng.rand() % pictures.size();
+				        auto& key = currentKey;
+					auto& pic = currentPic;
+					
+				        if(tick - latestKeyPicChangeTick > SHOWTIME_TICKS){
+					  key = rng.rand() % keywords.size();
+					  pic = rng.rand() % pictures.size();
+					  
+					  latestKeyPicChangeTick = tick;
+					}
 					
 					std::vector<float> sndparams;
 					sndparams.resize(synth->getNumberOfParameters());
@@ -3868,9 +3896,9 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	  std::vector< math::vertex< math::blas_real<double> > > curve;
 	  std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > points;
 	  const unsigned int NPOINTS = 5;
-	  const unsigned int DIMENSION = 2;
+	  const unsigned int DIMENSION = 2; // 3
 
-	  const double TICKSPERCURVE = CURVETIME/(TICK_MS/1000.0);
+	  const double TICKSPERCURVE = CURVETIME/(TICK_MS/1000.0); // 0.5 second long buffer
 	  curveParameter = (tick - latestTickCurveDrawn)/TICKSPERCURVE;
 	  double stdev = 0.0;
 
@@ -3878,11 +3906,10 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	  // scales curve noise/stddev according to distances from
 	  // mean dbel value
 	  {
-	    for(unsigned int i=latestTickCurveDrawn+1;i<=tick;i++){
-	      historyPower.push_back(mic->getInputPower());
-	    }
+	    // assumes we dont miss any ticks..
+	    historyPower.push_back(mic->getInputPower());
 
-	    while(historyPower.size() > TICKSPERCURVE)
+	    while(historyPower.size() > TICKSPERCURVE/5.0) // 1.0 sec long history
 	      historyPower.pop_front();
 
 	    auto m = 0.0, v = 0.0;
@@ -3893,9 +3920,21 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	    }
 
 	    v -= m*m;
-	    v = sqrt(v);
+	    v = sqrt(abs(v));
 
-	    stdev = (mic->getInputPower())/(v + 0.01*m);
+	    double t = mic->getInputPower();
+	    stdev = 4.0;
+
+	    double limit = m+v;
+	    
+	    if(t > limit){
+	      stdev += 50.0*(abs(limit) + v)/abs(limit);
+	    }
+	    else{
+	    }
+
+	    // printf("MIC : %f %f %f\n", mic->getInputPower(), limit, stdev); fflush(stdout);
+
 	  }
 	  
 	  
@@ -3934,10 +3973,11 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	      
 	    }
 	  }
-	  
+
 	  // creates curve that goes through points
 	  createHermiteCurve(curve, points, 0.001 + 0.01*stdev/4.0, 10000);
 
+	  
 	  for(const auto& p : curve){
 	    int x = 0;
 	    double scalingx = SCREEN_WIDTH/4;
@@ -3949,7 +3989,11 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 	    if(x>=0 && x<SCREEN_WIDTH && y>=0 && y<SCREEN_HEIGHT){
 	      Uint8 * pixel = (Uint8*)surface->pixels;
 	      pixel += (y * surface->pitch) + (x * sizeof(Uint32));
-	      *((Uint32*)pixel) = 0x00000000; // black
+
+	      if(bgcolor >= 160)
+		*((Uint32*)pixel) = 0x00000000; // black
+	      else
+		*((Uint32*)pixel) = 0x00FFFFFF; // white
 	    }
 	    
 	  }
@@ -4096,6 +4140,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	flags = MIX_INIT_OGG;
 
 	audioEnabled = false;
+	
 	synth = new FMSoundSynthesis(); // curretly just supports single synthesizer type
 	mic   = new SDLMicListener();   // records single input channel
 	synth->pause(); // no sounds
@@ -4143,7 +4188,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	  }
 	}
 	
-#if 0
+	//#if 0
 	if(Mix_Init(flags) != flags){
 		char buffer[80];
 		snprintf(buffer, 80, "Mix_Init failed: %s\n", Mix_GetError());
@@ -4164,8 +4209,9 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		snprintf(buffer, 80, "ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
 		logging.warn(buffer);
 	}
-#endif
+	//#endif
 	logging.info("SDL initialization.. SUCCESSFUL");
+	audioEnabled = true;
 	
 	return true;
 }

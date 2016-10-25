@@ -33,6 +33,7 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
       // std::vector< whiteice::math::vertex< math::blas_real<double> > > points;
 
       curve.calculate(points, (int)NSAMPLES);
+      samples.clear();
 
       for(unsigned s=0;s<NSAMPLES;s++){
 	auto& m = curve[s];
@@ -40,12 +41,11 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
 	rng.normal(n);
 	whiteice::math::blas_real<double> stdev = noise_stdev*rng.uniform();
 	n = m + n*stdev;
-	
+
 	samples.push_back(n);
       }
     }
-    
-    
+
     {
       // normalizes mean and variance for each dimension
       whiteice::math::vertex< whiteice::math::blas_real<double> > m, v;
@@ -54,7 +54,7 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
       v.resize(DIMENSION);
       m.zero();
       v.zero();
-      
+
       for(unsigned int s=0;s<NSAMPLES;s++){
 	auto x = samples[s];
 	m += x;
@@ -65,12 +65,12 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
       
       m /= NSAMPLES;
       v /= NSAMPLES;
-      
+
       for(unsigned int i=0;i<m.size();i++){
 	v[i] -= m[i]*m[i];
 	v[i] = sqrt(v[i]); // st.dev.
       }
-      
+
       // normalizes mean to be zero and st.dev. / variance to be one
       for(unsigned int s=0;s<NSAMPLES;s++){
 	auto x = samples[s];
@@ -80,7 +80,20 @@ void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::bla
 	  x[i] /= v[i];
 	
 	samples[s] = x;
+#if 0
+	auto& n    = samples[s];
+	auto  z0   = n[2];
+	z0         = 2.0;
+
+	if(n[2] != 0.0){
+	  n[0] = n[0] / (z0 + n[2]);
+	  n[1] = n[1] / (z0 + n[2]);
+	  n.resize(2);
+	}
+#endif
       }
+
+      
     }
 
     // saveSamples("splinecurve.txt", samples);

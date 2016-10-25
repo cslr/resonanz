@@ -8,6 +8,5 @@ fail
 dead
 alone
 bad
-
-
-
+success
+together

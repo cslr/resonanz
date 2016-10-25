@@ -50,6 +50,7 @@ void print_usage()
 	printf("--keyword-file=  source keywords file\n");
 	printf("--model-dir=     model directory for measurements and prediction models\n");
 	printf("--program-file=  sets NMC program file\n");
+	printf("--music-file=    sets music (MP3) file for playback\n");
 	printf("--target=        sets measurement program targets (comma separated numbers)\n");
 	printf("--device=        sets measurement device: muse*, [insight], random\n");
 	printf("--method=        sets optimization method: rbf, lbfgs*, bayes\n");
@@ -94,7 +95,6 @@ int main(int argc, char** argv)
 	bool usepca  = false;
 	bool fullscreen = false;
 	bool loop = false;
-	bool saveVideo = false;
 	bool optimizeSynthOnly = false;
 	bool verbose = false;
 	
@@ -157,6 +157,10 @@ int main(int argc, char** argv)
 	    	char* p = &(argv[i][15]);
 	    	if(strlen(p) > 0) programFile = p;
 	    }
+	    else if(strncmp(argv[i], "--music-file=", 13) == 0){
+	        char* p = &(argv[i][13]);
+		if(strlen(p) > 0) cmd.audioFile = p;
+	    }
 	    else if(strncmp(argv[i], "--device=", 9) == 0){
 	        char* p = &(argv[i][9]);
 	        if(strlen(p) > 0) device = p;
@@ -179,7 +183,7 @@ int main(int argc, char** argv)
 	        loop = true;
 	    } 
 	    else if(strcmp(argv[i],"--savevideo") == 0){
-	        saveVideo = true;
+ 	        cmd.saveVideo = true;
 	    } 
 	    else if(strcmp(argv[i],"--pca") == 0){
 	        usepca = true;
@@ -264,7 +268,7 @@ int main(int argc, char** argv)
 	
 	
 	if(cmd.command == cmd.CMD_DO_RANDOM){
- 	        if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile, saveVideo) == false){
+	  if(engine.cmdRandom(cmd.pictureDir, cmd.keywordsFile, cmd.audioFile, cmd.saveVideo) == false){
 			printf("ERROR: bad parameters\n");
 			return -1;
 		}
@@ -315,7 +319,7 @@ int main(int argc, char** argv)
 		if(engine.cmdExecuteProgram(cmd.pictureDir, cmd.keywordsFile, 
 					    cmd.modelDir, audioFile, 
 					    signalNames, signalPrograms,
-					    false, saveVideo) == false){
+					    false, cmd.saveVideo) == false){
 			printf("ERROR: bad parameters\n");
 			return -1;
 		}
