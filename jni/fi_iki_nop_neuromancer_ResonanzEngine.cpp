@@ -34,7 +34,12 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_startRando
 		const char *pic = env->GetStringUTFChars(pictureDir, 0);
 		const char *key = env->GetStringUTFChars(keywordsFile, 0);
 
-		bool result = engine.cmdRandom(std::string(pic), std::string(key));
+		std::string picstr = std::string(pic);
+		std::string keystr = std::string(key);
+		std::string audiostr = "";
+		bool saveVideo = false;
+
+		bool result = engine.cmdRandom(picstr, keystr, audiostr, saveVideo);
 
 		env->ReleaseStringUTFChars(pictureDir, pic);
 		env->ReleaseStringUTFChars(keywordsFile, key);

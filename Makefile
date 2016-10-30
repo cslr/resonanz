@@ -14,8 +14,8 @@ CP = cp
 
 
 
-CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
-CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/
+CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/
+CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
@@ -32,6 +32,7 @@ LIBS = `/usr/local/bin/sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-con
 RESONANZ_OBJECTS=$(OBJECTS) main.o
 
 JNILIB_OBJECTS=$(OBJECTS) jni/fi_iki_nop_neuromancer_ResonanzEngine.o
+JNITARGET = resonanz-engine.so
 
 SPECTRAL_TEST_OBJECTS=spectral_analysis.o tst/spectral_test.o
 SPECTRAL_TEST_TARGET=spectral_test
@@ -60,7 +61,12 @@ resonanz: $(RESONANZ_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(RESONANZ_OBJECTS) $(LIBS)
 
 jnilib: $(JNILIB_OBJECTS)
-# TODO build shared library for JNI class to link to
+	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o lib$(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)
+
+# DUMMY JNI INTERFACE FILE USED FOR TESTING JNI INTERFACE (LOADLIBRARY) WORKS..
+dummy: jni/dummy.o
+	$(CXX) -shared -Wl,-soname,dummy.so -o libdummy.so jni/dummy.o
+
 
 sound: $(SOUND_TEST_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(SOUND_TEST_TARGET) $(SOUND_TEST_OBJECTS) $(SOUND_LIBS)

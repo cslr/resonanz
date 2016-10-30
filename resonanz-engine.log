@@ -1,0 +1,1152 @@
+INFO 0.00000 Logging facilities started..
+INFO 0.00000 resonanz-engine: starting..
+INFO 0.00100 engine_loop() started
+INFO 0.00100 Starting SDL initialization..
+INFO 3.17800 SDL initialization.. SUCCESSFUL
+INFO 3.17800 checking command
+INFO 3.17800 resonanz-engine: sleeping..
+INFO 3.17800 eeg No EEG device 0.50
+INFO 3.17800 checking command
+INFO 3.17800 resonanz-engine: sleeping..
+INFO 3.17800 eeg No EEG device 0.50
+INFO 3.20800 resonanz-engine::setParameter: use-bayesian-nnetwork = true
+INFO 3.20800 resonanz-engine::setParameter: use-data-rbf = true
+INFO 3.20800 resonanz-engine::setParameter: use-bayesian-nnetwork = false
+INFO 3.20800 resonanz-engine::setParameter: use-data-rbf = false
+INFO 3.20800 resonanz-engine::setParameter: pca-preprocess = false
+INFO 3.20800 resonanz-engine::setParameter: fullscreen = false
+INFO 3.20800 resonanz-engine::setParameter: loop = false
+INFO 3.20800 resonanz-engine::setParameter: optimize-synth-only = false
+INFO 3.20800 checking command
+INFO 3.20800 new engine command received
+INFO 3.28100 resonanz-engine: loading media files..
+INFO 3.28100 resonanz-engine: loading media files (0.0%)..
+INFO 3.38600 resonanz-engine: loading media files (16.7%)..
+INFO 3.42500 resonanz-engine: loading media files (33.3%)..
+INFO 3.46800 resonanz-engine: loading media files (50.0%)..
+INFO 3.51400 resonanz-engine: loading media files (66.7%)..
+INFO 3.55200 resonanz-engine: loading media files (83.3%)..
+INFO 3.58900 loading media files successful (12 keywords, 6 pics)
+INFO 3.58900 resonanz-engine: starting sound synthesis..
+INFO 3.59400 starting sound synthesis..OK
+INFO 3.59400 resonanz-engine: showing random examples..
+INFO 3.59900 eeg Interaxon Muse : no connection to hardware
+INFO 3.59900 checking command
+INFO 3.59900 resonanz-engine: showing random examples..
+INFO 3.60200 eeg Interaxon Muse : no connection to hardware
+INFO 3.60200 checking command
+INFO 3.60200 resonanz-engine: showing random examples..
+INFO 3.60500 eeg Interaxon Muse : no connection to hardware
+INFO 3.65600 checking command
+INFO 3.65600 resonanz-engine: showing random examples..
+INFO 3.65800 eeg Interaxon Muse : no connection to hardware
+INFO 3.70900 checking command
+INFO 3.70900 resonanz-engine: showing random examples..
+INFO 3.71200 eeg Interaxon Muse : no connection to hardware
+INFO 3.75200 checking command
+INFO 3.75200 resonanz-engine: showing random examples..
+INFO 3.75500 eeg Interaxon Muse : no connection to hardware
+INFO 3.80600 checking command
+INFO 3.80600 resonanz-engine: showing random examples..
+INFO 3.80900 eeg Interaxon Muse : no connection to hardware
+INFO 3.85900 checking command
+INFO 3.85900 resonanz-engine: showing random examples..
+INFO 3.86200 eeg Interaxon Muse : no connection to hardware
+INFO 3.90300 checking command
+INFO 3.90300 resonanz-engine: showing random examples..
+INFO 3.90600 eeg Interaxon Muse : no connection to hardware
+INFO 3.95600 checking command
+INFO 3.95600 resonanz-engine: showing random examples..
+INFO 3.95900 eeg Interaxon Muse : no connection to hardware
+INFO 4.01000 checking command
+INFO 4.01000 resonanz-engine: showing random examples..
+INFO 4.01300 eeg Interaxon Muse : no connection to hardware
+INFO 4.05300 checking command
+INFO 4.05300 resonanz-engine: showing random examples..
+INFO 4.05600 eeg Interaxon Muse : no connection to hardware
+INFO 4.10700 checking command
+INFO 4.10700 resonanz-engine: showing random examples..
+INFO 4.11000 eeg Interaxon Muse : no connection to hardware
+INFO 4.16000 checking command
+INFO 4.16000 resonanz-engine: showing random examples..
+INFO 4.16300 eeg Interaxon Muse : no connection to hardware
+INFO 4.20300 checking command
+INFO 4.20300 resonanz-engine: showing random examples..
+INFO 4.20700 eeg Interaxon Muse : no connection to hardware
+INFO 4.25700 checking command
+INFO 4.25700 resonanz-engine: showing random examples..
+INFO 4.26100 eeg Interaxon Muse : no connection to hardware
+INFO 4.30100 checking command
+INFO 4.30100 resonanz-engine: showing random examples..
+INFO 4.30400 eeg Interaxon Muse : no connection to hardware
+INFO 4.35500 checking command
+INFO 4.35500 resonanz-engine: showing random examples..
+INFO 4.35800 eeg Interaxon Muse : no connection to hardware
+INFO 4.40800 checking command
+INFO 4.40800 resonanz-engine: showing random examples..
+INFO 4.41100 eeg Interaxon Muse : no connection to hardware
+INFO 4.45200 checking command
+INFO 4.45200 resonanz-engine: showing random examples..
+INFO 4.45500 eeg Interaxon Muse : no connection to hardware
+INFO 4.50500 checking command
+INFO 4.50500 resonanz-engine: showing random examples..
+INFO 4.50800 eeg Interaxon Muse : no connection to hardware
+INFO 4.55900 checking command
+INFO 4.55900 resonanz-engine: showing random examples..
+INFO 4.56100 eeg Interaxon Muse : no connection to hardware
+INFO 4.60200 checking command
+INFO 4.60200 resonanz-engine: showing random examples..
+INFO 4.60500 eeg Interaxon Muse : no connection to hardware
+INFO 4.65500 checking command
+INFO 4.65500 resonanz-engine: showing random examples..
+INFO 4.65800 eeg Interaxon Muse : no connection to hardware
+INFO 4.70900 checking command
+INFO 4.70900 resonanz-engine: showing random examples..
+INFO 4.71100 eeg Interaxon Muse : no connection to hardware
+INFO 4.75200 checking command
+INFO 4.75200 resonanz-engine: showing random examples..
+INFO 4.75500 eeg Interaxon Muse : no connection to hardware
+INFO 4.80500 checking command
+INFO 4.80500 resonanz-engine: showing random examples..
+INFO 4.80800 eeg Interaxon Muse : no connection to hardware
+INFO 4.85900 checking command
+INFO 4.85900 resonanz-engine: showing random examples..
+INFO 4.86200 eeg Interaxon Muse : no connection to hardware
+INFO 4.90200 checking command
+INFO 4.90200 resonanz-engine: showing random examples..
+INFO 4.90500 eeg Interaxon Muse : no connection to hardware
+INFO 4.95600 checking command
+INFO 4.95600 resonanz-engine: showing random examples..
+INFO 4.95900 eeg Interaxon Muse : no connection to hardware
+INFO 5.00900 checking command
+INFO 5.00900 resonanz-engine: showing random examples..
+INFO 5.01200 eeg Interaxon Muse : no connection to hardware
+INFO 5.05200 checking command
+INFO 5.05200 resonanz-engine: showing random examples..
+INFO 5.05600 eeg Interaxon Muse : no connection to hardware
+INFO 5.10600 checking command
+INFO 5.10600 resonanz-engine: showing random examples..
+INFO 5.10900 eeg Interaxon Muse : no connection to hardware
+INFO 5.16000 checking command
+INFO 5.16000 resonanz-engine: showing random examples..
+INFO 5.16200 eeg Interaxon Muse : no connection to hardware
+INFO 5.20300 checking command
+INFO 5.20300 resonanz-engine: showing random examples..
+INFO 5.20600 eeg Interaxon Muse : no connection to hardware
+INFO 5.25600 checking command
+INFO 5.25600 resonanz-engine: showing random examples..
+INFO 5.25900 eeg Interaxon Muse : no connection to hardware
+INFO 5.31000 checking command
+INFO 5.31000 resonanz-engine: showing random examples..
+INFO 5.31200 eeg Interaxon Muse : no connection to hardware
+INFO 5.35300 checking command
+INFO 5.35300 resonanz-engine: showing random examples..
+INFO 5.35700 eeg Interaxon Muse : no connection to hardware
+INFO 5.40800 checking command
+INFO 5.40800 resonanz-engine: showing random examples..
+INFO 5.41100 eeg Interaxon Muse : no connection to hardware
+INFO 5.45100 checking command
+INFO 5.45100 resonanz-engine: showing random examples..
+INFO 5.45400 eeg Interaxon Muse : no connection to hardware
+INFO 5.50500 checking command
+INFO 5.50500 resonanz-engine: showing random examples..
+INFO 5.50800 eeg Interaxon Muse : no connection to hardware
+INFO 5.55900 checking command
+INFO 5.55900 resonanz-engine: showing random examples..
+INFO 5.56100 eeg Interaxon Muse : no connection to hardware
+INFO 5.60200 checking command
+INFO 5.60200 resonanz-engine: showing random examples..
+INFO 5.60500 eeg Interaxon Muse : no connection to hardware
+INFO 5.65500 checking command
+INFO 5.65600 resonanz-engine: showing random examples..
+INFO 5.65800 eeg Interaxon Muse : no connection to hardware
+INFO 5.70900 checking command
+INFO 5.70900 resonanz-engine: showing random examples..
+INFO 5.71200 eeg Interaxon Muse : no connection to hardware
+INFO 5.75200 checking command
+INFO 5.75200 resonanz-engine: showing random examples..
+INFO 5.75500 eeg Interaxon Muse : no connection to hardware
+INFO 5.80600 checking command
+INFO 5.80600 resonanz-engine: showing random examples..
+INFO 5.80900 eeg Interaxon Muse : no connection to hardware
+INFO 5.85900 checking command
+INFO 5.85900 resonanz-engine: showing random examples..
+INFO 5.86200 eeg Interaxon Muse : no connection to hardware
+INFO 5.90300 checking command
+INFO 5.90300 resonanz-engine: showing random examples..
+INFO 5.90600 eeg Interaxon Muse : no connection to hardware
+INFO 5.95700 checking command
+INFO 5.95700 resonanz-engine: showing random examples..
+INFO 5.96000 eeg Interaxon Muse : no connection to hardware
+INFO 6.01000 checking command
+INFO 6.01000 resonanz-engine: showing random examples..
+INFO 6.01300 eeg Interaxon Muse : no connection to hardware
+INFO 6.05300 checking command
+INFO 6.05300 resonanz-engine: showing random examples..
+INFO 6.05600 eeg Interaxon Muse : no connection to hardware
+INFO 6.10700 checking command
+INFO 6.10700 resonanz-engine: showing random examples..
+INFO 6.11000 eeg Interaxon Muse : no connection to hardware
+INFO 6.16000 checking command
+INFO 6.16000 resonanz-engine: showing random examples..
+INFO 6.16300 eeg Interaxon Muse : no connection to hardware
+INFO 6.20300 checking command
+INFO 6.20400 resonanz-engine: showing random examples..
+INFO 6.20600 eeg Interaxon Muse : no connection to hardware
+INFO 6.25700 checking command
+INFO 6.25700 resonanz-engine: showing random examples..
+INFO 6.26000 eeg Interaxon Muse : no connection to hardware
+INFO 6.31000 checking command
+INFO 6.31000 resonanz-engine: showing random examples..
+INFO 6.31300 eeg Interaxon Muse : no connection to hardware
+INFO 6.35300 checking command
+INFO 6.35300 resonanz-engine: showing random examples..
+INFO 6.35600 eeg Interaxon Muse : no connection to hardware
+INFO 6.40700 checking command
+INFO 6.40700 resonanz-engine: showing random examples..
+INFO 6.41000 eeg Interaxon Muse : no connection to hardware
+INFO 6.46000 checking command
+INFO 6.46000 resonanz-engine: showing random examples..
+INFO 6.46300 eeg Interaxon Muse : no connection to hardware
+INFO 6.50300 checking command
+INFO 6.50300 resonanz-engine: showing random examples..
+INFO 6.50700 eeg Interaxon Muse : no connection to hardware
+INFO 6.55700 checking command
+INFO 6.55700 resonanz-engine: showing random examples..
+INFO 6.56000 eeg Interaxon Muse : no connection to hardware
+INFO 6.61100 checking command
+INFO 6.61100 resonanz-engine: showing random examples..
+INFO 6.61400 eeg Interaxon Muse : no connection to hardware
+INFO 6.65400 checking command
+INFO 6.65400 resonanz-engine: showing random examples..
+INFO 6.65700 eeg Interaxon Muse : no connection to hardware
+INFO 6.70800 checking command
+INFO 6.70800 resonanz-engine: showing random examples..
+INFO 6.71000 eeg Interaxon Muse : no connection to hardware
+INFO 6.76100 checking command
+INFO 6.76100 resonanz-engine: showing random examples..
+INFO 6.76400 eeg Interaxon Muse : no connection to hardware
+INFO 6.80400 checking command
+INFO 6.80400 resonanz-engine: showing random examples..
+INFO 6.80700 eeg Interaxon Muse : no connection to hardware
+INFO 6.85800 checking command
+INFO 6.85800 resonanz-engine: showing random examples..
+INFO 6.86000 eeg Interaxon Muse : no connection to hardware
+INFO 6.91100 checking command
+INFO 6.91100 resonanz-engine: showing random examples..
+INFO 6.91400 eeg Interaxon Muse : no connection to hardware
+INFO 6.95400 checking command
+INFO 6.95400 resonanz-engine: showing random examples..
+INFO 6.95700 eeg Interaxon Muse : no connection to hardware
+INFO 7.00800 checking command
+INFO 7.00800 resonanz-engine: showing random examples..
+INFO 7.01100 eeg Interaxon Muse : no connection to hardware
+INFO 7.05100 checking command
+INFO 7.05100 resonanz-engine: showing random examples..
+INFO 7.05400 eeg Interaxon Muse : no connection to hardware
+INFO 7.10500 checking command
+INFO 7.10500 resonanz-engine: showing random examples..
+INFO 7.10800 eeg Interaxon Muse : no connection to hardware
+INFO 7.15800 checking command
+INFO 7.15800 resonanz-engine: showing random examples..
+INFO 7.16100 eeg Interaxon Muse : no connection to hardware
+INFO 7.20100 checking command
+INFO 7.20100 resonanz-engine: showing random examples..
+INFO 7.20400 eeg Interaxon Muse : no connection to hardware
+INFO 7.25500 checking command
+INFO 7.25500 resonanz-engine: showing random examples..
+INFO 7.25800 eeg Interaxon Muse : no connection to hardware
+INFO 7.30800 checking command
+INFO 7.30800 resonanz-engine: showing random examples..
+INFO 7.31100 eeg Interaxon Muse : no connection to hardware
+INFO 7.35100 checking command
+INFO 7.35200 resonanz-engine: showing random examples..
+INFO 7.35400 eeg Interaxon Muse : no connection to hardware
+INFO 7.40500 checking command
+INFO 7.40500 resonanz-engine: showing random examples..
+INFO 7.40800 eeg Interaxon Muse : no connection to hardware
+INFO 7.45800 checking command
+INFO 7.45800 resonanz-engine: showing random examples..
+INFO 7.46100 eeg Interaxon Muse : no connection to hardware
+INFO 7.50100 checking command
+INFO 7.50100 resonanz-engine: showing random examples..
+INFO 7.50400 eeg Interaxon Muse : no connection to hardware
+INFO 7.55500 checking command
+INFO 7.55500 resonanz-engine: showing random examples..
+INFO 7.55800 eeg Interaxon Muse : no connection to hardware
+INFO 7.60800 checking command
+INFO 7.60800 resonanz-engine: showing random examples..
+INFO 7.61100 eeg Interaxon Muse : no connection to hardware
+INFO 7.65200 checking command
+INFO 7.65200 resonanz-engine: showing random examples..
+INFO 7.65500 eeg Interaxon Muse : no connection to hardware
+INFO 7.70500 checking command
+INFO 7.70500 resonanz-engine: showing random examples..
+INFO 7.70800 eeg Interaxon Muse : no connection to hardware
+INFO 7.75900 checking command
+INFO 7.75900 resonanz-engine: showing random examples..
+INFO 7.76200 eeg Interaxon Muse : no connection to hardware
+INFO 7.80200 checking command
+INFO 7.80200 resonanz-engine: showing random examples..
+INFO 7.80500 eeg Interaxon Muse : no connection to hardware
+INFO 7.85600 checking command
+INFO 7.85600 resonanz-engine: showing random examples..
+INFO 7.85800 eeg Interaxon Muse : no connection to hardware
+INFO 7.90900 checking command
+INFO 7.90900 resonanz-engine: showing random examples..
+INFO 7.91200 eeg Interaxon Muse : no connection to hardware
+INFO 7.95200 checking command
+INFO 7.95200 resonanz-engine: showing random examples..
+INFO 7.95500 eeg Interaxon Muse : no connection to hardware
+INFO 8.00600 checking command
+INFO 8.00600 resonanz-engine: showing random examples..
+INFO 8.00900 eeg Interaxon Muse : no connection to hardware
+INFO 8.05900 checking command
+INFO 8.05900 resonanz-engine: showing random examples..
+INFO 8.06200 eeg Interaxon Muse : no connection to hardware
+INFO 8.10300 checking command
+INFO 8.10300 resonanz-engine: showing random examples..
+INFO 8.10600 eeg Interaxon Muse : no connection to hardware
+INFO 8.15600 checking command
+INFO 8.15600 resonanz-engine: showing random examples..
+INFO 8.15900 eeg Interaxon Muse : no connection to hardware
+INFO 8.21000 checking command
+INFO 8.21000 resonanz-engine: showing random examples..
+INFO 8.21200 eeg Interaxon Muse : no connection to hardware
+INFO 8.25300 checking command
+INFO 8.25300 resonanz-engine: showing random examples..
+INFO 8.25600 eeg Interaxon Muse : no connection to hardware
+INFO 8.30600 checking command
+INFO 8.30600 resonanz-engine: showing random examples..
+INFO 8.30900 eeg Interaxon Muse : no connection to hardware
+INFO 8.36000 checking command
+INFO 8.36000 resonanz-engine: showing random examples..
+INFO 8.36300 eeg Interaxon Muse : no connection to hardware
+INFO 8.40300 checking command
+INFO 8.40300 resonanz-engine: showing random examples..
+INFO 8.40600 eeg Interaxon Muse : no connection to hardware
+INFO 8.45700 checking command
+INFO 8.45700 resonanz-engine: showing random examples..
+INFO 8.45900 eeg Interaxon Muse : no connection to hardware
+INFO 8.51000 checking command
+INFO 8.51000 resonanz-engine: showing random examples..
+INFO 8.51300 eeg Interaxon Muse : no connection to hardware
+INFO 8.55300 checking command
+INFO 8.55300 resonanz-engine: showing random examples..
+INFO 8.55600 eeg Interaxon Muse : no connection to hardware
+INFO 8.60700 checking command
+INFO 8.60700 resonanz-engine: showing random examples..
+INFO 8.61000 eeg Interaxon Muse : no connection to hardware
+INFO 8.66000 checking command
+INFO 8.66000 resonanz-engine: showing random examples..
+INFO 8.66300 eeg Interaxon Muse : no connection to hardware
+INFO 8.70300 checking command
+INFO 8.70300 resonanz-engine: showing random examples..
+INFO 8.70600 eeg Interaxon Muse : no connection to hardware
+INFO 8.75700 checking command
+INFO 8.75700 resonanz-engine: showing random examples..
+INFO 8.76000 eeg Interaxon Muse : no connection to hardware
+INFO 8.81000 checking command
+INFO 8.81000 resonanz-engine: showing random examples..
+INFO 8.81300 eeg Interaxon Muse : no connection to hardware
+INFO 8.85300 checking command
+INFO 8.85300 resonanz-engine: showing random examples..
+INFO 8.85600 eeg Interaxon Muse : no connection to hardware
+INFO 8.90700 checking command
+INFO 8.90700 resonanz-engine: showing random examples..
+INFO 8.91000 eeg Interaxon Muse : no connection to hardware
+INFO 8.96000 checking command
+INFO 8.96000 resonanz-engine: showing random examples..
+INFO 8.96300 eeg Interaxon Muse : no connection to hardware
+INFO 9.00400 checking command
+INFO 9.00400 resonanz-engine: showing random examples..
+INFO 9.00700 eeg Interaxon Muse : no connection to hardware
+INFO 9.05700 checking command
+INFO 9.05700 resonanz-engine: showing random examples..
+INFO 9.06000 eeg Interaxon Muse : no connection to hardware
+INFO 9.11000 checking command
+INFO 9.11000 resonanz-engine: showing random examples..
+INFO 9.11300 eeg Interaxon Muse : no connection to hardware
+INFO 9.15400 checking command
+INFO 9.15400 resonanz-engine: showing random examples..
+INFO 9.15700 eeg Interaxon Muse : no connection to hardware
+INFO 9.20700 checking command
+INFO 9.20700 resonanz-engine: showing random examples..
+INFO 9.21000 eeg Interaxon Muse : no connection to hardware
+INFO 9.26000 checking command
+INFO 9.26000 resonanz-engine: showing random examples..
+INFO 9.26300 eeg Interaxon Muse : no connection to hardware
+INFO 9.30400 checking command
+INFO 9.30400 resonanz-engine: showing random examples..
+INFO 9.30700 eeg Interaxon Muse : no connection to hardware
+INFO 9.35700 checking command
+INFO 9.35700 resonanz-engine: showing random examples..
+INFO 9.36000 eeg Interaxon Muse : no connection to hardware
+INFO 9.41100 checking command
+INFO 9.41100 resonanz-engine: showing random examples..
+INFO 9.41400 eeg Interaxon Muse : no connection to hardware
+INFO 9.45400 checking command
+INFO 9.45400 resonanz-engine: showing random examples..
+INFO 9.45700 eeg Interaxon Muse : no connection to hardware
+INFO 9.50800 checking command
+INFO 9.50800 resonanz-engine: showing random examples..
+INFO 9.51100 eeg Interaxon Muse : no connection to hardware
+INFO 9.55200 checking command
+INFO 9.55200 resonanz-engine: showing random examples..
+INFO 9.55500 eeg Interaxon Muse : no connection to hardware
+INFO 9.60500 checking command
+INFO 9.60500 resonanz-engine: showing random examples..
+INFO 9.60800 eeg Interaxon Muse : no connection to hardware
+INFO 9.65900 checking command
+INFO 9.65900 resonanz-engine: showing random examples..
+INFO 9.66200 eeg Interaxon Muse : no connection to hardware
+INFO 9.70200 checking command
+INFO 9.70200 resonanz-engine: showing random examples..
+INFO 9.70600 eeg Interaxon Muse : no connection to hardware
+INFO 9.75600 checking command
+INFO 9.75600 resonanz-engine: showing random examples..
+INFO 9.76000 eeg Interaxon Muse : no connection to hardware
+INFO 9.81100 checking command
+INFO 9.81100 resonanz-engine: showing random examples..
+INFO 9.81300 eeg Interaxon Muse : no connection to hardware
+INFO 9.85400 checking command
+INFO 9.85400 resonanz-engine: showing random examples..
+INFO 9.85700 eeg Interaxon Muse : no connection to hardware
+INFO 9.90700 checking command
+INFO 9.90700 resonanz-engine: showing random examples..
+INFO 9.91000 eeg Interaxon Muse : no connection to hardware
+INFO 9.96100 checking command
+INFO 9.96100 resonanz-engine: showing random examples..
+INFO 9.96400 eeg Interaxon Muse : no connection to hardware
+INFO 10.00400 checking command
+INFO 10.00400 resonanz-engine: showing random examples..
+INFO 10.00700 eeg Interaxon Muse : no connection to hardware
+INFO 10.05800 checking command
+INFO 10.38400 resonanz-engine: showing random examples..
+INFO 10.38600 eeg Interaxon Muse : no connection to hardware
+INFO 10.38600 checking command
+INFO 10.38600 resonanz-engine: showing random examples..
+INFO 10.39100 eeg Interaxon Muse : no connection to hardware
+INFO 10.40100 checking command
+INFO 10.40100 resonanz-engine: showing random examples..
+INFO 10.40500 eeg Interaxon Muse : no connection to hardware
+INFO 10.45500 checking command
+INFO 10.45500 resonanz-engine: showing random examples..
+INFO 10.45800 eeg Interaxon Muse : no connection to hardware
+INFO 10.50900 checking command
+INFO 10.50900 resonanz-engine: showing random examples..
+INFO 10.51100 eeg Interaxon Muse : no connection to hardware
+INFO 10.55200 checking command
+INFO 10.55200 resonanz-engine: showing random examples..
+INFO 10.55500 eeg Interaxon Muse : no connection to hardware
+INFO 10.60500 checking command
+INFO 10.60500 resonanz-engine: showing random examples..
+INFO 10.60800 eeg Interaxon Muse : no connection to hardware
+INFO 10.65900 checking command
+INFO 10.65900 resonanz-engine: showing random examples..
+INFO 10.66200 eeg Interaxon Muse : no connection to hardware
+INFO 10.70200 checking command
+INFO 10.70200 resonanz-engine: showing random examples..
+INFO 10.70500 eeg Interaxon Muse : no connection to hardware
+INFO 10.75600 checking command
+INFO 10.75600 resonanz-engine: showing random examples..
+INFO 10.75800 eeg Interaxon Muse : no connection to hardware
+INFO 10.80900 checking command
+INFO 10.80900 resonanz-engine: showing random examples..
+INFO 10.81200 eeg Interaxon Muse : no connection to hardware
+INFO 10.85200 checking command
+INFO 10.85200 resonanz-engine: showing random examples..
+INFO 10.85500 eeg Interaxon Muse : no connection to hardware
+INFO 10.90600 checking command
+INFO 10.90600 resonanz-engine: showing random examples..
+INFO 10.90900 eeg Interaxon Muse : no connection to hardware
+INFO 10.95900 checking command
+INFO 10.95900 resonanz-engine: showing random examples..
+INFO 10.96200 eeg Interaxon Muse : no connection to hardware
+INFO 11.00200 checking command
+INFO 11.00200 resonanz-engine: showing random examples..
+INFO 11.00500 eeg Interaxon Muse : no connection to hardware
+INFO 11.05600 checking command
+INFO 11.05600 resonanz-engine: showing random examples..
+INFO 11.05900 eeg Interaxon Muse : no connection to hardware
+INFO 11.10900 checking command
+INFO 11.10900 resonanz-engine: showing random examples..
+INFO 11.11200 eeg Interaxon Muse : no connection to hardware
+INFO 11.15200 checking command
+INFO 11.15200 resonanz-engine: showing random examples..
+INFO 11.15500 eeg Interaxon Muse : no connection to hardware
+INFO 11.20600 checking command
+INFO 11.20600 resonanz-engine: showing random examples..
+INFO 11.20900 eeg Interaxon Muse : no connection to hardware
+INFO 11.25900 checking command
+INFO 11.25900 resonanz-engine: showing random examples..
+INFO 11.26200 eeg Interaxon Muse : no connection to hardware
+INFO 11.30200 checking command
+INFO 11.30200 resonanz-engine: showing random examples..
+INFO 11.30500 eeg Interaxon Muse : no connection to hardware
+INFO 11.35600 checking command
+INFO 11.35600 resonanz-engine: showing random examples..
+INFO 11.35900 eeg Interaxon Muse : no connection to hardware
+INFO 11.41000 checking command
+INFO 11.41000 resonanz-engine: showing random examples..
+INFO 11.41200 eeg Interaxon Muse : no connection to hardware
+INFO 11.45300 checking command
+INFO 11.45300 resonanz-engine: showing random examples..
+INFO 11.45600 eeg Interaxon Muse : no connection to hardware
+INFO 11.50600 checking command
+INFO 11.50600 resonanz-engine: showing random examples..
+INFO 11.50900 eeg Interaxon Muse : no connection to hardware
+INFO 11.55900 checking command
+INFO 11.55900 resonanz-engine: showing random examples..
+INFO 11.56200 eeg Interaxon Muse : no connection to hardware
+INFO 11.60300 checking command
+INFO 11.60300 resonanz-engine: showing random examples..
+INFO 11.60600 eeg Interaxon Muse : no connection to hardware
+INFO 11.65600 checking command
+INFO 11.65600 resonanz-engine: showing random examples..
+INFO 11.65900 eeg Interaxon Muse : no connection to hardware
+INFO 11.70900 checking command
+INFO 11.70900 resonanz-engine: showing random examples..
+INFO 11.71200 eeg Interaxon Muse : no connection to hardware
+INFO 11.75300 checking command
+INFO 11.75300 resonanz-engine: showing random examples..
+INFO 11.75600 eeg Interaxon Muse : no connection to hardware
+INFO 11.80600 checking command
+INFO 11.80600 resonanz-engine: showing random examples..
+INFO 11.80900 eeg Interaxon Muse : no connection to hardware
+INFO 11.85900 checking command
+INFO 11.85900 resonanz-engine: showing random examples..
+INFO 11.86200 eeg Interaxon Muse : no connection to hardware
+INFO 11.90300 checking command
+INFO 11.90300 resonanz-engine: showing random examples..
+INFO 11.90600 eeg Interaxon Muse : no connection to hardware
+INFO 11.95600 checking command
+INFO 11.95600 resonanz-engine: showing random examples..
+INFO 11.95900 eeg Interaxon Muse : no connection to hardware
+INFO 12.01000 checking command
+INFO 12.01000 resonanz-engine: showing random examples..
+INFO 12.01300 eeg Interaxon Muse : no connection to hardware
+INFO 12.05300 checking command
+INFO 12.05300 resonanz-engine: showing random examples..
+INFO 12.05600 eeg Interaxon Muse : no connection to hardware
+INFO 12.10600 checking command
+INFO 12.10600 resonanz-engine: showing random examples..
+INFO 12.10900 eeg Interaxon Muse : no connection to hardware
+INFO 12.16000 checking command
+INFO 12.16000 resonanz-engine: showing random examples..
+INFO 12.16200 eeg Interaxon Muse : no connection to hardware
+INFO 12.20300 checking command
+INFO 12.20300 resonanz-engine: showing random examples..
+INFO 12.20600 eeg Interaxon Muse : no connection to hardware
+INFO 12.25600 checking command
+INFO 12.25600 resonanz-engine: showing random examples..
+INFO 12.25900 eeg Interaxon Muse : no connection to hardware
+INFO 12.30900 checking command
+INFO 12.30900 resonanz-engine: showing random examples..
+INFO 12.31200 eeg Interaxon Muse : no connection to hardware
+INFO 12.35300 checking command
+INFO 12.35300 resonanz-engine: showing random examples..
+INFO 12.35600 eeg Interaxon Muse : no connection to hardware
+INFO 12.40600 checking command
+INFO 12.40600 resonanz-engine: showing random examples..
+INFO 12.40900 eeg Interaxon Muse : no connection to hardware
+INFO 12.45900 checking command
+INFO 12.45900 resonanz-engine: showing random examples..
+INFO 12.46200 eeg Interaxon Muse : no connection to hardware
+INFO 12.50200 checking command
+INFO 12.50200 resonanz-engine: showing random examples..
+INFO 12.50500 eeg Interaxon Muse : no connection to hardware
+INFO 12.55600 checking command
+INFO 12.55600 resonanz-engine: showing random examples..
+INFO 12.55900 eeg Interaxon Muse : no connection to hardware
+INFO 12.60900 checking command
+INFO 12.60900 resonanz-engine: showing random examples..
+INFO 12.61200 eeg Interaxon Muse : no connection to hardware
+INFO 12.65200 checking command
+INFO 12.65200 resonanz-engine: showing random examples..
+INFO 12.65500 eeg Interaxon Muse : no connection to hardware
+INFO 12.70600 checking command
+INFO 12.70600 resonanz-engine: showing random examples..
+INFO 12.70900 eeg Interaxon Muse : no connection to hardware
+INFO 12.75900 checking command
+INFO 12.75900 resonanz-engine: showing random examples..
+INFO 12.76200 eeg Interaxon Muse : no connection to hardware
+INFO 12.80200 checking command
+INFO 12.80200 resonanz-engine: showing random examples..
+INFO 12.80500 eeg Interaxon Muse : no connection to hardware
+INFO 12.85600 checking command
+INFO 12.85600 resonanz-engine: showing random examples..
+INFO 12.85900 eeg Interaxon Muse : no connection to hardware
+INFO 12.90900 checking command
+INFO 12.90900 resonanz-engine: showing random examples..
+INFO 12.91200 eeg Interaxon Muse : no connection to hardware
+INFO 12.95200 checking command
+INFO 12.95200 resonanz-engine: showing random examples..
+INFO 12.95600 eeg Interaxon Muse : no connection to hardware
+INFO 13.00700 checking command
+INFO 13.00700 resonanz-engine: showing random examples..
+INFO 13.01000 eeg Interaxon Muse : no connection to hardware
+INFO 13.06000 checking command
+INFO 13.06000 resonanz-engine: showing random examples..
+INFO 13.06300 eeg Interaxon Muse : no connection to hardware
+INFO 13.10300 checking command
+INFO 13.10300 resonanz-engine: showing random examples..
+INFO 13.10700 eeg Interaxon Muse : no connection to hardware
+INFO 13.15700 checking command
+INFO 13.15700 resonanz-engine: showing random examples..
+INFO 13.16000 eeg Interaxon Muse : no connection to hardware
+INFO 13.21100 checking command
+INFO 13.21100 resonanz-engine: showing random examples..
+INFO 13.21400 eeg Interaxon Muse : no connection to hardware
+INFO 13.25400 checking command
+INFO 13.25400 resonanz-engine: showing random examples..
+INFO 13.25700 eeg Interaxon Muse : no connection to hardware
+INFO 13.30800 checking command
+INFO 13.30800 resonanz-engine: showing random examples..
+INFO 13.31000 eeg Interaxon Muse : no connection to hardware
+INFO 13.36100 checking command
+INFO 13.36100 resonanz-engine: showing random examples..
+INFO 13.36400 eeg Interaxon Muse : no connection to hardware
+INFO 13.40400 checking command
+INFO 13.40400 resonanz-engine: showing random examples..
+INFO 13.40700 eeg Interaxon Muse : no connection to hardware
+INFO 13.45800 checking command
+INFO 13.45800 resonanz-engine: showing random examples..
+INFO 13.46100 eeg Interaxon Muse : no connection to hardware
+INFO 13.50100 checking command
+INFO 13.50100 resonanz-engine: showing random examples..
+INFO 13.50400 eeg Interaxon Muse : no connection to hardware
+INFO 13.55500 checking command
+INFO 13.55500 resonanz-engine: showing random examples..
+INFO 13.55800 eeg Interaxon Muse : no connection to hardware
+INFO 13.60800 checking command
+INFO 13.60800 resonanz-engine: showing random examples..
+INFO 13.61100 eeg Interaxon Muse : no connection to hardware
+INFO 13.65200 checking command
+INFO 13.65200 resonanz-engine: showing random examples..
+INFO 13.65500 eeg Interaxon Muse : no connection to hardware
+INFO 13.70500 checking command
+INFO 13.70500 resonanz-engine: showing random examples..
+INFO 13.70800 eeg Interaxon Muse : no connection to hardware
+INFO 13.75900 checking command
+INFO 13.75900 resonanz-engine: showing random examples..
+INFO 13.76200 eeg Interaxon Muse : no connection to hardware
+INFO 13.80200 checking command
+INFO 13.80200 resonanz-engine: showing random examples..
+INFO 13.80500 eeg Interaxon Muse : no connection to hardware
+INFO 13.85600 checking command
+INFO 13.85600 resonanz-engine: showing random examples..
+INFO 13.85900 eeg Interaxon Muse : no connection to hardware
+INFO 13.90900 checking command
+INFO 13.90900 resonanz-engine: showing random examples..
+INFO 13.91200 eeg Interaxon Muse : no connection to hardware
+INFO 13.95300 checking command
+INFO 13.95300 resonanz-engine: showing random examples..
+INFO 13.95600 eeg Interaxon Muse : no connection to hardware
+INFO 14.00600 checking command
+INFO 14.00600 resonanz-engine: showing random examples..
+INFO 14.00900 eeg Interaxon Muse : no connection to hardware
+INFO 14.06000 checking command
+INFO 14.06000 resonanz-engine: showing random examples..
+INFO 14.06300 eeg Interaxon Muse : no connection to hardware
+INFO 14.10300 checking command
+INFO 14.10300 resonanz-engine: showing random examples..
+INFO 14.10700 eeg Interaxon Muse : no connection to hardware
+INFO 14.15700 checking command
+INFO 14.15700 resonanz-engine: showing random examples..
+INFO 14.16000 eeg Interaxon Muse : no connection to hardware
+INFO 14.21100 checking command
+INFO 14.21100 resonanz-engine: showing random examples..
+INFO 14.21300 eeg Interaxon Muse : no connection to hardware
+INFO 14.25400 checking command
+INFO 14.25400 resonanz-engine: showing random examples..
+INFO 14.25700 eeg Interaxon Muse : no connection to hardware
+INFO 14.30700 checking command
+INFO 14.30700 resonanz-engine: showing random examples..
+INFO 14.31000 eeg Interaxon Muse : no connection to hardware
+INFO 14.36000 checking command
+INFO 14.36000 resonanz-engine: showing random examples..
+INFO 14.36300 eeg Interaxon Muse : no connection to hardware
+INFO 14.40400 checking command
+INFO 14.40400 resonanz-engine: showing random examples..
+INFO 14.40700 eeg Interaxon Muse : no connection to hardware
+INFO 14.45700 checking command
+INFO 14.45700 resonanz-engine: showing random examples..
+INFO 14.46000 eeg Interaxon Muse : no connection to hardware
+INFO 14.51000 checking command
+INFO 14.51000 resonanz-engine: showing random examples..
+INFO 14.51300 eeg Interaxon Muse : no connection to hardware
+INFO 14.55300 checking command
+INFO 14.55300 resonanz-engine: showing random examples..
+INFO 14.55600 eeg Interaxon Muse : no connection to hardware
+INFO 14.60700 checking command
+INFO 14.60700 resonanz-engine: showing random examples..
+INFO 14.61000 eeg Interaxon Muse : no connection to hardware
+INFO 14.66000 checking command
+INFO 14.66000 resonanz-engine: showing random examples..
+INFO 14.66300 eeg Interaxon Muse : no connection to hardware
+INFO 14.70400 checking command
+INFO 14.70400 resonanz-engine: showing random examples..
+INFO 14.70700 eeg Interaxon Muse : no connection to hardware
+INFO 14.75700 checking command
+INFO 14.75700 resonanz-engine: showing random examples..
+INFO 14.76000 eeg Interaxon Muse : no connection to hardware
+INFO 14.81000 checking command
+INFO 14.81000 resonanz-engine: showing random examples..
+INFO 14.81300 eeg Interaxon Muse : no connection to hardware
+INFO 14.85400 checking command
+INFO 14.85400 resonanz-engine: showing random examples..
+INFO 14.85600 eeg Interaxon Muse : no connection to hardware
+INFO 14.90700 checking command
+INFO 14.90700 resonanz-engine: showing random examples..
+INFO 14.91000 eeg Interaxon Muse : no connection to hardware
+INFO 14.96000 checking command
+INFO 14.96000 resonanz-engine: showing random examples..
+INFO 14.96300 eeg Interaxon Muse : no connection to hardware
+INFO 15.00300 checking command
+INFO 15.00300 resonanz-engine: showing random examples..
+INFO 15.00600 eeg Interaxon Muse : no connection to hardware
+INFO 15.05700 checking command
+INFO 15.05700 resonanz-engine: showing random examples..
+INFO 15.06000 eeg Interaxon Muse : no connection to hardware
+INFO 15.11000 checking command
+INFO 15.11000 resonanz-engine: showing random examples..
+INFO 15.11300 eeg Interaxon Muse : no connection to hardware
+INFO 15.15300 checking command
+INFO 15.15300 resonanz-engine: showing random examples..
+INFO 15.15700 eeg Interaxon Muse : no connection to hardware
+INFO 15.20700 checking command
+INFO 15.20700 resonanz-engine: showing random examples..
+INFO 15.21100 eeg Interaxon Muse : no connection to hardware
+INFO 15.25100 checking command
+INFO 15.25100 resonanz-engine: showing random examples..
+INFO 15.25400 eeg Interaxon Muse : no connection to hardware
+INFO 15.30500 checking command
+INFO 15.30500 resonanz-engine: showing random examples..
+INFO 15.30700 eeg Interaxon Muse : no connection to hardware
+INFO 15.35800 checking command
+INFO 15.35800 resonanz-engine: showing random examples..
+INFO 15.36100 eeg Interaxon Muse : no connection to hardware
+INFO 15.40100 checking command
+INFO 15.40100 resonanz-engine: showing random examples..
+INFO 15.40400 eeg Interaxon Muse : no connection to hardware
+INFO 15.45500 checking command
+INFO 15.45500 resonanz-engine: showing random examples..
+INFO 15.45800 eeg Interaxon Muse : no connection to hardware
+INFO 15.50800 checking command
+INFO 15.50800 resonanz-engine: showing random examples..
+INFO 15.51100 eeg Interaxon Muse : no connection to hardware
+INFO 15.55100 checking command
+INFO 15.55200 resonanz-engine: showing random examples..
+INFO 15.55500 eeg Interaxon Muse : no connection to hardware
+INFO 15.60500 checking command
+INFO 15.60500 resonanz-engine: showing random examples..
+INFO 15.60800 eeg Interaxon Muse : no connection to hardware
+INFO 15.65900 checking command
+INFO 15.65900 resonanz-engine: showing random examples..
+INFO 15.66200 eeg Interaxon Muse : no connection to hardware
+INFO 15.70200 checking command
+INFO 15.70200 resonanz-engine: showing random examples..
+INFO 15.70500 eeg Interaxon Muse : no connection to hardware
+INFO 15.75600 checking command
+INFO 15.75600 resonanz-engine: showing random examples..
+INFO 15.75900 eeg Interaxon Muse : no connection to hardware
+INFO 15.80900 checking command
+INFO 15.80900 resonanz-engine: showing random examples..
+INFO 15.81200 eeg Interaxon Muse : no connection to hardware
+INFO 15.85300 checking command
+INFO 15.85300 resonanz-engine: showing random examples..
+INFO 15.85600 eeg Interaxon Muse : no connection to hardware
+INFO 15.90600 checking command
+INFO 15.90600 resonanz-engine: showing random examples..
+INFO 15.90900 eeg Interaxon Muse : no connection to hardware
+INFO 15.95900 checking command
+INFO 15.95900 resonanz-engine: showing random examples..
+INFO 15.96200 eeg Interaxon Muse : no connection to hardware
+INFO 16.00300 checking command
+INFO 16.00300 resonanz-engine: showing random examples..
+INFO 16.00600 eeg Interaxon Muse : no connection to hardware
+INFO 16.05600 checking command
+INFO 16.05600 resonanz-engine: showing random examples..
+INFO 16.05900 eeg Interaxon Muse : no connection to hardware
+INFO 16.10900 checking command
+INFO 16.10900 resonanz-engine: showing random examples..
+INFO 16.11200 eeg Interaxon Muse : no connection to hardware
+INFO 16.15300 checking command
+INFO 16.15300 resonanz-engine: showing random examples..
+INFO 16.15600 eeg Interaxon Muse : no connection to hardware
+INFO 16.20600 checking command
+INFO 16.20600 resonanz-engine: showing random examples..
+INFO 16.20900 eeg Interaxon Muse : no connection to hardware
+INFO 16.26000 checking command
+INFO 16.26000 resonanz-engine: showing random examples..
+INFO 16.26200 eeg Interaxon Muse : no connection to hardware
+INFO 16.30300 checking command
+INFO 16.30300 resonanz-engine: showing random examples..
+INFO 16.30600 eeg Interaxon Muse : no connection to hardware
+INFO 16.35600 checking command
+INFO 16.35600 resonanz-engine: showing random examples..
+INFO 16.35900 eeg Interaxon Muse : no connection to hardware
+INFO 16.41000 checking command
+INFO 16.41000 resonanz-engine: showing random examples..
+INFO 16.41200 eeg Interaxon Muse : no connection to hardware
+INFO 16.45300 checking command
+INFO 16.45300 resonanz-engine: showing random examples..
+INFO 16.45600 eeg Interaxon Muse : no connection to hardware
+INFO 16.50600 checking command
+INFO 16.50600 resonanz-engine: showing random examples..
+INFO 16.50900 eeg Interaxon Muse : no connection to hardware
+INFO 16.56000 checking command
+INFO 16.56000 resonanz-engine: showing random examples..
+INFO 16.56200 eeg Interaxon Muse : no connection to hardware
+INFO 16.60300 checking command
+INFO 16.60300 resonanz-engine: showing random examples..
+INFO 16.60600 eeg Interaxon Muse : no connection to hardware
+INFO 16.65600 checking command
+INFO 16.65600 resonanz-engine: showing random examples..
+INFO 16.65900 eeg Interaxon Muse : no connection to hardware
+INFO 16.71000 checking command
+INFO 16.71000 resonanz-engine: showing random examples..
+INFO 16.71200 eeg Interaxon Muse : no connection to hardware
+INFO 16.75300 checking command
+INFO 16.75300 resonanz-engine: showing random examples..
+INFO 16.75600 eeg Interaxon Muse : no connection to hardware
+INFO 16.80600 checking command
+INFO 16.80600 resonanz-engine: showing random examples..
+INFO 16.80900 eeg Interaxon Muse : no connection to hardware
+INFO 16.85900 checking command
+INFO 16.86000 resonanz-engine: showing random examples..
+INFO 16.86200 eeg Interaxon Muse : no connection to hardware
+INFO 16.90300 checking command
+INFO 16.90300 resonanz-engine: showing random examples..
+INFO 16.90600 eeg Interaxon Muse : no connection to hardware
+INFO 16.95600 checking command
+INFO 16.95600 resonanz-engine: showing random examples..
+INFO 16.95900 eeg Interaxon Muse : no connection to hardware
+INFO 17.01000 checking command
+INFO 17.01000 resonanz-engine: showing random examples..
+INFO 17.01200 eeg Interaxon Muse : no connection to hardware
+INFO 17.05300 checking command
+INFO 17.05300 resonanz-engine: showing random examples..
+INFO 17.05600 eeg Interaxon Muse : no connection to hardware
+INFO 17.10700 checking command
+INFO 17.10700 resonanz-engine: showing random examples..
+INFO 17.11000 eeg Interaxon Muse : no connection to hardware
+INFO 17.16000 checking command
+INFO 17.16000 resonanz-engine: showing random examples..
+INFO 17.16300 eeg Interaxon Muse : no connection to hardware
+INFO 17.20400 checking command
+INFO 17.20400 resonanz-engine: showing random examples..
+INFO 17.20700 eeg Interaxon Muse : no connection to hardware
+INFO 17.25700 checking command
+INFO 17.25700 resonanz-engine: showing random examples..
+INFO 17.26000 eeg Interaxon Muse : no connection to hardware
+INFO 17.31000 checking command
+INFO 17.31100 resonanz-engine: showing random examples..
+INFO 17.31300 eeg Interaxon Muse : no connection to hardware
+INFO 17.35400 checking command
+INFO 17.35400 resonanz-engine: showing random examples..
+INFO 17.35700 eeg Interaxon Muse : no connection to hardware
+INFO 17.40800 checking command
+INFO 17.40800 resonanz-engine: showing random examples..
+INFO 17.41200 eeg Interaxon Muse : no connection to hardware
+INFO 17.45200 checking command
+INFO 17.45200 resonanz-engine: showing random examples..
+INFO 17.45500 eeg Interaxon Muse : no connection to hardware
+INFO 17.50600 checking command
+INFO 17.50600 resonanz-engine: showing random examples..
+INFO 17.50900 eeg Interaxon Muse : no connection to hardware
+INFO 17.55900 checking command
+INFO 17.55900 resonanz-engine: showing random examples..
+INFO 17.56200 eeg Interaxon Muse : no connection to hardware
+INFO 17.60300 checking command
+INFO 17.60300 resonanz-engine: showing random examples..
+INFO 17.60600 eeg Interaxon Muse : no connection to hardware
+INFO 17.65600 checking command
+INFO 17.65600 resonanz-engine: showing random examples..
+INFO 17.65900 eeg Interaxon Muse : no connection to hardware
+INFO 17.71000 checking command
+INFO 17.71000 resonanz-engine: showing random examples..
+INFO 17.71300 eeg Interaxon Muse : no connection to hardware
+INFO 17.75300 checking command
+INFO 17.75300 resonanz-engine: showing random examples..
+INFO 17.75600 eeg Interaxon Muse : no connection to hardware
+INFO 17.80700 checking command
+INFO 17.80700 resonanz-engine: showing random examples..
+INFO 17.81000 eeg Interaxon Muse : no connection to hardware
+INFO 17.86000 checking command
+INFO 17.86000 resonanz-engine: showing random examples..
+INFO 17.86300 eeg Interaxon Muse : no connection to hardware
+INFO 17.90400 checking command
+INFO 17.90400 resonanz-engine: showing random examples..
+INFO 17.90700 eeg Interaxon Muse : no connection to hardware
+INFO 17.95700 checking command
+INFO 17.95700 resonanz-engine: showing random examples..
+INFO 17.96000 eeg Interaxon Muse : no connection to hardware
+INFO 18.01000 checking command
+INFO 18.01000 resonanz-engine: showing random examples..
+INFO 18.01300 eeg Interaxon Muse : no connection to hardware
+INFO 18.05400 checking command
+INFO 18.05400 resonanz-engine: showing random examples..
+INFO 18.05700 eeg Interaxon Muse : no connection to hardware
+INFO 18.10700 checking command
+INFO 18.10700 resonanz-engine: showing random examples..
+INFO 18.11000 eeg Interaxon Muse : no connection to hardware
+INFO 18.16000 checking command
+INFO 18.16000 resonanz-engine: showing random examples..
+INFO 18.16300 eeg Interaxon Muse : no connection to hardware
+INFO 18.20400 checking command
+INFO 18.20400 resonanz-engine: showing random examples..
+INFO 18.20600 eeg Interaxon Muse : no connection to hardware
+INFO 18.25700 checking command
+INFO 18.25700 resonanz-engine: showing random examples..
+INFO 18.26000 eeg Interaxon Muse : no connection to hardware
+INFO 18.31000 checking command
+INFO 18.31000 resonanz-engine: showing random examples..
+INFO 18.31300 eeg Interaxon Muse : no connection to hardware
+INFO 18.35300 checking command
+INFO 18.35300 resonanz-engine: showing random examples..
+INFO 18.35600 eeg Interaxon Muse : no connection to hardware
+INFO 18.40700 checking command
+INFO 18.40700 resonanz-engine: showing random examples..
+INFO 18.41000 eeg Interaxon Muse : no connection to hardware
+INFO 18.46000 checking command
+INFO 18.46000 resonanz-engine: showing random examples..
+INFO 18.46300 eeg Interaxon Muse : no connection to hardware
+INFO 18.50300 checking command
+INFO 18.50300 resonanz-engine: showing random examples..
+INFO 18.50600 eeg Interaxon Muse : no connection to hardware
+INFO 18.55700 checking command
+INFO 18.55700 resonanz-engine: showing random examples..
+INFO 18.55900 eeg Interaxon Muse : no connection to hardware
+INFO 18.61000 checking command
+INFO 18.61000 resonanz-engine: showing random examples..
+INFO 18.61300 eeg Interaxon Muse : no connection to hardware
+INFO 18.65300 checking command
+INFO 18.65300 resonanz-engine: showing random examples..
+INFO 18.65600 eeg Interaxon Muse : no connection to hardware
+INFO 18.70600 checking command
+INFO 18.70600 resonanz-engine: showing random examples..
+INFO 18.70900 eeg Interaxon Muse : no connection to hardware
+INFO 18.76000 checking command
+INFO 18.76000 resonanz-engine: showing random examples..
+INFO 18.76200 eeg Interaxon Muse : no connection to hardware
+INFO 18.80300 checking command
+INFO 18.80300 resonanz-engine: showing random examples..
+INFO 18.80600 eeg Interaxon Muse : no connection to hardware
+INFO 18.85600 checking command
+INFO 18.85600 resonanz-engine: showing random examples..
+INFO 18.85900 eeg Interaxon Muse : no connection to hardware
+INFO 18.90900 checking command
+INFO 18.90900 resonanz-engine: showing random examples..
+INFO 18.91200 eeg Interaxon Muse : no connection to hardware
+INFO 18.95200 checking command
+INFO 18.95200 resonanz-engine: showing random examples..
+INFO 18.95500 eeg Interaxon Muse : no connection to hardware
+INFO 19.00600 checking command
+INFO 19.00600 resonanz-engine: showing random examples..
+INFO 19.00900 eeg Interaxon Muse : no connection to hardware
+INFO 19.05900 checking command
+INFO 19.05900 resonanz-engine: showing random examples..
+INFO 19.06200 eeg Interaxon Muse : no connection to hardware
+INFO 19.10200 checking command
+INFO 19.10200 resonanz-engine: showing random examples..
+INFO 19.10500 eeg Interaxon Muse : no connection to hardware
+INFO 19.15600 checking command
+INFO 19.15600 resonanz-engine: showing random examples..
+INFO 19.15900 eeg Interaxon Muse : no connection to hardware
+INFO 19.20900 checking command
+INFO 19.20900 resonanz-engine: showing random examples..
+INFO 19.21200 eeg Interaxon Muse : no connection to hardware
+INFO 19.25200 checking command
+INFO 19.25200 resonanz-engine: showing random examples..
+INFO 19.25500 eeg Interaxon Muse : no connection to hardware
+INFO 19.30600 checking command
+INFO 19.30600 resonanz-engine: showing random examples..
+INFO 19.30900 eeg Interaxon Muse : no connection to hardware
+INFO 19.36000 checking command
+INFO 19.36000 resonanz-engine: showing random examples..
+INFO 19.36300 eeg Interaxon Muse : no connection to hardware
+INFO 19.40300 checking command
+INFO 19.40300 resonanz-engine: showing random examples..
+INFO 19.40600 eeg Interaxon Muse : no connection to hardware
+INFO 19.45700 checking command
+INFO 19.45700 resonanz-engine: showing random examples..
+INFO 19.45900 eeg Interaxon Muse : no connection to hardware
+INFO 19.51000 checking command
+INFO 19.51000 resonanz-engine: showing random examples..
+INFO 19.51300 eeg Interaxon Muse : no connection to hardware
+INFO 19.55300 checking command
+INFO 19.55300 resonanz-engine: showing random examples..
+INFO 19.55600 eeg Interaxon Muse : no connection to hardware
+INFO 19.60700 checking command
+INFO 19.60700 resonanz-engine: showing random examples..
+INFO 19.61000 eeg Interaxon Muse : no connection to hardware
+INFO 19.66100 checking command
+INFO 19.66100 resonanz-engine: showing random examples..
+INFO 19.66400 eeg Interaxon Muse : no connection to hardware
+INFO 19.70400 checking command
+INFO 19.70400 resonanz-engine: showing random examples..
+INFO 19.70700 eeg Interaxon Muse : no connection to hardware
+INFO 19.75700 checking command
+INFO 19.75700 resonanz-engine: showing random examples..
+INFO 19.76000 eeg Interaxon Muse : no connection to hardware
+INFO 19.81100 checking command
+INFO 19.81100 resonanz-engine: showing random examples..
+INFO 19.81300 eeg Interaxon Muse : no connection to hardware
+INFO 19.85400 checking command
+INFO 19.85400 resonanz-engine: showing random examples..
+INFO 19.85700 eeg Interaxon Muse : no connection to hardware
+INFO 19.90700 checking command
+INFO 19.90700 resonanz-engine: showing random examples..
+INFO 19.91000 eeg Interaxon Muse : no connection to hardware
+INFO 19.96100 checking command
+INFO 19.96100 resonanz-engine: showing random examples..
+INFO 19.96300 eeg Interaxon Muse : no connection to hardware
+INFO 20.00400 checking command
+INFO 20.00400 resonanz-engine: showing random examples..
+INFO 20.00600 eeg Interaxon Muse : no connection to hardware
+INFO 20.05700 checking command
+INFO 20.05700 resonanz-engine: showing random examples..
+INFO 20.06000 eeg Interaxon Muse : no connection to hardware
+INFO 20.11000 checking command
+INFO 20.11000 resonanz-engine: showing random examples..
+INFO 20.11300 eeg Interaxon Muse : no connection to hardware
+INFO 20.15300 checking command
+INFO 20.15300 resonanz-engine: showing random examples..
+INFO 20.15600 eeg Interaxon Muse : no connection to hardware
+INFO 20.20700 checking command
+INFO 20.20700 resonanz-engine: showing random examples..
+INFO 20.21000 eeg Interaxon Muse : no connection to hardware
+INFO 20.26000 checking command
+INFO 20.26000 resonanz-engine: showing random examples..
+INFO 20.26300 eeg Interaxon Muse : no connection to hardware
+INFO 20.30300 checking command
+INFO 20.30300 resonanz-engine: showing random examples..
+INFO 20.30600 Received keypress: stopping command..
+INFO 20.30600 eeg Interaxon Muse : no connection to hardware
+INFO 20.35700 checking command
+INFO 20.35700 new engine command received
+INFO 20.35700 stop synth
+INFO 20.35800 resonanz-engine: sleeping..
+INFO 20.35800 eeg Interaxon Muse : no connection to hardware
+INFO 20.40800 checking command
+INFO 20.40800 resonanz-engine: sleeping..
+INFO 20.40800 eeg Interaxon Muse : no connection to hardware
+INFO 20.45900 checking command
+INFO 20.45900 resonanz-engine: sleeping..
+INFO 20.45900 eeg Interaxon Muse : no connection to hardware
+INFO 20.51000 checking command
+INFO 20.51000 resonanz-engine: sleeping..
+INFO 20.51000 eeg Interaxon Muse : no connection to hardware
+INFO 20.56000 checking command
+INFO 20.56000 resonanz-engine: sleeping..
+INFO 20.56000 eeg Interaxon Muse : no connection to hardware
+INFO 20.61100 checking command
+INFO 20.61100 resonanz-engine: sleeping..
+INFO 20.61100 eeg Interaxon Muse : no connection to hardware
+INFO 20.65100 checking command
+INFO 20.65100 resonanz-engine: sleeping..
+INFO 20.65100 eeg Interaxon Muse : no connection to hardware
+INFO 20.70200 checking command
+INFO 20.70200 resonanz-engine: sleeping..
+INFO 20.70200 eeg Interaxon Muse : no connection to hardware
+INFO 20.75200 checking command
+INFO 20.75200 resonanz-engine: sleeping..
+INFO 20.75200 eeg Interaxon Muse : no connection to hardware
+INFO 20.80300 checking command
+INFO 20.80300 resonanz-engine: sleeping..
+INFO 20.80300 eeg Interaxon Muse : no connection to hardware
+INFO 20.85300 checking command
+INFO 20.85300 resonanz-engine: sleeping..
+INFO 20.85300 eeg Interaxon Muse : no connection to hardware
+INFO 20.90400 checking command
+INFO 20.90400 resonanz-engine: sleeping..
+INFO 20.90400 eeg Interaxon Muse : no connection to hardware
+INFO 20.95400 checking command
+INFO 20.95400 resonanz-engine: sleeping..
+INFO 20.95400 eeg Interaxon Muse : no connection to hardware
+INFO 21.00500 checking command
+INFO 21.00500 resonanz-engine: sleeping..
+INFO 21.00500 eeg Interaxon Muse : no connection to hardware
+INFO 21.05500 checking command
+INFO 21.05500 resonanz-engine: sleeping..
+INFO 21.05500 eeg Interaxon Muse : no connection to hardware
+INFO 21.10600 checking command
+INFO 21.10600 resonanz-engine: sleeping..
+INFO 21.10600 eeg Interaxon Muse : no connection to hardware
+INFO 21.15600 checking command
+INFO 21.15700 resonanz-engine: sleeping..
+INFO 21.15700 eeg Interaxon Muse : no connection to hardware
+INFO 21.20700 checking command
+INFO 21.20700 resonanz-engine: sleeping..
+INFO 21.20700 eeg Interaxon Muse : no connection to hardware
+INFO 21.25800 checking command
+INFO 21.25800 new engine command received
+INFO 21.25800 resonanz-engine: sleeping..
+INFO 21.25800 eeg Interaxon Muse : no connection to hardware
+INFO 21.30800 checking command
+INFO 21.30800 resonanz-engine: sleeping..
+INFO 21.30800 eeg Interaxon Muse : no connection to hardware
+INFO 21.35900 checking command
+INFO 21.35900 resonanz-engine: sleeping..
+INFO 21.35900 eeg Interaxon Muse : no connection to hardware
+INFO 21.40900 checking command
+INFO 21.40900 resonanz-engine: sleeping..
+INFO 21.40900 eeg Interaxon Muse : no connection to hardware
+INFO 21.46000 checking command
+INFO 21.46000 resonanz-engine: sleeping..
+INFO 21.46000 eeg Interaxon Muse : no connection to hardware
+INFO 21.51000 checking command
+INFO 21.51000 resonanz-engine: sleeping..
+INFO 21.51000 eeg Interaxon Muse : no connection to hardware
+INFO 21.56100 checking command
+INFO 21.56100 resonanz-engine: sleeping..
+INFO 21.56100 eeg Interaxon Muse : no connection to hardware
+INFO 21.60100 checking command
+INFO 21.60100 resonanz-engine: sleeping..
+INFO 21.60100 eeg Interaxon Muse : no connection to hardware
+INFO 21.65200 checking command
+INFO 21.65200 resonanz-engine: sleeping..
+INFO 21.65200 eeg Interaxon Muse : no connection to hardware
+INFO 21.70200 checking command
+INFO 21.70300 resonanz-engine: sleeping..
+INFO 21.70300 eeg Interaxon Muse : no connection to hardware
+INFO 21.75300 checking command
+INFO 21.75300 resonanz-engine: sleeping..
+INFO 21.75300 eeg Interaxon Muse : no connection to hardware
+INFO 21.80400 checking command
+INFO 21.80400 resonanz-engine: sleeping..
+INFO 21.80400 eeg Interaxon Muse : no connection to hardware
+INFO 21.85400 checking command
+INFO 21.85400 resonanz-engine: sleeping..
+INFO 21.85400 eeg Interaxon Muse : no connection to hardware
+INFO 21.90500 checking command
+INFO 21.90500 resonanz-engine: sleeping..
+INFO 21.90500 eeg Interaxon Muse : no connection to hardware
+INFO 21.95500 checking command
+INFO 21.95500 resonanz-engine: sleeping..
+INFO 21.95500 eeg Interaxon Muse : no connection to hardware
+INFO 22.00600 checking command
+INFO 22.00600 resonanz-engine: sleeping..
+INFO 22.00600 eeg Interaxon Muse : no connection to hardware
+INFO 22.05600 checking command
+INFO 22.05600 resonanz-engine: sleeping..
+INFO 22.05600 eeg Interaxon Muse : no connection to hardware
+INFO 22.10700 checking command
+INFO 22.10700 resonanz-engine: sleeping..
+INFO 22.10700 eeg Interaxon Muse : no connection to hardware
+INFO 22.15800 checking command
+INFO 22.15800 resonanz-engine: sleeping..
+INFO 22.15800 eeg Interaxon Muse : no connection to hardware
+INFO 22.20800 checking command
+INFO 22.20800 resonanz-engine: sleeping..
+INFO 22.20800 eeg Interaxon Muse : no connection to hardware
+INFO 22.21000 resonanz-engine: shutdown..
+INFO 22.25900 checking command
+INFO 22.25900 resonanz-engine: sleeping..
+INFO 22.25900 eeg Interaxon Muse : no connection to hardware
+INFO 22.28400 SDL deinitialization..
+INFO 22.54500 SDL deinitialization.. DONE
+INFO 23.21000 resonanz-engine: halted
+INFO 23.21000 Shutdown? Logging class destroyed.
