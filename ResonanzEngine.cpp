@@ -740,6 +740,9 @@ void ResonanzEngine::engine_loop()
 
 	std::vector<float> eegCurrent;
 
+	
+	// thread has started successfully
+	thread_initialized = true;
 
 
 	// tries to initialize SDL library functionality - and load the font
@@ -767,8 +770,6 @@ void ResonanzEngine::engine_loop()
 	}
 	
 
-	// thread has started successfully
-	thread_initialized = true;
 
 
 	while(thread_is_running){
@@ -4109,9 +4110,33 @@ void ResonanzEngine::engine_updateScreen()
 // initializes SDL libraries to be used (graphics, font, music)
 bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 {
-        logging.info("Starting SDL initialization..");
+        logging.info("Starting SDL init (0)..");
         
-	SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Init(0);
+
+	logging.info("Starting SDL subsystem init (events, video, audio)..");
+
+	if(SDL_InitSubSystem(SDL_INIT_EVENTS) != 0){
+	  logging.error("SDL_Init(EVENTS) FAILED!");
+	  return false;
+	}
+	else
+	  logging.info("Starting SDL_Init(EVENTS) done..");
+	
+	if(SDL_InitSubSystem(SDL_INIT_VIDEO) != 0){
+	  logging.error("SDL_Init(VIDEO) FAILED!");
+	  return false;
+	}
+	else
+	  logging.info("Starting SDL_Init(VIDEO) done..");
+
+	if(SDL_InitSubSystem(SDL_INIT_AUDIO) != 0){
+	  logging.error("SDL_Init(AUDIO) FAILED!");
+	  return false;
+	}
+	else
+	  logging.info("Starting SDL_Init(AUDIO) done..");
+	
 
 	SDL_DisplayMode mode;
 
@@ -4120,12 +4145,16 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		SCREEN_HEIGHT = mode.h;
 	}
 
+	logging.info("Starting SDL_GetCurrentDisplayMode() done..");
+
 	if(TTF_Init() != 0){
 		char buffer[80];
 		snprintf(buffer, 80, "TTF_Init failed: %s\n", TTF_GetError());
 		logging.error(buffer);
 		throw std::runtime_error("TTF_Init() failed.");
 	}
+
+	logging.info("Starting TTF_Init() done..");
 
 	int flags = IMG_INIT_JPG | IMG_INIT_PNG;
 
@@ -4137,6 +4166,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		throw std::runtime_error("IMG_Init() failed.");
 	}
 
+	logging.info("Starting IMG_Init() done..");
+
 	flags = MIX_INIT_OGG;
 
 	audioEnabled = false;
@@ -4144,6 +4175,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	synth = new FMSoundSynthesis(); // curretly just supports single synthesizer type
 	mic   = new SDLMicListener();   // records single input channel
 	synth->pause(); // no sounds
+
+	logging.info("Created sound synthesizer and capture objects..");
 	
 	if(mic->listen() == false)      // tries to start recording audio
 	  logging.error("starting SDL sound capture failed");
@@ -4200,6 +4233,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		throw std::runtime_error("Mix_Init() failed.");
 		*/
 	}
+
+	logging.info("Starting Mix_Init() done..");
 	
 	font = 0;
 
@@ -4209,9 +4244,9 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 		snprintf(buffer, 80, "ERROR: Cannot open SDL mixer: %s.\n", Mix_GetError());
 		logging.warn(buffer);
 	}
+	else audioEnabled = true;
 	//#endif
 	logging.info("SDL initialization.. SUCCESSFUL");
-	audioEnabled = true;
 	
 	return true;
 }
