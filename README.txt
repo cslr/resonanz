@@ -1,8 +1,5 @@
 DEPENDENCIES
 
-- FFTW3 (Fastest Fourier Transform in the West) library
-  libfftw3-dev
-
 - SDL2 and SDL2_ttf, SDL2_image, SDL2_gfx (NOT SDL1.2 or something similar)
   You need to fetch these and compile them from libsdl.org and elsewhere
 
