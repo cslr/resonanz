@@ -1842,7 +1842,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	std::vector< std::pair<float, int> > results(keywordData.size());
 	std::vector< float > model_error_ratio(keywordData.size());
 
-#pragma omp parallel for schedule(dynamic)
+	logging.info("engine_executeProgram() calculate keywords");
+
+#pragma omp parallel for schedule(dynamic)	
 	for(unsigned int index=0;index<keywordData.size();index++){
 
 		math::vertex<> x(eegCurrent.size());
@@ -1947,7 +1949,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	results.resize(pictureData.size());
 	model_error_ratio.resize(pictureData.size());
 
-#pragma omp parallel for schedule(dynamic)
+	logging.info("engine_executeProgram(): calculate pictures");
+
+#pragma omp parallel for schedule(dynamic)	
 	for(unsigned int index=0;index<pictureData.size();index++){
 
 		math::vertex<> x(eegCurrent.size());
@@ -2047,6 +2051,8 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	
 	
 	if(synth){
+	  logging.info("engine_executeProgram(): calculate synth model");
+	  
 	  // initial sound parameters are random
 	  soundParameters.resize(synth->getNumberOfParameters());
 	  for(unsigned int i=0;i<soundParameters.size();i++)
@@ -2061,6 +2067,10 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  
 	  synth->getParameters(synthBefore);
 	  synthTest.resize(synthBefore.size());
+
+	  if(synthBefore.size() + eegCurrent.size() != synthModel.inputSize()){
+	    logging.fatal("engine_executeProgram(): synth model input parameters (dimension) mismatch!\n");
+	  }
 	  
 	  for(unsigned int i=0;i<synthBefore.size();i++){
 	    input[i] = synthBefore[i];

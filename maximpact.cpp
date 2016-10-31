@@ -1,7 +1,5 @@
 /*
  * MaxImpact - create maximum reponse stimulus pictures (see PLAN.txt) 
- * [use GA/genetic algorithm optimization from dinrhiw + 
- *  measure brainwave responses]
  * 
  */
 
@@ -16,15 +14,22 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL2_rotozoom.h>
-#include <aalib.h>
-
-// NOTE: conversion of image to ASCII does not really work in console
 
 
 void print_show_usage(){
-  printf("Usage: maximpact <picture> [--ascii] [AA-lib options]\n");
+  printf("Usage: maximpact <picture>\n");
 }
 
+
+bool parse_parameters(int argc, char** argv, std::string& filename)
+{
+  if(argc != 2) return false;
+  filename = argv[1];
+  return true;
+}
+
+
+double* createRandomSurface(int w, int h, double stdev);
 
 // calculates real value of gabor filter
 bool calculateGaborFilter(std::vector<double>& p, 
@@ -45,54 +50,22 @@ int main(int argc, char** argv)
   srand(time(0));
   
   std::string picture;
-  struct stat buf;
-  
-  // to allow development/testing in text only environment
-  bool useAscii = false; 
-  
-  if(argc < 2){
-    print_show_usage();
-    fprintf(stderr, "ERROR: Incorrect number of parameters.\n");
-    return -1;
-  }
-  else if(stat(argv[1], &buf) != 0){
+
+  if(!parse_parameters(argc, argv, picture)){
     print_show_usage();
     fprintf(stderr, "ERROR: Incorrect parameters.\n");
-    return -1;    
+    return -1;
   }
   else{
-    if(buf.st_size > 0){
-      picture = argv[1];
-    }
-    else{
+    struct stat buf;
+
+    if(stat(picture.c_str(), &buf) != 0){
       print_show_usage();
-      fprintf(stderr, "ERROR: Bad picture file.\n");
-      return -1;
-    }
-  }
-  
-  for(unsigned int i=2;i<3;i++){
-    if(strcmp(argv[i], "--ascii") == 0){
-      useAscii = true;
-    }
-    else{
-      printf("%s\n", argv[i]);
-      print_show_usage();
-      fprintf(stderr, "ERROR: bad command line parameter.\n");
-      return -1;
+      fprintf(stderr, "ERROR: Incorrect parameters.\n");
+      return -1;    
     }
   }
 
-  if(useAscii){
-    int nargc = argc-2;
-    char** nargv = &(argv[2]);
-    if(!aa_parseoptions(NULL, NULL, &nargc, nargv)){
-      print_show_usage();
-      fprintf(stderr, "ERROR: BAD AAlib parameters.\n");
-      return -1;      
-    }
-  }
-  
   
   SDL_Init(SDL_INIT_EVERYTHING);
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
@@ -100,220 +73,128 @@ int main(int argc, char** argv)
   SDL_Surface* pic = IMG_Load(picture.c_str());
   
   if(pic == NULL){
-      printf("Usage: maximpact <picture>\n");
-      fprintf(stderr, "ERROR: Bad picture file.\n");
-      
-      IMG_Quit();
-      SDL_Quit();
-      
-      return -1;    
-  }
-
-  SDL_Window* window = NULL;
-  aa_context* ascii = NULL;
-  
-  unsigned int W = 160;
-  unsigned int H = 120;
-  
-  if(!useAscii){
-    window = SDL_CreateWindow("MaxImpact",
-			      SDL_WINDOWPOS_CENTERED,
-			      SDL_WINDOWPOS_CENTERED,
-			      W, H, 0);
-  }
-  
-  if(window == NULL){
-    ascii = aa_autoinit(&aa_defparams);
+    printf("Usage: maximpact <picture>\n");
+    fprintf(stderr, "ERROR: Bad picture file.\n");
     
-    if(ascii){
-      W = aa_scrwidth(ascii);
-      H = aa_scrheight(ascii);
-      
-      printf("AAlib output: %dx%d\n", W, H);
-      fflush(stdout);
-      
-      aa_autoinitkbd(ascii, 0);
-      initscr();
-      raw();
-      noecho();
-      curs_set(0);
-    }
+    IMG_Quit();
+    SDL_Quit();
+    
+    return -1;    
   }
   
+  SDL_Window* window = NULL;
+  
+  int W = 640;
+  int H = 480;
 
-  if(window == NULL && ascii == NULL){
-    if(window == NULL) 
-      fprintf(stderr, "ERROR: Cannot open window: %s.\n", SDL_GetError());
+
+  SDL_DisplayMode mode;
+  
+  if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
+    W = (3*mode.w)/4;
+    H = (3*mode.h)/4;
+  }
+
+  
+  
+  window = SDL_CreateWindow("MaxImpact",
+			    SDL_WINDOWPOS_CENTERED,
+			    SDL_WINDOWPOS_CENTERED,
+			    W, H, 0);
+  if(window == NULL){
+    fprintf(stderr, "ERROR: Cannot open window: %s.\n", SDL_GetError());
     SDL_FreeSurface(pic);
     IMG_Quit();
     SDL_Quit();
     
     return -1;        
   }
+
   
   SDL_Event event;
   bool exit = false;
-  
-  SDL_Surface* original = NULL;
-  SDL_PixelFormat fmt;
-  fmt.format = SDL_PIXELFORMAT_ARGB8888;
-  fmt.BitsPerPixel  = 32;
-  fmt.BytesPerPixel = 4;
-  fmt.Rmask = 0x00FF0000;
-  fmt.Gmask = 0x0000FF00;
-  fmt.Bmask = 0x000000FF;
-  original = SDL_ConvertSurface(pic, &fmt, 0);
-  
 
-  std::vector<double> p; // gabor filter parameters
-  p.resize(5);
+  // converts picture to scaled version of itself that fits to the window
+  SDL_Surface* scaled = NULL;
+
+  if((pic->w) > (pic->h)){
+    double wscale = ((double)W)/((double)pic->w);
+    
+    scaled = SDL_CreateRGBSurface(0, (int)(pic->w*wscale), (int)(pic->h*wscale), 32,
+				  0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+    if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
+      return -1;
+  }
+  else{
+    double hscale = ((double)H)/((double)pic->h);
+    
+    scaled = SDL_CreateRGBSurface(0, (int)(pic->w*hscale), (int)(pic->h*hscale), 32,
+				  0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    
+    if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
+      return -1;
+  }
   
-  std::vector<double> filter; // 33x33 filter mask
-  filter.resize(33*33);
+  SDL_FreeSurface(pic);
+
+  // std::vector<double> p; // gabor filter parameters
+  // p.resize(5);
+  
+  // std::vector<double> filter; // 33x33 filter mask
+  // filter.resize(33*33);
   
   
   while(!exit){
-    SDL_Surface* scaled = NULL;
-      
-    // calculates convolution of surface per each color component
-    calculateGaborFilter(p, filter, 16, 0.1);
-    convolveSurface(original, filter, 16, scaled); 
+    // creates random delta D for scaled picture and measures how much responses change in dt time.
+    // this will then used to calculate E[ gradient ] along which next step is searched for
     
-    if(ascii){
-      // NOTE: ASCII rendering of images do not really work for now
-      //       the code is just for testing/"visualization" purposes for now
-      
-      W = aa_imgwidth(ascii);
-      H = aa_imgheight(ascii);
-      
-      // rescale picture to the target dimension
-      if(pic->w < pic->h){
-	double wscale = ((double)W)/((double)pic->w);
-	scaled = zoomSurface(pic, wscale, wscale, SMOOTHING_ON);
-			     
-      }
-      else{
-	double hscale = ((double)H)/((double)pic->h);
-	scaled = zoomSurface(pic, hscale, hscale, SMOOTHING_ON);
-			     
-      }
-      
-      // TODO convert to palette format 
-      // [select 256-point centers randomly, assign pixel (r,g,b) pairs
-      //  to the clusters, recalculate mean for each cluster, reassign pixel pairs again
-      //  continue until convergence]
-      {
-	SDL_Surface* im = 
-	  SDL_ConvertSurfaceFormat(scaled, SDL_PIXELFORMAT_ARGB8888, 0);
-	if(im){
-	  SDL_FreeSurface(scaled);
-	  scaled = im;
-	}
-      }
-      
-      SDL_Palette* palette = scaled->format->palette;
-      aa_palette pal;
-      
-      if(palette){
-	for(int i=0;i<palette->ncolors;i++){
-	  aa_setpalette(pal, i, 
-			palette->colors[i].r, 
-			palette->colors[i].g, 
-			palette->colors[i].b);
-	}
-      }
-      
-      
-
-      unsigned char* screen = (unsigned char*)aa_image(ascii);
-      memset(screen, 0, W*H*sizeof(unsigned char));
-      
-      for(unsigned int h=0;h<(scaled->h);h++){
-	for(unsigned int w=0;w<(scaled->w);w++){
-	  unsigned int ww = w + (W/2) - (scaled->w/2);
-	  unsigned int hh = h + (H/2) - (scaled->h/2);
-
-	  if(palette){
-	    Uint8 color = ((Uint8*)(scaled->pixels))[w + h*scaled->w];
-	    unsigned char value = color;
-	    
-	    screen[ww + hh*W] = (unsigned char)value;
-	  }
-	  else{
-	    Uint32 color = ((Uint32*)(scaled->pixels))[w + h*scaled->w];
-	    
-	    unsigned char value = (((color & 0x00FF0000)>>16) + 
-				   ((color & 0x0000FF00)>>8) + 
-				   ((color & 0x000000FF)>>0)) / 3;
-	    
-	    screen[ww + hh*W] = (unsigned char)value;
-	  }
-	  
-	  
-	}
-      }
-      
-      SDL_FreeSurface(scaled);
-      
-      aa_renderparams rp;
-      rp.bright    = 0; // 0-255
-      rp.contrast  = 0; // 0-127
-      rp.gamma     = 1.0;
-      rp.dither    = AA_FLOYD_S;
-      rp.inversion = 0;
-      rp.randomval = 0;
-      
-      
-      if(palette == 0){
-	aa_render(ascii, &rp, 
-		  0, 0, aa_scrwidth(ascii), aa_scrheight(ascii));
-      }
-      else{
-	aa_renderpalette(ascii, pal, &rp, 
-			 0, 0, aa_scrwidth(ascii), aa_scrheight(ascii));
-      }
-      
-      // aa_fastrender(ascii, 0, 0, aa_scrwidth(ascii), aa_scrheight(ascii));
-      // aa_flush(ascii);      
-      
-      
-      aa_gotoxy(ascii, 0, 0);
-      aa_hidecursor(ascii);
-      unsigned char* text = aa_text(ascii);
-      unsigned char* attr = aa_attrs(ascii);
-      
-      for(unsigned int h=0;h<aa_scrheight(ascii);h++){
-	for(unsigned int w=0;w<aa_scrwidth(ascii);w++){
-	  unsigned char ch = text[w + h*aa_scrwidth(ascii)];
-	  unsigned char a  = attr[w + h*aa_scrwidth(ascii)];
-	  if(a | AA_BOLD)    ch = ch | A_BOLD;
-	  if(a | AA_DIM)     ch = ch | A_DIM;
-	  if(a | AA_REVERSE) ch = ch | A_REVERSE;
-	  
-	  mvaddch(h, w, ch);
-	}
-      }
-      aa_gotoxy(ascii, 0, 0);
-      
-      refresh();
-      
-      SDL_Delay(1000);
-      
-      // check for keypress
-      int event = aa_getevent(ascii, 0);
-      if(event != AA_NONE && event >= 0 && event <= 255)
-	exit = true; // normal keypress
-      
-    }
-    else{ // SDL graphics code
-      // TODO implement me
+    double* delta = createRandomSurface(scaled->w, scaled->h, 100.0); // stdev is range of changes
+    
+    // calculates convolution of surface per each color component
+    // calculateGaborFilter(p, filter, 16, 0.1);
+    // convolveSurface(original, filter, 16, scaled); 
+    {
+      // SDL graphics code (TODO implement me)
       
       SDL_Surface* surf = SDL_GetWindowSurface(window);
       
-      /*
-       * SDL_FillRect(surf, NULL, 
-       * SDL_MapRGB(surf->format, 255, 0, 0));
-       */
+      SDL_FillRect(surf, NULL, 
+		   SDL_MapRGB(surf->format, 0, 0, 0));
+
+      SDL_Surface* view = SDL_CreateRGBSurface(0, scaled->w, scaled->h, 32,
+					       0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+      SDL_Rect imageRect;
+      imageRect.w = scaled->w;
+      imageRect.h = scaled->h;
+      imageRect.x = (W - scaled->w)/2;
+      imageRect.y = (H - scaled->h)/2;
+
+      for(int j=0;j<scaled->h;j++){
+	for(int i=0;i<scaled->w;i++){
+	  unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
+	  int r = (0x00FF0000 & pixel) >> 16;
+	  int g = (0x0000FF00 & pixel) >>  8;
+	  int b = (0x000000FF & pixel);
+
+	  r += delta[3*(j*scaled->w + i) + 0];
+	  g += delta[3*(j*scaled->w + i) + 1];
+	  b += delta[3*(j*scaled->w + i) + 2];
+
+	  if(r<0) r = 0; if(r>255) r = 255;
+	  if(g<0) g = 0; if(g>255) g = 255;
+	  if(b<0) b = 0; if(b>255) b = 255;
+	  
+	  pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
+
+	  ((unsigned int*)(((char*)view->pixels) + j*view->pitch))[i] = pixel;
+	}
+      }
+
+	    
+      SDL_BlitSurface(view, NULL, surf, &imageRect);
+      
       
       SDL_FreeSurface(surf);
       SDL_UpdateWindowSurface(window);
@@ -325,22 +206,37 @@ int main(int argc, char** argv)
       }
     }
     
-    
+    delete[] delta;
   }
   
 
-  SDL_FreeSurface(original);
-  SDL_FreeSurface(pic);
+  SDL_FreeSurface(scaled);
   if(window) SDL_DestroyWindow(window);
-  if(ascii){
-    aa_close(ascii);
-    endwin();
-  }
   
   IMG_Quit();
   SDL_Quit();
   
   return 0;
+}
+
+
+
+
+double* createRandomSurface(int w, int h, double stdev)
+{
+  double* delta = new double[w*h*3];
+
+  whiteice::RNG<double> rng;
+
+  for(int j=0;j<h;j++){
+    for(int i=0;i<w;i++){
+      delta[3*(j*w + i) + 0] = rng.uniform()*stdev;
+      delta[3*(j*w + i) + 1] = rng.uniform()*stdev;
+      delta[3*(j*w + i) + 2] = rng.uniform()*stdev;
+    }
+  }
+  
+  return delta;
 }
 
 

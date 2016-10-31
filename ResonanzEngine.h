@@ -225,8 +225,8 @@ private:
 
 	long long tick = 0; // current engine tick (one tick is TICK_MS long)
 
-	// was 100ms
-	static const unsigned int TICK_MS = 50; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	// set to 100ms
+	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
 	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
 	// media resource
