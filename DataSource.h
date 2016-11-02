@@ -21,8 +21,8 @@ public:
   virtual std::string getDataSourceName() const = 0;
 
   /**
-  	 * Returns true if connection and data collection to device is currently working.
-  	 */
+   * Returns true if connection and data collection to device is currently working.
+   */
   virtual bool connectionOk() const = 0;
 
   /**

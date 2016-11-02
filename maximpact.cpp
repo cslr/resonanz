@@ -1,35 +1,96 @@
 /*
- * MaxImpact - create maximum reponse stimulus pictures (see PLAN.txt) 
+ * MaxImpact - measure maximum reponse stimulus pictures (v1)
+ *             create/modify images for maximum response (plan / v2)
  * 
  */
 
 #include <stdio.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 #include <vector>
 #include <string>
 
+#include <thread>
+#include <chrono>
+
 #include <dinrhiw.h>
 #include <ncurses.h>
+#include <dirent.h>
+#include <string.h>
 
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL2_rotozoom.h>
 
+// devices that can be used for measurements
+#include "DataSource.h"
+#include "RandomEEG.h"
+#include "MuseOSC.h"
+
+
 
 void print_show_usage(){
-  printf("Usage: maximpact <picture>\n");
+  printf("Usage: maximpact <device> <picture-directory>\n");
+  printf("       <device> = 'muse' (osc localhost udp port 4545) or 'random'\n");
+  printf("\n");
 }
 
 
-bool parse_parameters(int argc, char** argv, std::string& filename)
+bool parse_parameters(int argc, char** argv, std::string& device, std::vector<std::string>& filenames)
 {
-  if(argc != 2) return false;
-  filename = argv[1];
-  return true;
+  device = "random";
+
+  if(argc != 3) return false;
+
+  device = argv[1];
+
+  if(device != "muse" && device != "random")
+    return false;
+  
+  DIR *dir;
+  struct dirent *ent;
+
+  std::string path = argv[2];
+
+  if(path.size() <= 0)
+    return false;
+  
+  if(path[path.size()-1] == '/' || path[path.size()-1] == '\\')
+    path.resize(path.size()-1);
+     
+  
+  if ((dir = opendir (path.c_str())) != NULL) {
+    
+    while ((ent = readdir (dir)) != NULL) {
+      const char* filename = ent->d_name;
+      const int L = strlen(filename);
+
+      if(strcmp((const char*)(filename+L-4), ".jpg") == 0 ||
+	 strcmp((const char*)(filename+L-4), ".png") == 0){
+
+	std::string f = path;
+	f += "/";
+	f += ent->d_name;
+
+	// std::cout << f << std::endl;
+	
+	filenames.push_back(f);
+      }
+			    
+      
+    }
+    closedir (dir);
+  }
+  else
+    return false;
+
+  return filenames.size() > 0;
 }
 
 
 double* createRandomSurface(int w, int h, double stdev);
+
+void addDeltaToSurface(SDL_Surface* scaled, double* delta, SDL_Surface* view);
 
 // calculates real value of gabor filter
 bool calculateGaborFilter(std::vector<double>& p, 
@@ -39,8 +100,21 @@ bool calculateGaborFilter(std::vector<double>& p,
 // calculates convolution of surface per each color component
 bool convolveSurface(SDL_Surface* original, 
 		     std::vector<double>& filter, 
-		     unsigned int N, SDL_Surface* scaled); 
+		     unsigned int N, SDL_Surface* scaled);
 
+
+void cpp_sleep(int msecs)
+{
+  std::chrono::milliseconds duration(msecs);
+  std::this_thread::sleep_for(duration);
+}
+
+
+void report_deltas(std::vector<std::string>& pictures,
+		   std::vector< std::vector<float> >& deltas);
+
+
+//////////////////////////////////////////////////////////////////////
 
 
 int main(int argc, char** argv)
@@ -48,40 +122,50 @@ int main(int argc, char** argv)
   printf("MaxImpact v0.01\n");
   
   srand(time(0));
-  
-  std::string picture;
 
-  if(!parse_parameters(argc, argv, picture)){
+  std::string device;
+  std::vector<std::string> pictures;
+
+  if(!parse_parameters(argc, argv, device, pictures)){
     print_show_usage();
     fprintf(stderr, "ERROR: Incorrect parameters.\n");
     return -1;
   }
   else{
     struct stat buf;
-
-    if(stat(picture.c_str(), &buf) != 0){
-      print_show_usage();
-      fprintf(stderr, "ERROR: Incorrect parameters.\n");
-      return -1;    
+    
+    for(unsigned int i=0;i<pictures.size();i++){
+      if(stat(pictures[i].c_str(), &buf) != 0){
+	print_show_usage();
+	fprintf(stderr, "ERROR: Incorrect parameters.\n");
+	return -1;    
+      }
     }
   }
+  
 
-  
-  SDL_Init(SDL_INIT_EVERYTHING);
-  IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
-  
-  SDL_Surface* pic = IMG_Load(picture.c_str());
-  
-  if(pic == NULL){
-    printf("Usage: maximpact <picture>\n");
-    fprintf(stderr, "ERROR: Bad picture file.\n");
-    
-    IMG_Quit();
-    SDL_Quit();
-    
+  /////////////////////////////////////////////////////////////
+
+  DataSource* dev = nullptr;
+
+  if(device == "muse"){
+    dev = new whiteice::resonanz::MuseOSC(4545);
+  }
+  else if(device == "random"){
+    dev = new whiteice::resonanz::RandomEEG();
+  }
+
+  if(dev->connectionOk() == false){
+    fprintf(stderr, "ERROR: Cannot connect to device.\n");
     return -1;    
   }
   
+  
+  /////////////////////////////////////////////////////////////
+  
+  SDL_Init(SDL_INIT_EVERYTHING);
+  IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
+
   SDL_Window* window = NULL;
   
   int W = 640;
@@ -95,15 +179,70 @@ int main(int argc, char** argv)
     H = (3*mode.h)/4;
   }
 
+
+
+  std::vector<SDL_Surface*> pics;
+
+  for(auto p : pictures){
+    SDL_Surface* pic = IMG_Load(p.c_str());
+    
+    if(pic == NULL) break;
+    
+      // converts picture to scaled version of itself that fits to the window
+    SDL_Surface* scaled = NULL;
+    
+    if((pic->w) > (pic->h)){
+      double wscale = ((double)W)/((double)pic->w);
+      
+      scaled = SDL_CreateRGBSurface(0, (int)(pic->w*wscale), (int)(pic->h*wscale), 32,
+				    0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+      
+      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
+	return -1;
+    }
+    else{
+      double hscale = ((double)H)/((double)pic->h);
+      
+      scaled = SDL_CreateRGBSurface(0, (int)(pic->w*hscale), (int)(pic->h*hscale), 32,
+				    0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+      
+      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
+	return -1;
+    }
+    
+    SDL_FreeSurface(pic);
+    
+    pics.push_back(scaled);
+  }
+
   
+  if(pics.size() == 0){
+    printf("Usage: maximpact <picture>\n");
+    fprintf(stderr, "ERROR: Bad picture files.\n");
+
+    for(auto p : pics)
+      SDL_FreeSurface(p);
+    
+    delete dev;
+    
+    IMG_Quit();
+    SDL_Quit();
+    
+    return -1;    
+  }
   
+
   window = SDL_CreateWindow("MaxImpact",
 			    SDL_WINDOWPOS_CENTERED,
 			    SDL_WINDOWPOS_CENTERED,
 			    W, H, 0);
   if(window == NULL){
-    fprintf(stderr, "ERROR: Cannot open window: %s.\n", SDL_GetError());
-    SDL_FreeSurface(pic);
+    fprintf(stderr, "ERROR: Cannot open window: %s.\n", SDL_GetError()); 
+    for(auto p : pics)
+      SDL_FreeSurface(p);
+
+    delete dev;
+    
     IMG_Quit();
     SDL_Quit();
     
@@ -114,46 +253,23 @@ int main(int argc, char** argv)
   SDL_Event event;
   bool exit = false;
 
-  // converts picture to scaled version of itself that fits to the window
-  SDL_Surface* scaled = NULL;
+  // delta values when showing each picture
+  std::vector< std::vector<float> > deltas;
+  deltas.resize(pictures.size());
 
-  if((pic->w) > (pic->h)){
-    double wscale = ((double)W)/((double)pic->w);
-    
-    scaled = SDL_CreateRGBSurface(0, (int)(pic->w*wscale), (int)(pic->h*wscale), 32,
-				  0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-
-    if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
-      return -1;
-  }
-  else{
-    double hscale = ((double)H)/((double)pic->h);
-    
-    scaled = SDL_CreateRGBSurface(0, (int)(pic->w*hscale), (int)(pic->h*hscale), 32,
-				  0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-    
-    if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
-      return -1;
-  }
-  
-  SDL_FreeSurface(pic);
-
-  // std::vector<double> p; // gabor filter parameters
-  // p.resize(5);
-  
-  // std::vector<double> filter; // 33x33 filter mask
-  // filter.resize(33*33);
-  
   
   while(!exit){
-    // creates random delta D for scaled picture and measures how much responses change in dt time.
-    // this will then used to calculate E[ gradient ] along which next step is searched for
+    const unsigned int picIndex = rand() % pics.size();
     
-    double* delta = createRandomSurface(scaled->w, scaled->h, 100.0); // stdev is range of changes
+    bool connOk = true;
     
-    // calculates convolution of surface per each color component
-    // calculateGaborFilter(p, filter, 16, 0.1);
-    // convolveSurface(original, filter, 16, scaled); 
+    if(dev->connectionOk() == false)
+      connOk = false;
+
+    std::vector<float> before;
+    if(dev->data(before) == false)
+      connOk = false;
+    
     {
       // SDL graphics code (TODO implement me)
       
@@ -162,56 +278,61 @@ int main(int argc, char** argv)
       SDL_FillRect(surf, NULL, 
 		   SDL_MapRGB(surf->format, 0, 0, 0));
 
-      SDL_Surface* view = SDL_CreateRGBSurface(0, scaled->w, scaled->h, 32,
-					       0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+      SDL_Surface* scaled = pics[ picIndex ];
 
       SDL_Rect imageRect;
       imageRect.w = scaled->w;
       imageRect.h = scaled->h;
       imageRect.x = (W - scaled->w)/2;
-      imageRect.y = (H - scaled->h)/2;
+      imageRect.y = (H - scaled->h)/2;      
 
-      for(int j=0;j<scaled->h;j++){
-	for(int i=0;i<scaled->w;i++){
-	  unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
-	  int r = (0x00FF0000 & pixel) >> 16;
-	  int g = (0x0000FF00 & pixel) >>  8;
-	  int b = (0x000000FF & pixel);
+      SDL_BlitSurface(scaled, NULL, surf, &imageRect);
 
-	  r += delta[3*(j*scaled->w + i) + 0];
-	  g += delta[3*(j*scaled->w + i) + 1];
-	  b += delta[3*(j*scaled->w + i) + 2];
-
-	  if(r<0) r = 0; if(r>255) r = 255;
-	  if(g<0) g = 0; if(g>255) g = 255;
-	  if(b<0) b = 0; if(b>255) b = 255;
-	  
-	  pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
-
-	  ((unsigned int*)(((char*)view->pixels) + j*view->pitch))[i] = pixel;
-	}
-      }
-
-	    
-      SDL_BlitSurface(view, NULL, surf, &imageRect);
       
-      
-      SDL_FreeSurface(surf);
       SDL_UpdateWindowSurface(window);
       SDL_ShowWindow(window);
-      
+      SDL_FreeSurface(surf);
+
+      // shows picture for 200ms
+      cpp_sleep(200);
+	    
       while(SDL_PollEvent(&event)){
 	if(event.type == SDL_KEYDOWN)
 	  exit = true;
       }
     }
+
+    if(dev->connectionOk() == false)
+      connOk = false;
     
-    delete[] delta;
+    std::vector<float> after;
+    if(dev->data(after) == false)
+      connOk = false;
+
+    if(connOk){
+      float delta = 0.0f;
+      
+      for(unsigned int i=0;i<before.size();i++){
+	delta += (after[i] - before[i])*(after[i] - before[i]);
+      }
+      
+      delta = sqrt(delta);
+      
+      deltas[picIndex].push_back(delta);
+    }
+    
   }
+
+
+  report_deltas(pictures, deltas);
   
 
-  SDL_FreeSurface(scaled);
   if(window) SDL_DestroyWindow(window);
+
+  for(auto p : pics)
+    SDL_FreeSurface(p);
+
+  delete dev;
   
   IMG_Quit();
   SDL_Quit();
@@ -219,7 +340,69 @@ int main(int argc, char** argv)
   return 0;
 }
 
+//////////////////////////////////////////////////////////////////////
 
+struct picture_delta {
+  std::string pic;
+  float mean;
+  float stdev;
+};
+
+int pd_cmp(const void* p11, const void* p22)
+{
+  const struct picture_delta *p1, *p2;
+  p1 = (struct picture_delta*)p11;
+  p2 = (struct picture_delta*)p22;
+
+  if(p1->mean == p2->mean) return 0;
+  else if(p1->mean > p2->mean) return -1;
+  else return +1;
+}
+
+
+
+void report_deltas(std::vector<std::string>& pictures,
+		   std::vector< std::vector<float> >& deltas)
+{
+  // create array of picture data
+  struct picture_delta* pics =
+    new struct picture_delta[pictures.size()];
+
+  // populate it with results
+  for(unsigned int i=0;i<pictures.size();i++){
+    pics[i].pic = pictures[i];
+    
+    std::vector<float>& data = deltas[i];
+
+    float mean = 0.0f, var = 0.0f;
+    
+    for(auto d : data){
+      mean += d/data.size();
+      var  += d*d/data.size();
+    }
+
+    var -= mean*mean;
+
+    pics[i].mean = mean;
+    pics[i].stdev = sqrt(var);
+  }
+  
+  // qsort it
+  qsort(pics, pictures.size(), sizeof(struct picture_delta), pd_cmp);
+
+  // prints the results
+  for(unsigned int i=0;i<pictures.size();i++){
+    printf("%f (+-%f)\t %s\n", pics[i].mean, pics[i].stdev,
+	   pics[i].pic.c_str());
+  }
+  fflush(stdout);
+					
+
+  delete[] pics;
+}
+
+
+//////////////////////////////////////////////////////////////////////
 
 
 double* createRandomSurface(int w, int h, double stdev)
@@ -237,6 +420,31 @@ double* createRandomSurface(int w, int h, double stdev)
   }
   
   return delta;
+}
+
+
+void addDeltaToSurface(SDL_Surface* scaled, double* delta, SDL_Surface* view)
+{
+  for(int j=0;j<scaled->h;j++){
+    for(int i=0;i<scaled->w;i++){
+      unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
+      int r = (0x00FF0000 & pixel) >> 16;
+      int g = (0x0000FF00 & pixel) >>  8;
+      int b = (0x000000FF & pixel);
+      
+      r += delta[3*(j*scaled->w + i) + 0];
+      g += delta[3*(j*scaled->w + i) + 1];
+      b += delta[3*(j*scaled->w + i) + 2];
+      
+      if(r<0) r = 0; if(r>255) r = 255;
+      if(g<0) g = 0; if(g>255) g = 255;
+      if(b<0) b = 0; if(b>255) b = 255;
+      
+      pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
+      
+      ((unsigned int*)(((char*)view->pixels) + j*view->pitch))[i] = pixel;
+    }
+  }
 }
 
 

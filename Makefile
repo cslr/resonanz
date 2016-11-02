@@ -43,7 +43,7 @@ MAXIMPACT_CXXFLAGS=$(CFLAGS)
 
 MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_gfx --libs` `aalib-config --libs` `pkg-config dinrhiw --libs` -lncurses
 
-MAXIMPACT_OBJECTS=maximpact.o
+MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
 MAXIMPACT_TARGET=maximpact
 
 SOUND_LIBS=`/usr/local/bin/sdl2-config --libs`
