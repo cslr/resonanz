@@ -13,14 +13,14 @@
 #include <thread>
 #include <chrono>
 
-#include <dinrhiw.h>
-#include <ncurses.h>
+// #include <dinrhiw.h>
+// #include <ncurses.h>
 #include <dirent.h>
 #include <string.h>
+#include <math.h>
 
 #include <SDL.h>
-#include <SDL_image.h>
-#include <SDL2_rotozoom.h>
+#include <SDL_image.h> 
 
 // devices that can be used for measurements
 #include "DataSource.h"
@@ -342,7 +342,8 @@ int main(int argc, char** argv)
 
 //////////////////////////////////////////////////////////////////////
 
-struct picture_delta {
+struct picture_delta
+{
   std::string pic;
   float mean;
   float stdev;
@@ -365,8 +366,10 @@ void report_deltas(std::vector<std::string>& pictures,
 		   std::vector< std::vector<float> >& deltas)
 {
   // create array of picture data
-  struct picture_delta* pics =
-    new struct picture_delta[pictures.size()];
+  struct picture_delta pics[pictures.size()];
+
+  // for(unsigned int i=0;i<pictures.size();i++)
+  // pics[i] = new struct picture_delta;
 
   // populate it with results
   for(unsigned int i=0;i<pictures.size();i++){
@@ -396,15 +399,13 @@ void report_deltas(std::vector<std::string>& pictures,
 	   pics[i].pic.c_str());
   }
   fflush(stdout);
-					
-
-  delete[] pics;
+  
 }
 
 
 //////////////////////////////////////////////////////////////////////
 
-
+#if 0
 double* createRandomSurface(int w, int h, double stdev)
 {
   double* delta = new double[w*h*3];
@@ -421,6 +422,7 @@ double* createRandomSurface(int w, int h, double stdev)
   
   return delta;
 }
+
 
 
 void addDeltaToSurface(SDL_Surface* scaled, double* delta, SDL_Surface* view)
@@ -562,3 +564,4 @@ bool convolveSurface(SDL_Surface* original,
 }
 
 
+#endif
