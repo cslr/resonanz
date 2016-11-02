@@ -119,7 +119,7 @@ void report_deltas(std::vector<std::string>& pictures,
 
 int main(int argc, char** argv)
 {
-  printf("MaxImpact v0.01\n");
+  printf("MaxImpact v0.9a Copyright Tomas Ukkonen <tomas.ukkonen@iki.fi>\n");
   
   srand(time(0));
 
@@ -154,6 +154,8 @@ int main(int argc, char** argv)
   else if(device == "random"){
     dev = new whiteice::resonanz::RandomEEG();
   }
+
+  cpp_sleep(2500); // waits 2.5 seconds for connection to be established.
 
   if(dev->connectionOk() == false){
     fprintf(stderr, "ERROR: Cannot connect to device.\n");
