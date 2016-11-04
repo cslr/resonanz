@@ -2,7 +2,7 @@
  * EmotivInsight.cpp
  *
  *  Created on: 4 Nov 2016
- *      Author: cutesolar
+ *      Author: Tomas Ukkonen
  */
 
 #include "EmotivInsight.h"
@@ -19,10 +19,18 @@
 #include <stdexcept>
 #include "timing.h"
 
+#include "IEmoStateDLL.h"
+#include "Iedk.h"
+#include "IedkErrorCode.h"
+#include "IEmoStatePerformanceMetric.h"
+
 // FIXME currently assumes only single user and ignores UserID field [multiple different EEG devices connected to same system]
 
+namespace whiteice {
+namespace resonanz { 
 
-void* __emotiv_start_poll_thread(void* ptr);
+
+void* __emotiv_insight_start_poll_thread(void* ptr);
 
 
 EmotivInsight::EmotivInsight() {
@@ -65,7 +73,7 @@ EmotivInsight::EmotivInsight() {
 		throw std::runtime_error("Cannot initialize data mutex.");
 	}
 
-	if(pthread_create(&poll_thread, NULL, __emotiv_start_poll_thread, (void*)this) != 0){
+	if(pthread_create(&poll_thread, NULL, __emotiv_insight_start_poll_thread, (void*)this) != 0){
 		if(connection == EDK_OK) IEE_EngineDisconnect();
 		IEE_EmoStateFree(eState);
 		IEE_EmoEngineEventFree(eEvent);
@@ -94,6 +102,15 @@ EmotivInsight::~EmotivInsight() {
 	pthread_mutex_destroy(&data_lock);
 }
 
+
+/*
+ * Returns unique DataSource name
+ */
+std::string EmotivInsight::getDataSourceName() const
+{
+  return "Emotiv Insight";
+}
+  
 /**
  * Returns true if connection and data collection to device is currently working.
  */
@@ -215,6 +232,14 @@ std::string EmotivInsight::getSignalName(int index) const
 		return "Interest";
 	else
 		return "N/A";
+}
+
+bool EmotivInsight::getSignalNames(std::vector<std::string>& names) const
+{
+  for(unsigned int i=0;i<getNumberOfSignals();i++)
+    names.push_back(getSignalName(i));
+  
+  return true;
 }
 
 /**
@@ -476,25 +501,33 @@ void EmotivInsight::poll_events()
 
 				float t = IS_GetTimeFromStart(eState);
 
-				if(IS_PerformanceMetricIsActive(eState, PM_EXCITEMENT))
-					scores.push_back(IS_PerformanceMetricGetInstantaneousExcitementScore(eState));
-				else scores.push_back(0.5f);
+				double rawScore = 0.0, minScale = 0.0, maxScale = 0.0;
 
-				if(IS_PerformanceMetricIsActive(eState, PM_RELAXATION))
-					scores.push_back(IS_PerformanceMetricGetRelaxationScore(eState));
-				else scores.push_back(0.5f);
-
-				if(IS_PerformanceMetricIsActive(eState, PM_STRESS))
-					scores.push_back(IS_PerformanceMetricGetStressScore(eState));
-				else scores.push_back(0.5f);
-
-				if(IS_PerformanceMetricIsActive(eState, PM_ENGAGEMENT))
-					scores.push_back(IS_PerformanceMetricGetEngagementBoredomScore(eState));
-				else scores.push_back(0.5f);
-
-				if(IS_PerformanceMetricIsActive(eState, PM_INTEREST))
-					scores.push_back(IS_PerformanceMetricGetInterestScore(eState));
-				else scores.push_back(0.5f);
+				IS_PerformanceMetricGetInstantaneousExcitementModelParams(eState,
+											  &rawScore,&minScale,
+											  &maxScale);
+				if(minScale == maxScale) scores.push_back(0.5f); // undefined
+				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
+				
+				IS_PerformanceMetricGetRelaxationModelParams(eState,&rawScore,
+									     &minScale,&maxScale);
+				if(minScale == maxScale) scores.push_back(0.5f); // undefined
+				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
+				
+				IS_PerformanceMetricGetStressModelParams(eState,&rawScore,&minScale,
+									 &maxScale);
+				if(minScale == maxScale) scores.push_back(0.5f); // undefined
+				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
+				
+				IS_PerformanceMetricGetEngagementBoredomModelParams(eState,&rawScore,
+										    &minScale,&maxScale);
+				if(minScale == maxScale) scores.push_back(0.5f); // undefined
+				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
+				
+				IS_PerformanceMetricGetInterestModelParams(eState,&rawScore,
+									   &minScale,&maxScale);
+				if(minScale == maxScale) scores.push_back(0.5f); // undefined
+				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
 
 
 				/////////////////////////////////////////////////////////////////
@@ -519,6 +552,23 @@ void EmotivInsight::poll_events()
 }
 
 
+float EmotivInsight::calculateScaledScore(const double& rawScore, const double& maxScale,
+					  const double& minScale)
+{
+  double scaledScore = 0.5;
+  
+  if(rawScore<minScale){
+    scaledScore =0;
+  }else if (rawScore>maxScale){
+    scaledScore = 1;
+  }
+  else{
+    scaledScore = (rawScore-minScale)/(maxScale-minScale);
+  }
+
+  return (float)scaledScore;
+}
+
 
 void* __emotiv_insight_start_poll_thread(void* ptr)
 {
@@ -532,5 +582,6 @@ void* __emotiv_insight_start_poll_thread(void* ptr)
 }
 
 
-
+}
+}
 

@@ -186,6 +186,7 @@ void MuseOSC::muse_loop() // worker thread loop
 		}
 
 		if(sock.receiveNextPacket(30)){
+		        
 			pr.init(sock.packetData(), sock.packetSize());
 			Message* msg = NULL;
 
@@ -217,6 +218,7 @@ void MuseOSC::muse_loop() // worker thread loop
 						if(q > 0) connection = true;
 
 					hasConnection = connection;
+
 				}
 
 				// gets relative frequency bands powers..
@@ -236,6 +238,7 @@ void MuseOSC::muse_loop() // worker thread loop
 						delta = 10.0f * log10(mean);
 						hasNewData = true;
 					}
+
 				}
 
 				r = msg->match("/muse/elements/theta_absolute");
@@ -305,7 +308,7 @@ void MuseOSC::muse_loop() // worker thread loop
 			}
 		}
 
-
+		
 		if(sock.isOk() == false){
 			// tries to reconnect the socket to port
 			sock.close();

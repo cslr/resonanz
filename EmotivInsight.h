@@ -17,12 +17,19 @@
 #include "DataSource.h"
 #include "Iedk.h" // add -Iemotiv_insight/include and -Lemotiv_insight
 
+namespace whiteice {
+namespace resonanz { 
 
 class EmotivInsight: public DataSource {
 public:
 	EmotivInsight();
 	virtual ~EmotivInsight();
 
+	/*
+	 * Returns unique DataSource name
+	 */
+	std::string getDataSourceName() const;
+	
 	/**
 	 * Returns true if connection and data collection to device is currently working.
 	 */
@@ -66,6 +73,9 @@ public:
 	 */
 	std::string getSignalName(int index) const;
 
+	
+	bool getSignalNames(std::vector<std::string>& names) const;
+
 	/**
 	 * Returns amount of data collected [collection frequency is 1 Hz]
 	 */
@@ -80,7 +90,7 @@ protected:
 	double current_time() const;
 
 	// collection frequency [1 Hz]
-	static const double time_frequency = 1.0;
+	static constexpr double time_frequency = 1.0;
 
 private:
 
@@ -118,6 +128,14 @@ private:
 	pthread_t poll_thread;
 
 	friend void* __emotiv_insight_start_poll_thread(void*);
+
+
+	// helper function..
+	float calculateScaledScore(const double& rawScore, const double& maxScale,
+				   const double& minScale);
 };
+
+}
+}
 
 #endif /* EMOTIVINSIGHT_H_ */

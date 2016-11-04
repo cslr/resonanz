@@ -24,8 +24,8 @@
 #include "NMCFile.h"
 
 #ifdef WINNT
-#include <windows.h>
-#include "timing.h"
+//#include <windows.h>
+//#include "timing.h"
 #endif
 
 bool parse_float_vector(std::vector<float>& v, const char* str);

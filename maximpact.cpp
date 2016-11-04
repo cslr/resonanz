@@ -26,10 +26,11 @@
 #include "DataSource.h"
 #include "RandomEEG.h"
 #include "MuseOSC.h"
+#include "EmotivInsight.h"
 
 // uncomment define to create command-line tool
 // that cannot process muse commands.
-// #define DISABLEMUSE 1
+// #define DISABLE_EEG 1
 
 void print_show_usage(){
   printf("Usage: maximpact <device> <picture-directory> [time]\n");
@@ -49,7 +50,7 @@ bool parse_parameters(int argc, char** argv,
 
   device = argv[1];
 
-  if(device != "muse" && device != "random")
+  if(device != "muse" && device != "random" && device != "insight")
     return false;
   
   DIR *dir;
@@ -157,7 +158,7 @@ int main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////
 
-#ifdef DISABLEMUSE
+#ifdef DISABLE_EEG
   // always use random device
   device = "random";
 #endif
@@ -167,6 +168,8 @@ int main(int argc, char** argv)
   if(device == "muse"){
     dev = new whiteice::resonanz::MuseOSC(4545);
   }
+  else if(device == "insight")
+    dev = new whiteice::resonanz::EmotivInsight();
   else if(device == "random"){
     dev = new whiteice::resonanz::RandomEEG();
   }
