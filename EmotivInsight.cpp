@@ -468,6 +468,8 @@ void EmotivInsight::poll_events()
 
 	latest_data_received_t = current_time();
 
+	IEE_DataChannel_t channelList[] = { IED_AF3, IED_AF4, IED_T7, IED_T8, IED_Pz }; // Emotiv Insight measurement points
+	
 	while(keep_polling){
 
 		// 1. check that there is connection
@@ -489,9 +491,11 @@ void EmotivInsight::poll_events()
 		int state = IEE_EngineGetNextEvent(eEvent);
 
 		while(state == EDK_OK){
+		        unsigned int userID   = -1;
 
+		  
 			IEE_Event_t event_type = IEE_EmoEngineEventGetType(eEvent);
-			// IEE_EmoEngineEventGetUserId(eEvent, &userID);
+			IEE_EmoEngineEventGetUserId(eEvent, &userID);
 
 			if(event_type == IEE_EmoStateUpdated){
 				IEE_EmoEngineEventGetEmoState(eEvent, eState);
@@ -501,6 +505,51 @@ void EmotivInsight::poll_events()
 
 				float t = IS_GetTimeFromStart(eState);
 
+				IEE_FFTSetWindowingType(userID, IEE_HAMMING);
+
+				double alpha = 0.0, low_beta = 0.0, high_beta = 0.0, gamma = 0.0, theta = 0.0;
+				double sum_alpha = 0.0, sum_low_beta = 0.0, sum_high_beta = 0.0, sum_gamma = 0.0, sum_theta = 0.0;
+				double sum = 0.0;
+
+				for(int i=0 ; i< sizeof(channelList)/sizeof(channelList[0]) ; ++i){
+				  int result = IEE_GetAverageBandPowers(userID, channelList[i], &theta, &alpha, 
+									&low_beta, &high_beta, &gamma);
+				  if(result == EDK_OK){
+
+				    printf("bands: %f %f %f %f %f\n", theta, alpha, low_beta, high_beta, gamma);
+				    fflush(stdout);
+				    
+				    sum_alpha += alpha;
+				    sum_low_beta += low_beta;
+				    sum_high_beta += high_beta;
+				    sum_gamma += gamma;
+				    sum_theta += theta;
+				    sum++;
+				  }
+				}
+
+				if(sum > 0.0){
+				  sum_alpha /= sum;
+				  sum_low_beta /= sum;
+				  sum_high_beta /= sum;
+				  sum_gamma /= sum;
+				  sum_theta /= sum;
+				}
+				else{
+				  sum_alpha = 0.5;
+				  sum_low_beta = 0.5;
+				  sum_high_beta = 0.5;
+				  sum_gamma = 0.5;
+				  sum_theta = 0.5;
+				}
+
+				scores.push_back(theta);
+				scores.push_back(alpha);
+				scores.push_back(sum_low_beta);
+				scores.push_back(sum_high_beta);
+				scores.push_back(gamma);
+				
+#if 0
 				double rawScore = 0.0, minScale = 0.0, maxScale = 0.0;
 
 				IS_PerformanceMetricGetInstantaneousExcitementModelParams(eState,
@@ -528,7 +577,7 @@ void EmotivInsight::poll_events()
 									   &minScale,&maxScale);
 				if(minScale == maxScale) scores.push_back(0.5f); // undefined
 				else scores.push_back(calculateScaledScore(rawScore, maxScale, minScale));
-
+#endif
 
 				/////////////////////////////////////////////////////////////////
 				// process collected data here [add to datastream we are maintaining]
