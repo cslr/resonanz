@@ -27,20 +27,25 @@
 #include "RandomEEG.h"
 #include "MuseOSC.h"
 
-
+// uncomment define to create command-line tool
+// that cannot process muse commands.
+// #define DISABLEMUSE 1
 
 void print_show_usage(){
-  printf("Usage: maximpact <device> <picture-directory>\n");
+  printf("Usage: maximpact <device> <picture-directory> [time]\n");
   printf("       <device> = 'muse' (osc localhost udp port 4545) or 'random'\n");
   printf("\n");
 }
 
 
-bool parse_parameters(int argc, char** argv, std::string& device, std::vector<std::string>& filenames)
+bool parse_parameters(int argc, char** argv,
+		      std::string& device,
+		      std::vector<std::string>& filenames,
+		      int& msecs)
 {
   device = "random";
 
-  if(argc != 3) return false;
+  if(argc != 3 && argc != 4) return false;
 
   device = argv[1];
 
@@ -84,7 +89,12 @@ bool parse_parameters(int argc, char** argv, std::string& device, std::vector<st
   else
     return false;
 
-  return filenames.size() > 0;
+  msecs = 200;
+
+  if(argc == 4)
+    msecs = atoi(argv[3]);
+
+  return ((filenames.size() > 0) && (msecs > 0));
 }
 
 
@@ -125,10 +135,11 @@ int main(int argc, char** argv)
 
   std::string device;
   std::vector<std::string> pictures;
+  int msecs = 200; // default picture display time
 
-  if(!parse_parameters(argc, argv, device, pictures)){
+  if(!parse_parameters(argc, argv, device, pictures, msecs)){
     print_show_usage();
-    fprintf(stderr, "ERROR: Incorrect parameters.\n");
+    fprintf(stdout, "ERROR: Incorrect parameters.\n");
     return -1;
   }
   else{
@@ -137,7 +148,7 @@ int main(int argc, char** argv)
     for(unsigned int i=0;i<pictures.size();i++){
       if(stat(pictures[i].c_str(), &buf) != 0){
 	print_show_usage();
-	fprintf(stderr, "ERROR: Incorrect parameters.\n");
+	fprintf(stdout, "ERROR: Incorrect parameters.\n");
 	return -1;    
       }
     }
@@ -145,6 +156,11 @@ int main(int argc, char** argv)
   
 
   /////////////////////////////////////////////////////////////
+
+#ifdef DISABLEMUSE
+  // always use random device
+  device = "random";
+#endif
 
   DataSource* dev = nullptr;
 
@@ -158,7 +174,7 @@ int main(int argc, char** argv)
   cpp_sleep(2500); // waits 2.5 seconds for connection to be established.
 
   if(dev->connectionOk() == false){
-    fprintf(stderr, "ERROR: Cannot connect to device.\n");
+    fprintf(stdout, "ERROR: Cannot connect to device.\n");
     return -1;    
   }
   
@@ -220,7 +236,7 @@ int main(int argc, char** argv)
   
   if(pics.size() == 0){
     printf("Usage: maximpact <picture>\n");
-    fprintf(stderr, "ERROR: Bad picture files.\n");
+    fprintf(stdout, "ERROR: Bad picture files.\n");
 
     for(auto p : pics)
       SDL_FreeSurface(p);
@@ -237,9 +253,11 @@ int main(int argc, char** argv)
   window = SDL_CreateWindow("MaxImpact",
 			    SDL_WINDOWPOS_CENTERED,
 			    SDL_WINDOWPOS_CENTERED,
-			    W, H, 0);
+			    W, H,
+			    SDL_WINDOW_ALWAYS_ON_TOP |
+			    SDL_WINDOW_INPUT_FOCUS);
   if(window == NULL){
-    fprintf(stderr, "ERROR: Cannot open window: %s.\n", SDL_GetError()); 
+    fprintf(stdout, "ERROR: Cannot open window: %s.\n", SDL_GetError()); 
     for(auto p : pics)
       SDL_FreeSurface(p);
 
@@ -251,6 +269,11 @@ int main(int argc, char** argv)
     return -1;        
   }
 
+  // brings window on top of other windows (?)
+  SDL_RaiseWindow(window);
+  SDL_UpdateWindowSurface(window);
+  SDL_RaiseWindow(window);
+  
   
   SDL_Event event;
   bool exit = false;
@@ -295,8 +318,8 @@ int main(int argc, char** argv)
       SDL_ShowWindow(window);
       SDL_FreeSurface(surf);
 
-      // shows picture for 200ms
-      cpp_sleep(200);
+      // shows picture for (default: 200ms)
+      cpp_sleep(msecs);
 	    
       while(SDL_PollEvent(&event)){
 	if(event.type == SDL_KEYDOWN)
