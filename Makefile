@@ -51,8 +51,8 @@ SOUND_TEST_TARGET=fmsound
 SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o
 
 R9E_TARGET=renaissance
-R9E_LIBS=`/usr/local/bin/sdl2-config --libs`
-R9E_OBJECTS=renaissance.o
+R9E_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
+R9E_OBJECTS=renaissance.o pictureAutoencoder.o
 
 
 ############################################################

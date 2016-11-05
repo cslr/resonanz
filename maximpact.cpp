@@ -317,6 +317,7 @@ int main(int argc, char** argv)
       SDL_BlitSurface(scaled, NULL, surf, &imageRect);
 
       
+      
       SDL_UpdateWindowSurface(window);
       SDL_ShowWindow(window);
       SDL_FreeSurface(surf);
