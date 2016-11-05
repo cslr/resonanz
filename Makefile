@@ -50,6 +50,10 @@ SOUND_LIBS=`/usr/local/bin/sdl2-config --libs`
 SOUND_TEST_TARGET=fmsound
 SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o
 
+R9E_TARGET=renaissance
+R9E_LIBS=`/usr/local/bin/sdl2-config --libs`
+R9E_OBJECTS=renaissance.o
+
 
 ############################################################
 
@@ -59,6 +63,9 @@ all: $(OBJECTS) resonanz
 
 resonanz: $(RESONANZ_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(RESONANZ_OBJECTS) $(LIBS)
+
+renaissance: $(R9E_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(R9E_TARGET) $(R9E_OBJECTS) $(R9E_LIBS) $(LIBS)
 
 jnilib: $(JNILIB_OBJECTS)
 	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o lib$(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)
