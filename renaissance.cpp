@@ -33,9 +33,9 @@ using namespace whiteice::resonanz;
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-// processes pictures of size 64x64
+// processes pictures of size 8x8 for now (out of memory otherwise)
 
-#define PICTURESIZE 64
+#define PICTURESIZE 4
 
 
 int main(int argc, char** argv)

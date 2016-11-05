@@ -122,6 +122,7 @@ namespace whiteice
     }
 
     
+
     // optimizes/learns autoencoder for processing pictures
     bool learnPictureAutoencoder(const std::string& picdir,
 				 std::vector<std::string>& pictures,
@@ -129,6 +130,62 @@ namespace whiteice
 				 whiteice::nnetwork< whiteice::math::blas_real<double> >& encoder,
 				 whiteice::nnetwork< whiteice::math::blas_real<double> >& decoder)
     {
+      // 1. converts pictures to vectors and trains DBN
+
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
+
+      data.resize(pictures.size());
+      //data.resize(30);
+
+      bool ok = true;
+      unsigned int sum = 0;
+
+#pragma omp parallel for shared(sum)
+      for(unsigned int counter=0;counter<data.size();counter++){
+      	
+	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	const auto& p = pictures[counter];
+	
+	if(picToVector(p, picsize, v) == false){
+	  ok = false;
+
+	  printf("PIC %d/%d ERROR\n", sum++, pictures.size());
+	  fflush(stdout);
+	}
+	else{
+	  data[counter] = v;
+	  
+	  printf("PIC %d/%d PROCESSED\n", sum++, pictures.size());
+	  fflush(stdout);
+	}
+      }
+
+      if(ok == false)
+	return false;
+      
+      // 2. trains DBN given data
+      std::vector<unsigned int> arch; // architecture of DBN
+      arch.push_back(3 * picsize * picsize);
+      arch.push_back(10 * 3 * picsize * picsize);
+      arch.push_back(picsize);
+      arch.push_back(10);
+	
+      whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
+      dbn.initializeWeights();
+
+      whiteice::math::blas_real<double> error = 0.01;
+
+      if(dbn.learnWeights(data, error, true) == false)
+	return false; // training failed
+      
+      
+      
+      
+      
+      return false;
+
+      
+#if 0
       // INITIAL TEST TO TEST PICTURE LOADING WORKS OK
 
       // open window (SDL)
@@ -205,9 +262,8 @@ namespace whiteice
 		
       }
 		 
-
+#endif
       
-      return false;
     }
     
   }
