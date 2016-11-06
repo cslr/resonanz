@@ -166,7 +166,7 @@ namespace whiteice
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
       arch.push_back(3 * picsize * picsize);
-      // arch.push_back(10 * 3 * picsize * picsize);
+      arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
       arch.push_back(10);
 	
