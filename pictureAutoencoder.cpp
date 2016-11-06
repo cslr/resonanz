@@ -1,6 +1,7 @@
 
 #include "pictureAutoencoder.h"
 
+#include <dinrhiw/dinrhiw.h>
 #include <SDL.h>
 #include <SDL_image.h>
 
@@ -32,7 +33,6 @@ namespace whiteice
 	return false;
       }
 
-      // FIXME
       SDL_Rect srcrect;
 
       if(pic->w < pic->h){
@@ -69,9 +69,9 @@ namespace whiteice
 	  int g = (0x0000FF00 & pixel) >>  8;
 	  int b = (0x000000FF & pixel);
 
-	  v[index] = (double)r; index++;
-	  v[index] = (double)g; index++;
-	  v[index] = (double)b; index++;
+	  v[index] = (double)r/255.0; index++;
+	  v[index] = (double)g/255.0; index++;
+	  v[index] = (double)b/255.0; index++;
 	}
       }
 
@@ -104,9 +104,9 @@ namespace whiteice
 	for(int i=0;i<surf->w;i++){
 	  int r = 0, g = 0, b = 0;
 
-	  whiteice::math::convert(r, v[index]); index++;
-	  whiteice::math::convert(g, v[index]); index++;
-	  whiteice::math::convert(b, v[index]); index++;
+	  whiteice::math::convert(r, 255.0*v[index]); index++;
+	  whiteice::math::convert(g, 255.0*v[index]); index++;
+	  whiteice::math::convert(b, 255.0*v[index]); index++;
 	  
 	  if(r<0) r = 0; if(r>255) r = 255;
 	  if(g<0) g = 0; if(g>255) g = 255;
@@ -127,15 +127,15 @@ namespace whiteice
     bool learnPictureAutoencoder(const std::string& picdir,
 				 std::vector<std::string>& pictures,
 				 unsigned int picsize,
-				 whiteice::nnetwork< whiteice::math::blas_real<double> >& encoder,
-				 whiteice::nnetwork< whiteice::math::blas_real<double> >& decoder)
+				 whiteice::nnetwork< whiteice::math::blas_real<double> >*& encoder,
+				 whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
     {
       // 1. converts pictures to vectors and trains DBN
 
       std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
 
-      data.resize(pictures.size());
-      //data.resize(30);
+      // data.resize(pictures.size());
+      data.resize(30); // FIXME temporarilly reduced to 30 for testing..
 
       bool ok = true;
       unsigned int sum = 0;
@@ -166,7 +166,7 @@ namespace whiteice
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
       arch.push_back(3 * picsize * picsize);
-      arch.push_back(10 * 3 * picsize * picsize);
+      // arch.push_back(10 * 3 * picsize * picsize);
       arch.push_back(picsize);
       arch.push_back(10);
 	
@@ -178,16 +178,132 @@ namespace whiteice
       if(dbn.learnWeights(data, error, true) == false)
 	return false; // training failed
       
-      
-      
-      
-      
-      return false;
+      // after pre-training dbn we convert DBN into feedforward autoencoder and train it
 
+      whiteice::nnetwork< whiteice::math::blas_real<double> >* net = nullptr;
       
-#if 0
-      // INITIAL TEST TO TEST PICTURE LOADING WORKS OK
+      if(dbn.convertToAutoEncoder(net) == false)
+	return false; // if true is returned then net is always non-null
 
+      whiteice::math::vertex< whiteice::math::blas_real<double> > x0;
+
+      if(net->exportdata(x0) == false){
+	delete net;
+	return false;
+      }
+
+      // create dataset<>
+      whiteice::dataset< whiteice::math::blas_real<double> > ds;
+      if(ds.createCluster("input", 3*picsize*picsize)  == false ||
+	 ds.createCluster("output", 3*picsize*picsize) == false){
+	delete net;
+	return false;
+      }
+      
+      if(ds.add(0, data) == false || ds.add(1, data) == false){
+	delete net;
+	return false;
+      }
+      
+
+      whiteice::LBFGS_nnetwork< whiteice::math::blas_real<double> > optimizer(*net, ds, false);
+
+      if(optimizer.minimize(x0) == false){
+	delete net;
+	return false;
+      }
+      
+      whiteice::math::vertex < whiteice::math::blas_real<double> > x;
+      whiteice::math::blas_real<double> y;
+      unsigned int iterations = (unsigned int)(-1);
+      
+      while(optimizer.isRunning() == true && optimizer.solutionConverged() == false){
+	usleep(100);
+	
+	unsigned int current = 0;
+	if(optimizer.getSolution(x, y, current)){
+
+	  if(iterations != current){
+	    iterations = current;
+	    printf("AUTOENCODER OPTIMIZER %d: %f\n", iterations, y.c[0]);
+	    fflush(stdout);
+	  }
+	}
+	
+      }
+
+      // after we have autoencoder nnetwork split it into encoder and decoder parts
+      std::vector<unsigned int>  arch2;
+      std::vector<unsigned int>& encoderArch = arch;
+      std::vector<unsigned int>  decoderArch;
+      
+      net->getArchitecture(arch2);
+
+      // last layer of encoder has same size as input layer of decoder
+      decoderArch.push_back(encoderArch[encoderArch.size()-1]);
+
+      // the rest is same as in encoder-decoder nnetwork..
+      for(unsigned int l=encoderArch.size();l<arch2.size();l++)
+	decoderArch.push_back(arch2[l]);
+
+      // generates nnetworks
+      encoder = new whiteice::nnetwork< whiteice::math::blas_real<double> > (encoderArch);
+      decoder = new whiteice::nnetwork< whiteice::math::blas_real<double> > (decoderArch);
+
+      if(encoder == nullptr || decoder == nullptr){
+	delete net;
+	if(encoder) delete encoder;
+	if(decoder) delete decoder;
+	return false;
+      }
+
+      try{
+	
+	for(unsigned int i=0;i<(encoderArch.size()-1);i++){
+	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	  if(net->getBias(b, i) == false) throw i;
+	  if(net->getWeights(W, i) == false) throw i;
+	  if(encoder->setBias(b, i) == false) throw i;
+	  if(encoder->setWeights(W, i) == false) throw i;
+	}
+	
+	const int L = encoderArch.size()-1; // continue from L:th layer
+	
+	for(unsigned int i=0;i<(decoderArch.size()-1);i++){
+	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	  if(net->getBias(b, L+i) == false) throw (L+i);
+	  if(net->getWeights(W, L+i) == false) throw (L+i);
+	  if(decoder->setBias(b, i) == false)  throw (L+i);
+	  if(decoder->setWeights(W, i) == false) throw (L+i);
+	}
+	
+      }
+      catch(int i){
+	printf("ERROR: setting bias/weight for layer %d (%d %d %d) failed\n",
+	       i, arch2.size(), encoderArch.size(), decoderArch.size());
+
+	delete net;
+	delete encoder;
+	delete decoder;
+
+	return false;
+      }
+      
+      // TODO
+      // finally retrain decoder separatedly
+      // 1. use encoder to create samples of hidden values
+      //    (last layer is linear now!
+      // 2. train decoder using samples {(h, original)}
+      
+      return true;      
+    }
+    
+
+    
+    void generateRandomPictures(whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
+    {
       // open window (SDL)
 
       SDL_Window* window = NULL;
@@ -217,9 +333,12 @@ namespace whiteice
       bool exit = false;
 
       while(!exit){
+	
 	while(SDL_PollEvent(&event)){
-	  if(event.type == SDL_KEYDOWN)
+	  if(event.type == SDL_KEYDOWN){
 	    exit = true;
+	    continue;
+	  }
 	}
 	
 	
@@ -231,10 +350,23 @@ namespace whiteice
 	SDL_Surface* scaled = NULL;
 
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
-	
-	if(picToVector(pictures[rand() % pictures.size()], picsize, v) == false) continue;
+	whiteice::math::vertex< whiteice::math::blas_real<double> > input;
+	input.resize(decoder->input_size());
+	v.resize(decoder->output_size());
 
-	if(vectorToSurface(v, picsize, scaled) == false) continue;
+	for(unsigned int i=0;i<input.size();i++){
+	  input[i] = ((double)rand())/((double)RAND_MAX) > 0.5 ? 1.0 : 0.0;
+	}
+	
+	decoder->calculate(input, v);
+	
+	std::cout << input << std::endl;
+	std::cout << v << std::endl;
+
+	const int picsize = (int)(sqrt(v.size()/3.0));
+	
+	if(vectorToSurface(v, picsize, scaled) == false)
+	  continue;
 	
 
 	SDL_Rect imageRect;
@@ -256,14 +388,15 @@ namespace whiteice
 	// SDL_BlitSurface(scaled, NULL, win, &imageRect);
 	SDL_BlitScaled(scaled, NULL, win, &imageRect);
 
+	SDL_FreeSurface(scaled);
+
 	SDL_UpdateWindowSurface(window);
 	SDL_ShowWindow(window);
 	SDL_FreeSurface(win);
-		
       }
-		 
-#endif
+
       
+      SDL_DestroyWindow(window);
     }
     
   }

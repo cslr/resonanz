@@ -35,12 +35,12 @@ using namespace whiteice::resonanz;
 
 // processes pictures of size 8x8 for now (out of memory otherwise)
 
-#define PICTURESIZE 4
+#define PICTURESIZE 8
 
 
 int main(int argc, char** argv)
 {
-  printf("Renaissance 0.01 (C) Copyright Tomas Ukkonen\n");
+  printf("Renaissance 0.02 (C) Copyright Tomas Ukkonen\n");
 
   srand(time(0));
 
@@ -57,8 +57,8 @@ int main(int argc, char** argv)
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
   if(cmd == "--autoencoder"){
-    whiteice::nnetwork< whiteice::math::blas_real<double> > encoder;
-    whiteice::nnetwork< whiteice::math::blas_real<double> > decoder;
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder = nullptr;
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder = nullptr;
 
     if(learnPictureAutoencoder(picturesDir, pictures,
 			       PICTURESIZE, encoder, decoder) == false){
@@ -69,7 +69,29 @@ int main(int argc, char** argv)
       
       return -1;
     }
+    
+    // saves endoder and decoder into pictures directory
+    {
+      std::string encoderFile = picturesDir + "/encoder.model";
+      std::string decoderFile = picturesDir + "/decoder.model";
       
+      if(encoder->save(encoderFile) == false || decoder->save(decoderFile) == false){	
+	printf("ERROR: cannot save encoder/decoder (autoencoder) to a disk\n");
+	
+	delete encoder;
+	delete decoder;
+	
+	IMG_Quit();
+	SDL_Quit();
+	return -1;
+      }
+    }
+
+    // testing: generates random pictures using decoder
+    generateRandomPictures(decoder);
+
+    if(encoder) delete encoder;
+    if(decoder) delete decoder;
   }
 
   
@@ -87,7 +109,8 @@ int main(int argc, char** argv)
 void print_usage()
 {
   printf("Usage: renaissance <cmd> <picture-directory>\n");
-  printf("       <cmd> = \"--autoencoder\" learns autoencoder from pictures and saves it to the picture directory");
+  printf("       <cmd> = \"--autoencoder\" learns autoencoder from pictures and saves it to the picture directory\n");
+  printf("       <picture-directory> path to directory (png files)\n");
   printf("\n");
 }
 
@@ -120,7 +143,7 @@ bool parse_parameters(int argc, char** argv, std::string& cmd, std::string& pict
       const char* filename = ent->d_name;
       const int L = strlen(filename);
       
-      if(strcmp((const char*)(filename+L-4), ".jpg") == 0 ||
+      if(/*strcmp((const char*)(filename+L-4), ".jpg") == 0 || */
 	 strcmp((const char*)(filename+L-4), ".png") == 0){
 	
 	std::string f = path;
