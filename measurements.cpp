@@ -64,7 +64,7 @@ namespace whiteice
 	whiteice::math::vertex< whiteice::math::blas_real<double> > input;
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 	
-	if(rand() & 1){ // synthesizes picture	  
+	{ // synthesizes picture	  
 	  
 	  input.resize(decoder->input_size());
 	  v.resize(decoder->output_size());
@@ -84,9 +84,13 @@ namespace whiteice
 	  if(vectorToSurface(v, picsize, scaled) == false)
 	    continue;
 	}
+#if 0
 	else{ // displays picture from disk (downscaled to picsize)
 
 	  unsigned int r = rand() % pictures.size();
+	  
+	  input.resize(decoder->input_size());
+	  v.resize(decoder->output_size());
 
 	  if(picToVector(pictures[r], picsize, v)){
 
@@ -96,6 +100,7 @@ namespace whiteice
 	      continue;
 	  }
 	}
+#endif
 	
 	SDL_Rect imageRect;
 	

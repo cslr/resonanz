@@ -21,6 +21,8 @@
 #include <dinrhiw/dinrhiw.h>
 #include "pictureAutoencoder.h"
 #include "measurements.h"
+#include "optimizeResponse.h"
+
 #include "DataSource.h"
 #include "RandomEEG.h"
 #include "MuseOSC.h"
@@ -61,9 +63,19 @@ int main(int argc, char** argv)
     return -1;
   }
 
+  const std::string encoderFile = dir + "/encoder.model";
+  const std::string decoderFile = dir + "/decoder.model";
+  const std::string datasetFile = dir + "/measurements.dat";
+  const std::string modelFile   = dir + "/response.model";
+  
+  
+  //////////////////////////////////////////////////////////////////////
+
   SDL_Init(SDL_INIT_EVERYTHING);
   IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
+
+  
   if(cmd == "--autoencoder"){
     // learns decoder picture synthesizer from data
     
@@ -83,8 +95,6 @@ int main(int argc, char** argv)
     
     // saves endoder and decoder into pictures directory
     {
-      std::string encoderFile = dir + "/encoder.model";
-      std::string decoderFile = dir + "/decoder.model";
       
       if(encoder->save(encoderFile) == false || decoder->save(decoderFile) == false){	
 	printf("ERROR: cannot save encoder/decoder (autoencoder) to a disk\n");
@@ -160,6 +170,22 @@ int main(int argc, char** argv)
 
     whiteice::dataset< whiteice::math::blas_real<double> > data;
     
+    if(data.load(datasetFile) == true){ // tries to load dataset
+      if(data.getNumberOfClusters() != 3){
+	printf("ERROR: cannot load dataset.\n");
+	
+	delete encoder;
+	delete decoder;
+	
+	delete dev;
+	
+	IMG_Quit();
+	SDL_Quit();
+	return -1;
+      }
+    }
+      
+    
     if(measureResponses(dev, DISPLAYTIME, encoder, decoder, pictures, PICTURESIZE, data) == false){
       printf("ERROR: could not measure responses to pictures\n");
 
@@ -174,9 +200,7 @@ int main(int argc, char** argv)
     }
 
     // saves dataset to disk
-    {
-      std::string datasetFile = dir + "/measurements.dat";
-
+    {      
       if(data.save(datasetFile) == false){
 	printf("ERROR: could not save measurements to disk\n");
 	delete encoder;
@@ -188,6 +212,9 @@ int main(int argc, char** argv)
 	SDL_Quit();
 	return -1;
       }
+
+      if(data.getNumberOfClusters() > 0)
+	printf("Total %d measurements in database\n", data.size(0));
     }
 
     delete encoder;
@@ -196,7 +223,41 @@ int main(int argc, char** argv)
   }
   else if(cmd == "--optimize"){
     // optimizes measurements using neural networks: nn(picparams, current_state) = next_state
+
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* nn = nullptr;
     
+    whiteice::dataset< whiteice::math::blas_real<double> > data;
+    
+    if(data.load(datasetFile) == true){ // tries to load dataset
+      if(data.getNumberOfClusters() != 3){
+	printf("ERROR: cannot load dataset.\n");
+	IMG_Quit();
+	SDL_Quit();
+	return -1;
+      }
+    }
+
+    // creates and optimizes neural network using L-BFGS training:
+    // nn(picparams, current_eeg_state) = next_eeg_state
+    if(optimizeResponse(nn, data) == false){
+      printf("ERROR: cannot load response dataset.\n");
+      IMG_Quit();
+      SDL_Quit();
+      return -1;
+    }
+
+    if(nn->save(modelFile) == false){
+      printf("ERROR: Cannot save response model to disk\n");
+      delete nn;
+      IMG_Quit();
+      SDL_Quit();
+      return -1;
+    }
+    else{
+      printf("NN prediction model saved.\n");
+    }
+
+    delete nn;
   }
   else if(cmd == "--synthesize"){ // decoder(params) = picture
     // loads prediction model and optimizes picparams using model nn(picparams, current_state) = next_state
@@ -206,7 +267,10 @@ int main(int argc, char** argv)
   }
   else if(cmd == "--stimulate"){ // encoder(picture) = params
     // goes through all pictures and always selects picture with best nn(picparams, current_state) = next_state
-    
+
+    // There is some problems using encoder
+
+    // TODO/FIXME
   }
 
   

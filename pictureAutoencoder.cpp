@@ -175,7 +175,7 @@ namespace whiteice
 
       whiteice::math::blas_real<double> error = 0.01;
 
-      // DO NOT DO RBM-PRETRAINING..
+      // does DBN pretraining..
       if(dbn.learnWeights(data, error, true) == false)
 	return false; // training failed
       
