@@ -22,6 +22,7 @@
 #include "pictureAutoencoder.h"
 #include "measurements.h"
 #include "optimizeResponse.h"
+#include "stimulation.h"
 
 #include "DataSource.h"
 #include "RandomEEG.h"
@@ -45,6 +46,8 @@ using namespace whiteice::resonanz;
 // processes pictures of size 8x8 for now (out of memory otherwise)
 
 #define PICTURESIZE 8
+#define DISPLAYTIME 200 // picture display time in msecs
+
 
 
 int main(int argc, char** argv)
@@ -56,9 +59,9 @@ int main(int argc, char** argv)
   std::string cmd;
   std::string dir;
   std::vector<std::string> pictures;
-  std::vector<float> target;
+  std::vector<float> targetVector;
 
-  if(!parse_parameters(argc, argv, cmd, dir, target, pictures)){
+  if(!parse_parameters(argc, argv, cmd, dir, targetVector, pictures)){
     print_usage();
     return -1;
   }
@@ -118,9 +121,6 @@ int main(int argc, char** argv)
     // connects to EEG hardware (Interaxon muse) and measures responses to synthesized pictures and
     // real pictures and stores results to database..
     
-    const unsigned int DISPLAYTIME = 200; // picture display time in msecs
-
-    
     DataSource* dev = nullptr;
 
     if(cmd == "--measure") dev = new whiteice::resonanz::MuseOSC(4545);
@@ -136,9 +136,6 @@ int main(int argc, char** argv)
     
     // loads endoder and decoder from pictures directory
     {
-      std::string encoderFile = dir + "/encoder.model";
-      std::string decoderFile = dir + "/decoder.model";
-      
       if(encoder->load(encoderFile) == false || decoder->load(decoderFile) == false){	
 	printf("ERROR: cannot load encoder/decoder (autoencoder) to a disk\n");
 	
@@ -223,7 +220,7 @@ int main(int argc, char** argv)
   }
   else if(cmd == "--optimize"){
     // optimizes measurements using neural networks: nn(picparams, current_state) = next_state
-
+    
     whiteice::nnetwork< whiteice::math::blas_real<double> >* nn = nullptr;
     
     whiteice::dataset< whiteice::math::blas_real<double> > data;
@@ -262,6 +259,51 @@ int main(int argc, char** argv)
   else if(cmd == "--synthesize"){ // decoder(params) = picture
     // loads prediction model and optimizes picparams using model nn(picparams, current_state) = next_state
     // (initially we do random search of picparams and always select the best one found)
+
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder =
+      new whiteice::nnetwork< whiteice::math::blas_real<double> >();
+    
+    // loads decoder
+    
+    // loads decoder from pictures directory
+    {
+      if(decoder->load(decoderFile) == false){
+	printf("ERROR: cannot load decoder (autoencoder) from a disk\n");
+	
+	delete decoder;
+	
+	IMG_Quit();
+	SDL_Quit();
+	return -1;
+      }
+    }
+
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* nn =
+      new whiteice::nnetwork< whiteice::math::blas_real<double> >();
+    
+    if(nn->load(modelFile) == false){
+      printf("ERROR: Cannot load response model from disk\n");
+      delete nn;
+      delete decoder;
+      IMG_Quit();
+      SDL_Quit();
+      return -1;
+    }
+
+    whiteice::math::vertex< whiteice::math::blas_real<double> > target;
+    target.resize(targetVector.size());
+
+    for(unsigned int i=0;i<target.size();i++)
+      target[i] = targetVector[i];
+    
+    
+    if(synthStimulation(decoder, PICTURESIZE, DISPLAYTIME, nn, target) == false){
+      printf("ERROR: picture synthesizer stimulation failed\n");
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
 
     
   }
