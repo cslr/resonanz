@@ -135,33 +135,28 @@ namespace whiteice
       std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
 
       // data.resize(pictures.size());
-      data.resize(30); // FIXME temporarilly reduced to 30 for testing..
-
-      bool ok = true;
+      
       unsigned int sum = 0;
 
-#pragma omp parallel for shared(sum)
-      for(unsigned int counter=0;counter<data.size();counter++){
+      //#pragma omp parallel for shared(sum)
+      for(unsigned int counter=0;counter<pictures.size();counter++){
       	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 	const auto& p = pictures[counter];
 	
 	if(picToVector(p, picsize, v) == false){
-	  ok = false;
-
 	  printf("PIC %d/%d ERROR\n", sum++, pictures.size());
 	  fflush(stdout);
 	}
 	else{
-	  data[counter] = v;
+	  data.push_back(v);
+	  // data[counter] = v;
 	  
 	  printf("PIC %d/%d PROCESSED\n", sum++, pictures.size());
 	  fflush(stdout);
 	}
       }
 
-      if(ok == false)
-	return false;
       
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
@@ -175,8 +170,9 @@ namespace whiteice
 
       whiteice::math::blas_real<double> error = 0.01;
 
-      if(dbn.learnWeights(data, error, true) == false)
-	return false; // training failed
+      // DO NOT DO RBM-PRETRAINING..
+      // if(dbn.learnWeights(data, error, true) == false)
+      //   return false; // training failed
       
       // after pre-training dbn we convert DBN into feedforward autoencoder and train it
 
@@ -215,9 +211,10 @@ namespace whiteice
       
       whiteice::math::vertex < whiteice::math::blas_real<double> > x;
       whiteice::math::blas_real<double> y;
-      unsigned int iterations = (unsigned int)(-1);
+      unsigned int iterations = 0;
       
       while(optimizer.isRunning() == true && optimizer.solutionConverged() == false){
+      // while(iterations < 100){ // hard limiter to 1000 iterations/tries
 	usleep(100);
 	
 	unsigned int current = 0;
@@ -233,6 +230,13 @@ namespace whiteice
       }
 
       // after we have autoencoder nnetwork split it into encoder and decoder parts
+      // 
+      // HACK:
+      // because last layer of dinrhiw's nnetwork implementation is always linear and
+      // encoder's last layer shoud be sigmoidal, I add one extra identity function
+      // layer to encoder
+      
+      
       std::vector<unsigned int>  arch2;
       std::vector<unsigned int>& encoderArch = arch;
       std::vector<unsigned int>  decoderArch;
@@ -267,7 +271,7 @@ namespace whiteice
 	  if(encoder->setBias(b, i) == false) throw i;
 	  if(encoder->setWeights(W, i) == false) throw i;
 	}
-	
+
 	const int L = encoderArch.size()-1; // continue from L:th layer
 	
 	for(unsigned int i=0;i<(decoderArch.size()-1);i++){
@@ -280,7 +284,7 @@ namespace whiteice
 	}
 	
       }
-      catch(int i){
+      catch(unsigned int i){
 	printf("ERROR: setting bias/weight for layer %d (%d %d %d) failed\n",
 	       i, arch2.size(), encoderArch.size(), decoderArch.size());
 
@@ -288,19 +292,66 @@ namespace whiteice
 	delete encoder;
 	delete decoder;
 
+	encoder = nullptr;
+	decoder = nullptr;
+
 	return false;
       }
+
+      delete net;
+
+
+      // HACK recreate encoder so that the last layer is linear identity layer
+      //      and outputs of encoder are proper sigmoids
+      {
+	std::vector<unsigned int>  arch3;
+	
+	encoder->getArchitecture(arch3);
+	const unsigned int dim = arch3[arch3.size()-1];
+	
+	arch3.push_back(dim);
+	auto newEncoder = new whiteice::nnetwork< whiteice::math::blas_real<double> >(arch3);
+	
+	try {
+	  for(unsigned int l=0;l<encoder->getLayers();l++){
+	    whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	    whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	    if(encoder->getWeights(W, l) == false) throw l;
+	    if(encoder->getBias(b, l) == false) throw l;
+	    if(newEncoder->setWeights(W, l) == false) throw l;
+	    if(newEncoder->setBias(b, l) == false) throw l;
+	  }
+	  
+	  // additional extra layer
+	  
+	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	  
+	  W.resize(dim, dim);
+	  b.resize(dim);
+	  
+	  W.identity();
+	  b.zero();
+	  
+	  if(newEncoder->setWeights(W, encoder->getLayers()) == false) throw encoder->getLayers();
+	  if(newEncoder->setBias(b, encoder->getLayers()) == false) throw encoder->getLayers();
+	  
+	  delete encoder;
+	  encoder = newEncoder;
+	}
+	catch(unsigned int l){
+	  delete newEncoder;
+	  
+	  printf("ERROR: adding extra layer to encoder failed: %d\n", l);
+	  
+	  return false;
+	}
+      }
       
-      // TODO
-      // finally retrain decoder separatedly
-      // 1. use encoder to create samples of hidden values
-      //    (last layer is linear now!
-      // 2. train decoder using samples {(h, original)}
-      
-      return true;      
+      return true;
     }
     
-
+    
     
     void generateRandomPictures(whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
     {
@@ -354,6 +405,7 @@ namespace whiteice
 	input.resize(decoder->input_size());
 	v.resize(decoder->output_size());
 
+	// input values to decoder are 0/1 valued "sigmoidal" values
 	for(unsigned int i=0;i<input.size();i++){
 	  input[i] = ((double)rand())/((double)RAND_MAX) > 0.5 ? 1.0 : 0.0;
 	}

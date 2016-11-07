@@ -1,28 +1,25 @@
 TODO
 
-- sound synthesis modules (FM synthesis)
+- renaissance: 
+ 
+   * stacked RBM autoencoders do not work that well and require too much computing power (too slow)
+
+   => implement variational autocoder (VAE) (see docs) to synthesize pictures
+   
 
 - HMM based analysis and generation of N-step long probable stimulation sequences
   (sample N>2 HMM sequences and only generate model and try 
    to learn 1..N long sequence models if probability of sequence is high enough)
    
-
 - move from second long "ticks" to 
   subsecond ticks and use it everywhere to get subsecond accuracy
+
+- get emotiv insight and add support for it
   
-- fix/text MC sampling code (speed): support non-real time rendering
+- create theora+ogg video+audio files when measuring programs
+  (currently does not 
 
-- sync music well with video
-  - encoding music into encoded videos (later afterwards using external ffmpeg command)
-  
-- decode theora+ogg video+audio files when measuring programs
-
-- picture Stacked RBM autoencoder synthesis/linear interpolation in feature space
-  (or non-linear using Hermite splines)
-  => requires implementation in Dinrhiw2 
-     [GB-RBM and BB-RBM + stackedRBM implementation => Autoencoder]
-
-- name change: Resonanz => "Renaissance"
+- improve sound synthesis modules (FM synthesis)
 
 
 
