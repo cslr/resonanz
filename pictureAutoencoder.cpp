@@ -11,7 +11,7 @@ namespace whiteice
   namespace resonanz {
 
     
-    // opens and converts (RGB) picture to 3*picsize*picsize sized vector
+    // opens and converts (RGB) picture to picsize*picsize sized grayscale vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
 		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v)
     {
@@ -58,7 +58,7 @@ namespace whiteice
       SDL_FreeSurface(pic);
 
       // transforms picture to a vector
-      v.resize(3*picsize*picsize);
+      v.resize(picsize*picsize);
 
       unsigned int index=0;
 
@@ -69,9 +69,13 @@ namespace whiteice
 	  int g = (0x0000FF00 & pixel) >>  8;
 	  int b = (0x000000FF & pixel);
 
-	  v[index] = (double)r/255.0; index++;
-	  v[index] = (double)g/255.0; index++;
-	  v[index] = (double)b/255.0; index++;
+	  double value = sqrt(r*r + g*g + b*b)/sqrt(3.0*255.0*255.0);
+
+	  v[index] = value; index++;
+
+	  // v[index] = (double)r/255.0; index++;
+	  // v[index] = (double)g/255.0; index++;
+	  // v[index] = (double)b/255.0; index++;
 	}
       }
 
@@ -87,7 +91,7 @@ namespace whiteice
 			 SDL_Surface*& surf)
     {
       if(picsize <= 0) return false;
-      if(v.size() != 3*picsize*picsize) return false;
+      if(v.size() != picsize*picsize) return false;
       
       surf = NULL;
       
@@ -105,8 +109,12 @@ namespace whiteice
 	  int r = 0, g = 0, b = 0;
 
 	  whiteice::math::convert(r, 255.0*v[index]); index++;
-	  whiteice::math::convert(g, 255.0*v[index]); index++;
-	  whiteice::math::convert(b, 255.0*v[index]); index++;
+	  g = r;
+	  b = r;
+
+	  // whiteice::math::convert(r, 255.0*v[index]); index++;
+	  // whiteice::math::convert(g, 255.0*v[index]); index++;
+	  // whiteice::math::convert(b, 255.0*v[index]); index++;
 	  
 	  if(r<0) r = 0; if(r>255) r = 255;
 	  if(g<0) g = 0; if(g>255) g = 255;
@@ -137,7 +145,7 @@ namespace whiteice
       // data.resize(pictures.size());
       
       unsigned int sum = 0;
-
+      
       //#pragma omp parallel for shared(sum)
       for(unsigned int counter=0;counter<pictures.size();counter++){
       	
@@ -145,25 +153,22 @@ namespace whiteice
 	const auto& p = pictures[counter];
 	
 	if(picToVector(p, picsize, v) == false){
-	  printf("PIC %d/%d ERROR\n", sum++, pictures.size());
-	  fflush(stdout);
 	}
 	else{
 	  data.push_back(v);
 	  // data[counter] = v;
-	  
-	  printf("PIC %d/%d PROCESSED\n", sum++, pictures.size());
-	  fflush(stdout);
 	}
       }
+
+      if(data.size() < 0)
+	return false;
 
       
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
-      arch.push_back(3 * picsize * picsize);
-      arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
+      arch.push_back(picsize * picsize);
+      // arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
-      arch.push_back(10);
 	
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
       dbn.initializeWeights();
@@ -171,8 +176,8 @@ namespace whiteice
       whiteice::math::blas_real<double> error = 0.01;
 
       // DO NOT DO RBM-PRETRAINING..
-      // if(dbn.learnWeights(data, error, true) == false)
-      //   return false; // training failed
+      if(dbn.learnWeights(data, error, true) == false)
+	return false; // training failed
       
       // after pre-training dbn we convert DBN into feedforward autoencoder and train it
 
@@ -190,8 +195,8 @@ namespace whiteice
 
       // create dataset<>
       whiteice::dataset< whiteice::math::blas_real<double> > ds;
-      if(ds.createCluster("input", 3*picsize*picsize)  == false ||
-	 ds.createCluster("output", 3*picsize*picsize) == false){
+      if(ds.createCluster("input", picsize*picsize)  == false ||
+	 ds.createCluster("output", picsize*picsize) == false){
 	delete net;
 	return false;
       }
@@ -298,9 +303,7 @@ namespace whiteice
 	return false;
       }
 
-      delete net;
-
-
+      
       // HACK recreate encoder so that the last layer is linear identity layer
       //      and outputs of encoder are proper sigmoids
       {
@@ -341,12 +344,15 @@ namespace whiteice
 	}
 	catch(unsigned int l){
 	  delete newEncoder;
+	  delete net;
 	  
 	  printf("ERROR: adding extra layer to encoder failed: %d\n", l);
 	  
 	  return false;
 	}
       }
+
+      // hack we use full net instead to create random pictures (...)
       
       return true;
     }
@@ -412,10 +418,10 @@ namespace whiteice
 	
 	decoder->calculate(input, v);
 	
-	std::cout << input << std::endl;
-	std::cout << v << std::endl;
+	// std::cout << input << std::endl;
+	// std::cout << v << std::endl;
 
-	const int picsize = (int)(sqrt(v.size()/3.0));
+	const int picsize = (int)(sqrt(v.size()));
 	
 	if(vectorToSurface(v, picsize, scaled) == false)
 	  continue;
@@ -445,6 +451,8 @@ namespace whiteice
 	SDL_UpdateWindowSurface(window);
 	SDL_ShowWindow(window);
 	SDL_FreeSurface(win);
+
+	sleep(1);
       }
 
       

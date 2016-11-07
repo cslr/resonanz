@@ -70,6 +70,7 @@ int main(int argc, char** argv)
       return -1;
     }
     
+    
     // saves endoder and decoder into pictures directory
     {
       std::string encoderFile = picturesDir + "/encoder.model";
@@ -108,9 +109,16 @@ int main(int argc, char** argv)
 
 void print_usage()
 {
-  printf("Usage: renaissance <cmd> <picture-directory>\n");
-  printf("       <cmd> = \"--autoencoder\" learns autoencoder from pictures and saves it to the picture directory\n");
-  printf("       <picture-directory> path to directory (png files)\n");
+  printf("Usage: renaissance <cmd> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
+  printf("       <cmd> = \"--autoencoder\" learns autoencoder from png-files in directory and saves autoencoder\n");
+  printf("       <cmd> = \"--measure\"     stimulate cns using decoder and stores responses to dataset file\n");
+  printf("                               reads responses from interaxon muse (osc.udp://localhost:4545/)\n");
+  printf("       <cmd> = \"--test\"        stimulate cns using decoder and generate random measurements\n");
+  printf("       <cmd> = \"--optimize\"    optimizes model using dataset file\n");
+  printf("       <cmd> = \"--stimulate\"   uses model and decoder to push brain towards target\n");
+  printf("       <directory>             path to directory (png and model files)\n");
+  printf("       --target=<vector>       optimization target [0,1]^6 vector. (?) value means value can be anything\n");
+  printf("                               <vector>= delta, theta, alpha, beta, gamma, total power scaled within [0,1]\n");
   printf("\n");
 }
 

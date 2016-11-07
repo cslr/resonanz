@@ -4,7 +4,7 @@ TODO
  
    * stacked RBM autoencoders do not work that well and require too much computing power (too slow)
 
-   => implement variational autocoder (VAE) (see docs) to synthesize pictures
+   => implement variational autocoder (VAE) (see docs) to synthesize pictures?
    
 
 - HMM based analysis and generation of N-step long probable stimulation sequences
