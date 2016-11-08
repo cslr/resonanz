@@ -27,6 +27,7 @@
 #include "RandomEEG.h"
 #include "MuseOSC.h"
 #include "EmotivInsight.h"
+#include "NeuroskyEEG.h"
 
 // uncomment define to create command-line tool
 // that cannot process muse commands.
@@ -50,7 +51,8 @@ bool parse_parameters(int argc, char** argv,
 
   device = argv[1];
 
-  if(device != "muse" && device != "random" && device != "insight")
+  if(device != "muse" && device != "random" &&
+     device != "insight" && device != "neurosky")
     return false;
   
   DIR *dir;
@@ -165,11 +167,12 @@ int main(int argc, char** argv)
 
   DataSource* dev = nullptr;
 
-  if(device == "muse"){
+  if(device == "muse")
     dev = new whiteice::resonanz::MuseOSC(4545);
-  }
   else if(device == "insight")
     dev = new whiteice::resonanz::EmotivInsight();
+  else if(device == "neurosky")
+    dev = new whiteice::resonanz::NeuroskyEEG();
   else if(device == "random"){
     dev = new whiteice::resonanz::RandomEEG();
   }

@@ -79,14 +79,14 @@ bool MuseOSC::connectionOk() const
  */
 bool MuseOSC::data(std::vector<float>& x) const
 {
-	std::lock_guard<std::mutex> lock(data_mutex);
-
-	if(this->connectionOk() == false)
-		return false;
-
-	x = value;
-
-	return true;
+  std::lock_guard<std::mutex> lock(data_mutex);
+  
+  if(this->connectionOk() == false)
+    return false;
+  
+  x = value;
+  
+  return true;
 }
 
 bool MuseOSC::getSignalNames(std::vector<std::string>& names) const
