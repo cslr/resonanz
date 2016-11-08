@@ -28,6 +28,7 @@
 #include "MuseOSC.h"
 #include "EmotivInsight.h"
 #include "NeuroskyEEG.h"
+#include "LightstoneDevice.h"
 
 // uncomment define to create command-line tool
 // that cannot process muse commands.
@@ -35,7 +36,11 @@
 
 void print_show_usage(){
   printf("Usage: maximpact <device> <picture-directory> [time]\n");
-  printf("       <device> = 'muse' (osc localhost udp port 4545) or 'random'\n");
+  printf("       <device> = muse (osc localhost udp port 4545)\n");
+  printf("                  neurosky (uses COM5)\n");
+  printf("                  insight (emotiv insight)\n");
+  printf("                  lightstone (wild divine lightstone IOM)\n");
+  printf("                  random (pseudorandom device)\n");
   printf("\n");
 }
 
@@ -52,7 +57,8 @@ bool parse_parameters(int argc, char** argv,
   device = argv[1];
 
   if(device != "muse" && device != "random" &&
-     device != "insight" && device != "neurosky")
+     device != "insight" && device != "neurosky" &&
+     device != "lightstone")
     return false;
   
   DIR *dir;
@@ -173,6 +179,8 @@ int main(int argc, char** argv)
     dev = new whiteice::resonanz::EmotivInsight();
   else if(device == "neurosky")
     dev = new whiteice::resonanz::NeuroskyEEG();
+  else if(device == "lightstone")
+    dev = new whiteice::resonanz::LightstoneDevice();
   else if(device == "random"){
     dev = new whiteice::resonanz::RandomEEG();
   }

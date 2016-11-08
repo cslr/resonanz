@@ -18,7 +18,7 @@ CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp -I/usr/local/include/SDL2/ `/usr/loc
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp NeuroskyEEG.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp NeuroskyEEG.cpp LightstoneDevice.cpp
 
 
 
@@ -26,7 +26,7 @@ SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp Ra
 
 TARGET = resonanz
 
-LIBS = `/usr/local/bin/sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -fopenmp -ltheoraenc -ltheoradec -logg -Lemotiv_insight -lglut64 -ledk -Lneurosky -lthinkgear64 
+LIBS = `/usr/local/bin/sdl2-config --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_gfx` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -fopenmp -ltheoraenc -ltheoradec -logg -Lemotiv_insight -lglut64 -ledk -Lneurosky -lthinkgear64 -llightstone
 
 RESONANZ_OBJECTS=$(OBJECTS) main.o
 
@@ -39,9 +39,9 @@ MAXIMPACT_CFLAGS=-O -g `/usr/local/bin/sdl2-config --cflags` `pkg-config SDL2_im
 
 MAXIMPACT_CXXFLAGS=$(CFLAGS)
 
-MAXIMPACT_LIBS=-L/usr/local/lib/ `/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` -lSDL2_image -lws2_32 -lm -mconsole -Lemotiv_insight -lglut64 -ledk -Lneurosky -lthinkgear64 
+MAXIMPACT_LIBS=-L/usr/local/lib/ `/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` -lSDL2_image -lws2_32 -lm -mconsole -Lemotiv_insight -lglut64 -ledk -Lneurosky -lthinkgear64 -llightstone
 
-MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o EmotivInsight.o NeuroskyEEG.o
+MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o EmotivInsight.o NeuroskyEEG.o LightstoneDevice.o Log.o
 MAXIMPACT_TARGET=maximpact
 
 SOUND_LIBS=`/usr/local/bin/sdl2-config --libs`
