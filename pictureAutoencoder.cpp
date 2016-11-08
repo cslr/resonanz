@@ -205,8 +205,10 @@ namespace whiteice
 	delete net;
 	return false;
       }
-      
 
+      // NO LBFGS or optimization using gradients
+#if 0
+      
       whiteice::LBFGS_nnetwork< whiteice::math::blas_real<double> > optimizer(*net, ds, false);
 
       if(optimizer.minimize(x0) == false){
@@ -230,9 +232,9 @@ namespace whiteice
 	    printf("AUTOENCODER OPTIMIZER %d: %f\n", iterations, y.c[0]);
 	    fflush(stdout);
 	  }
-	}
-	
+	}	
       }
+#endif
 
       // after we have autoencoder nnetwork split it into encoder and decoder parts
       // 
@@ -352,6 +354,10 @@ namespace whiteice
 	}
       }
 
+      // dbn imported networks are stochastic
+      encoder->setStochastic(true);
+      decoder->setStochastic(true);
+
       // hack we use full net instead to create random pictures (...)
       
       return true;
@@ -389,6 +395,12 @@ namespace whiteice
       SDL_Event event;
       bool exit = false;
 
+      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+      whiteice::math::vertex< whiteice::math::blas_real<double> > input;
+      input.resize(decoder->input_size());
+      v.resize(decoder->output_size());
+      input.zero();
+
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -406,15 +418,10 @@ namespace whiteice
 	
 	SDL_Surface* scaled = NULL;
 
-	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
-	whiteice::math::vertex< whiteice::math::blas_real<double> > input;
-	input.resize(decoder->input_size());
-	v.resize(decoder->output_size());
+	// flips a single bit to be different in input
+	const unsigned int index = rand()%input.size();
+	input[index] = (input[index] > 0.5) ? 0.0 : 1.0;
 
-	// input values to decoder are 0/1 valued "sigmoidal" values
-	for(unsigned int i=0;i<input.size();i++){
-	  input[i] = ((double)rand())/((double)RAND_MAX) > 0.5 ? 1.0 : 0.0;
-	}
 	
 	decoder->calculate(input, v);
 	

@@ -4,6 +4,7 @@
 #define __synth_stimulation_h
 
 #include <dinrhiw/dinrhiw.h>
+#include "DataSource.h"
 
 namespace whiteice {
   namespace resonanz {
@@ -12,7 +13,9 @@ namespace whiteice {
 			  const unsigned picsize,
 			  const unsigned int DISPLAYTIME,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >* response,
-			  whiteice::math::vertex< whiteice::math::blas_real<double> >& target);
+			  DataSource* dev, 
+			  whiteice::math::vertex< whiteice::math::blas_real<double> >& target,
+			  whiteice::math::vertex< whiteice::math::blas_real<double> >& targetVariance);
 
   }
 }

@@ -35,7 +35,8 @@ void print_usage();
 bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
 		      std::string& dir,
-		      std::vector<float>& targets, 
+		      std::vector<float>& targets,
+		      std::vector<float>& targetVars,
 		      std::vector<std::string>& pictures);
 
 using namespace whiteice::resonanz;
@@ -60,8 +61,9 @@ int main(int argc, char** argv)
   std::string dir;
   std::vector<std::string> pictures;
   std::vector<float> targetVector;
+  std::vector<float> targetVar;
 
-  if(!parse_parameters(argc, argv, cmd, dir, targetVector, pictures)){
+  if(!parse_parameters(argc, argv, cmd, dir, targetVector, targetVar, pictures)){
     print_usage();
     return -1;
   }
@@ -137,7 +139,7 @@ int main(int argc, char** argv)
     // loads endoder and decoder from pictures directory
     {
       if(encoder->load(encoderFile) == false || decoder->load(decoderFile) == false){	
-	printf("ERROR: cannot load encoder/decoder (autoencoder) to a disk\n");
+	printf("ERROR: cannot load encoder/decoder (autoencoder) from a disk\n");
 	
 	delete encoder;
 	delete decoder;
@@ -220,7 +222,8 @@ int main(int argc, char** argv)
   }
   else if(cmd == "--optimize"){
     // optimizes measurements using neural networks: nn(picparams, current_state) = next_state
-    
+
+    // this nn is NOT stochastic!
     whiteice::nnetwork< whiteice::math::blas_real<double> >* nn = nullptr;
     
     whiteice::dataset< whiteice::math::blas_real<double> > data;
@@ -242,7 +245,7 @@ int main(int argc, char** argv)
       SDL_Quit();
       return -1;
     }
-
+    
     if(nn->save(modelFile) == false){
       printf("ERROR: Cannot save response model to disk\n");
       delete nn;
@@ -259,6 +262,11 @@ int main(int argc, char** argv)
   else if(cmd == "--synthesize"){ // decoder(params) = picture
     // loads prediction model and optimizes picparams using model nn(picparams, current_state) = next_state
     // (initially we do random search of picparams and always select the best one found)
+    
+    DataSource* dev = nullptr;
+    
+    // dev = new whiteice::resonanz::MuseOSC(4545);
+    dev = new whiteice::resonanz::RandomEEG();
 
     whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder =
       new whiteice::nnetwork< whiteice::math::blas_real<double> >();
@@ -271,6 +279,7 @@ int main(int argc, char** argv)
 	printf("ERROR: cannot load decoder (autoencoder) from a disk\n");
 	
 	delete decoder;
+	delete dev;
 	
 	IMG_Quit();
 	SDL_Quit();
@@ -285,6 +294,8 @@ int main(int argc, char** argv)
       printf("ERROR: Cannot load response model from disk\n");
       delete nn;
       delete decoder;
+      delete dev;
+      
       IMG_Quit();
       SDL_Quit();
       return -1;
@@ -293,11 +304,16 @@ int main(int argc, char** argv)
     whiteice::math::vertex< whiteice::math::blas_real<double> > target;
     target.resize(targetVector.size());
 
-    for(unsigned int i=0;i<target.size();i++)
+    whiteice::math::vertex< whiteice::math::blas_real<double> > targetVariance;
+    targetVariance.resize(targetVar.size());
+
+    for(unsigned int i=0;i<target.size();i++){
       target[i] = targetVector[i];
+      targetVariance[i] = targetVar[i];
+    }
     
     
-    if(synthStimulation(decoder, PICTURESIZE, DISPLAYTIME, nn, target) == false){
+    if(synthStimulation(decoder, PICTURESIZE, DISPLAYTIME, nn, dev, target, targetVariance) == false){
       printf("ERROR: picture synthesizer stimulation failed\n");
       IMG_Quit();
       SDL_Quit();
@@ -348,6 +364,7 @@ bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
 		      std::string& dir,
 		      std::vector<float>& targets, // negative values mean given target value is ignored
+		      std::vector<float>& targetVar,
 		      std::vector<std::string>& pictures)
 {
   if(argc != 3 && argc != 4)
@@ -362,10 +379,11 @@ bool parse_parameters(int argc, char** argv,
      cmd != "--measure" &&
      cmd != "--test" &&
      cmd != "--optimize" &&
-     cmd != "--stimulate")
+     cmd != "--stimulate" &&
+     cmd != "--synthesize")
     return false;
 
-  if(argc == 4 && (cmd != "--stimulate" && cmd != "--synthesize"))
+  if(argc != 4 && (cmd == "--stimulate" || cmd == "--synthesize"))
     return false;
 
   if(cmd == "--stimulate" || cmd == "--synthesize"){
@@ -377,10 +395,14 @@ bool parse_parameters(int argc, char** argv,
       targets.push_back(atof(token));
 
       while((token = strtok_r(NULL, ",", &ptr)) != NULL){
-	if(strcmp(token, "?") == 0)
-	  targets.push_back(-1.0);
-	else
+	if(strcmp(token, "?") == 0){
+	  targets.push_back(0.0);
+	  targetVar.push_back(10e16); // very large value for this dimension
+	}
+	else{
 	  targets.push_back(atof(token));
+	  targetVar.push_back(1.0);
+	}
       }
     }
     else
