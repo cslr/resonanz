@@ -220,6 +220,14 @@ unsigned int EmotivInsight::getNumberOfSignals() const
  */
 std::string EmotivInsight::getSignalName(int index) const
 {
+  if(index == 0)      return "Theta";
+  else if(index == 1) return "Alpha";
+  else if(index == 2) return "Low-Beta";
+  else if(index == 3) return "High-Beta";
+  else if(index == 4) return "Gamma";
+  else                return "N/A";
+
+#if 0
 	if(index == 0)
 		return "Excitement";
 	else if(index == 1)
@@ -232,6 +240,7 @@ std::string EmotivInsight::getSignalName(int index) const
 		return "Interest";
 	else
 		return "N/A";
+#endif
 }
 
 bool EmotivInsight::getSignalNames(std::vector<std::string>& names) const
