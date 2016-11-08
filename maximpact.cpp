@@ -132,7 +132,7 @@ void report_deltas(std::vector<std::string>& pictures,
 
 int main(int argc, char** argv)
 {
-  printf("MaxImpact v0.9a Copyright Tomas Ukkonen <tomas.ukkonen@iki.fi>\n");
+  printf("MaxImpact v0.91a Copyright Tomas Ukkonen <tomas.ukkonen@iki.fi>\n");
   
   srand(time(0));
 
