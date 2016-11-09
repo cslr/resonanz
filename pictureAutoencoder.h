@@ -13,11 +13,11 @@ namespace whiteice
 {
   namespace resonanz {
     
-    // opens and converts (RGB) picture to 3*picsize*picsize sized vector
+    // opens and converts (RGB) picture to picsize*picsize sized (grayscale) vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
 		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v);
 
-    // converts picture vector to allocated picsize*picsize SDL_Surface (RGB) for displaying and further use
+    // converts picture vector to allocated picsize*picsize SDL_Surface (RGB grayscale) for displaying and further use
     bool vectorToSurface(const whiteice::math::vertex< whiteice::math::blas_real<double> >& v,
 			 const unsigned int picsize,
 			 SDL_Surface*& surf);

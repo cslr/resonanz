@@ -31,12 +31,12 @@
 
 void print_usage();
 
-// negative values mean given target value is ignored
 bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
+		      std::string& device,
 		      std::string& dir,
-		      std::vector<float>& targets,
-		      std::vector<float>& targetVars,
+		      std::vector<float>& targets, 
+		      std::vector<float>& targetVar,
 		      std::vector<std::string>& pictures);
 
 using namespace whiteice::resonanz;
@@ -58,12 +58,13 @@ int main(int argc, char** argv)
   srand(time(0));
 
   std::string cmd;
+  std::string device;
   std::string dir;
   std::vector<std::string> pictures;
   std::vector<float> targetVector;
   std::vector<float> targetVar;
 
-  if(!parse_parameters(argc, argv, cmd, dir, targetVector, targetVar, pictures)){
+  if(!parse_parameters(argc, argv, cmd, device, dir, targetVector, targetVar, pictures)){
     print_usage();
     return -1;
   }
@@ -119,14 +120,14 @@ int main(int argc, char** argv)
     if(encoder) delete encoder;
     if(decoder) delete decoder;
   }
-  else if(cmd == "--measure" || cmd == "--test"){
+  else if(cmd == "--measure"){
     // connects to EEG hardware (Interaxon muse) and measures responses to synthesized pictures and
     // real pictures and stores results to database..
     
     DataSource* dev = nullptr;
 
-    if(cmd == "--measure") dev = new whiteice::resonanz::MuseOSC(4545);
-    else if(cmd == "--test") dev = new whiteice::resonanz::RandomEEG();
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
     whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder =
       new whiteice::nnetwork< whiteice::math::blas_real<double> >();
@@ -264,10 +265,10 @@ int main(int argc, char** argv)
     // (initially we do random search of picparams and always select the best one found)
     
     DataSource* dev = nullptr;
-    
-    // dev = new whiteice::resonanz::MuseOSC(4545);
-    dev = new whiteice::resonanz::RandomEEG();
 
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+    
     whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder =
       new whiteice::nnetwork< whiteice::math::blas_real<double> >();
     
@@ -321,14 +322,76 @@ int main(int argc, char** argv)
       return -1;
     }
 
+    delete decoder;
+    delete dev;
+    delete nn;
     
   }
-  else if(cmd == "--stimulate"){ // encoder(picture) = params
-    // goes through all pictures and always selects picture with best nn(picparams, current_state) = next_state
+  else if(cmd == "--stimulate"){
+    // encoder(picture) = params
+    // randomly loads pictures and always selects picture with best nn(picparams, current_state) = next_state
+    
+    DataSource* dev = nullptr;
 
-    // There is some problems using encoder
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+    
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder =
+      new whiteice::nnetwork< whiteice::math::blas_real<double> >();
+    
+    // loads decoder
+    
+    // loads decoder from pictures directory
+    {
+      if(encoder->load(encoderFile) == false){
+	printf("ERROR: cannot load encoder (autoencoder) from a disk\n");
+	
+	delete encoder;
+	delete dev;
+	
+	IMG_Quit();
+	SDL_Quit();
+	return -1;
+      }
+    }
 
-    // TODO/FIXME
+    whiteice::nnetwork< whiteice::math::blas_real<double> >* nn =
+      new whiteice::nnetwork< whiteice::math::blas_real<double> >();
+    
+    if(nn->load(modelFile) == false){
+      printf("ERROR: Cannot load response model from disk\n");
+      delete nn;
+      delete encoder;
+      delete dev;
+      
+      IMG_Quit();
+      SDL_Quit();
+      return -1;
+    }
+
+    whiteice::math::vertex< whiteice::math::blas_real<double> > target;
+    target.resize(targetVector.size());
+
+    whiteice::math::vertex< whiteice::math::blas_real<double> > targetVariance;
+    targetVariance.resize(targetVar.size());
+
+    for(unsigned int i=0;i<target.size();i++){
+      target[i] = targetVector[i];
+      targetVariance[i] = targetVar[i];
+    }
+    
+    
+    if(pictureStimulation(encoder, pictures, PICTURESIZE, DISPLAYTIME, nn, dev, target, targetVariance) == false){
+      printf("ERROR: picture synthesizer stimulation failed\n");
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    delete encoder;
+    delete dev;
+    delete nn;
   }
 
   
@@ -345,14 +408,13 @@ int main(int argc, char** argv)
 
 void print_usage()
 {
-  printf("Usage: renaissance <cmd> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
+  printf("Usage: renaissance <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
   printf("       <cmd> = \"--autoencoder\" learns autoencoder from png-files in directory and saves autoencoder\n");
   printf("       <cmd> = \"--measure\"     stimulate cns using decoder and stores responses to dataset file\n");
-  printf("                               reads responses from interaxon muse (osc.udp://localhost:4545/)\n");
-  printf("       <cmd> = \"--test\"        stimulate cns using decoder and generate random measurements\n");
   printf("       <cmd> = \"--optimize\"    optimizes model using dataset file\n");
   printf("       <cmd> = \"--synthesize\"  uses model and decoder to push brain towards target\n");
   printf("       <cmd> = \"--stimulate\"   uses model, pictures in directory and encoder to push brain towards target state\n");
+  printf("       <device>                muse or random (interaxon muse osc.udp://localhost:4545) or pseudorandom measurements\n");
   printf("       <directory>             path to directory (png and model files)\n");
   printf("       --target=<vector>       optimization target [0,1]^6 vector. (?) value means value can be anything\n");
   printf("                               <vector>= delta, theta, alpha, beta, gamma, total power scaled within [0,1]\n");
@@ -362,33 +424,38 @@ void print_usage()
 
 bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
+		      std::string& device,
 		      std::string& dir,
 		      std::vector<float>& targets, // negative values mean given target value is ignored
 		      std::vector<float>& targetVar,
 		      std::vector<std::string>& pictures)
 {
-  if(argc != 3 && argc != 4)
+  if(argc != 4 && argc != 5)
     return false;
 
   cmd = argv[1];
-  dir = argv[2];
+  device = argv[2];
+  dir = argv[3];
   pictures.clear();
   targets.clear();
 
   if(cmd != "--autoencoder" &&
      cmd != "--measure" &&
-     cmd != "--test" &&
      cmd != "--optimize" &&
      cmd != "--stimulate" &&
      cmd != "--synthesize")
     return false;
 
-  if(argc != 4 && (cmd == "--stimulate" || cmd == "--synthesize"))
+  if(device != "muse" &&
+     device != "random")
+    return false;
+
+  if(argc != 5 && (cmd == "--stimulate" || cmd == "--synthesize"))
     return false;
 
   if(cmd == "--stimulate" || cmd == "--synthesize"){
-    if(strncmp(argv[3], "--target=", 9) == 0){
-      char* v = argv[3] + 9;
+    if(strncmp(argv[4], "--target=", 9) == 0){
+      char* v = argv[4] + 9;
       char* ptr = NULL;
       char* token = strtok_r(v, ",", &ptr);
 
