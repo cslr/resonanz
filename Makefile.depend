@@ -1,117 +1,322 @@
-main.o: main.cpp ResonanzEngine.h /usr/include/SDL2/SDL.h \
- /usr/include/SDL2/SDL_main.h /usr/include/SDL2/SDL_stdinc.h \
- /usr/include/SDL2/SDL_config.h /usr/include/SDL2/SDL_platform.h \
- /usr/include/SDL2/begin_code.h /usr/include/SDL2/close_code.h \
- /usr/include/SDL2/SDL_assert.h /usr/include/SDL2/SDL_atomic.h \
- /usr/include/SDL2/SDL_audio.h /usr/include/SDL2/SDL_error.h \
- /usr/include/SDL2/SDL_endian.h /usr/include/SDL2/SDL_mutex.h \
- /usr/include/SDL2/SDL_thread.h /usr/include/SDL2/SDL_rwops.h \
- /usr/include/SDL2/SDL_clipboard.h /usr/include/SDL2/SDL_cpuinfo.h \
- /usr/include/SDL2/SDL_events.h /usr/include/SDL2/SDL_video.h \
- /usr/include/SDL2/SDL_pixels.h /usr/include/SDL2/SDL_rect.h \
- /usr/include/SDL2/SDL_surface.h /usr/include/SDL2/SDL_blendmode.h \
- /usr/include/SDL2/SDL_keyboard.h /usr/include/SDL2/SDL_keycode.h \
- /usr/include/SDL2/SDL_scancode.h /usr/include/SDL2/SDL_mouse.h \
- /usr/include/SDL2/SDL_joystick.h /usr/include/SDL2/SDL_gamecontroller.h \
- /usr/include/SDL2/SDL_quit.h /usr/include/SDL2/SDL_gesture.h \
- /usr/include/SDL2/SDL_touch.h /usr/include/SDL2/SDL_filesystem.h \
- /usr/include/SDL2/SDL_haptic.h /usr/include/SDL2/SDL_hints.h \
- /usr/include/SDL2/SDL_loadso.h /usr/include/SDL2/SDL_log.h \
- /usr/include/SDL2/SDL_messagebox.h /usr/include/SDL2/SDL_power.h \
- /usr/include/SDL2/SDL_render.h /usr/include/SDL2/SDL_system.h \
- /usr/include/SDL2/SDL_timer.h /usr/include/SDL2/SDL_version.h \
- /usr/local/include/SDL2/SDL_ttf.h /usr/include/SDL2/begin_code.h \
- /usr/include/SDL2/close_code.h /usr/local/include/SDL2/SDL_image.h \
- /usr/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_mixer.h \
- /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_rwops.h \
- /usr/include/SDL2/SDL_audio.h /usr/include/SDL2/SDL_endian.h \
- DataSource.h SDLSoundSynthesis.h SDLTheora.h NMCFile.h
+main.o: main.cpp ResonanzEngine.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
+ /usr/local/include/SDL2/SDL_mixer.h DataSource.h SDLSoundSynthesis.h \
+ SDLMicrophoneListener.h SDLTheora.h NMCFile.h
 ResonanzEngine.o: ResonanzEngine.cpp ResonanzEngine.h \
- /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
- /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
- /usr/include/SDL2/SDL_platform.h /usr/include/SDL2/begin_code.h \
- /usr/include/SDL2/close_code.h /usr/include/SDL2/SDL_assert.h \
- /usr/include/SDL2/SDL_atomic.h /usr/include/SDL2/SDL_audio.h \
- /usr/include/SDL2/SDL_error.h /usr/include/SDL2/SDL_endian.h \
- /usr/include/SDL2/SDL_mutex.h /usr/include/SDL2/SDL_thread.h \
- /usr/include/SDL2/SDL_rwops.h /usr/include/SDL2/SDL_clipboard.h \
- /usr/include/SDL2/SDL_cpuinfo.h /usr/include/SDL2/SDL_events.h \
- /usr/include/SDL2/SDL_video.h /usr/include/SDL2/SDL_pixels.h \
- /usr/include/SDL2/SDL_rect.h /usr/include/SDL2/SDL_surface.h \
- /usr/include/SDL2/SDL_blendmode.h /usr/include/SDL2/SDL_keyboard.h \
- /usr/include/SDL2/SDL_keycode.h /usr/include/SDL2/SDL_scancode.h \
- /usr/include/SDL2/SDL_mouse.h /usr/include/SDL2/SDL_joystick.h \
- /usr/include/SDL2/SDL_gamecontroller.h /usr/include/SDL2/SDL_quit.h \
- /usr/include/SDL2/SDL_gesture.h /usr/include/SDL2/SDL_touch.h \
- /usr/include/SDL2/SDL_filesystem.h /usr/include/SDL2/SDL_haptic.h \
- /usr/include/SDL2/SDL_hints.h /usr/include/SDL2/SDL_loadso.h \
- /usr/include/SDL2/SDL_log.h /usr/include/SDL2/SDL_messagebox.h \
- /usr/include/SDL2/SDL_power.h /usr/include/SDL2/SDL_render.h \
- /usr/include/SDL2/SDL_system.h /usr/include/SDL2/SDL_timer.h \
- /usr/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
- /usr/include/SDL2/begin_code.h /usr/include/SDL2/close_code.h \
- /usr/local/include/SDL2/SDL_image.h /usr/include/SDL2/SDL_version.h \
- /usr/local/include/SDL2/SDL_mixer.h /usr/include/SDL2/SDL_stdinc.h \
- /usr/include/SDL2/SDL_rwops.h /usr/include/SDL2/SDL_audio.h \
- /usr/include/SDL2/SDL_endian.h DataSource.h SDLSoundSynthesis.h \
- SDLTheora.h Log.h NMCFile.h NoEEGDevice.h RandomEEG.h MuseOSC.h \
- FMSoundSynthesis.h
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
+ /usr/local/include/SDL2/SDL_mixer.h DataSource.h SDLSoundSynthesis.h \
+ SDLMicrophoneListener.h SDLTheora.h Log.h NMCFile.h NoEEGDevice.h \
+ RandomEEG.h MuseOSC.h FMSoundSynthesis.h hermitecurve.h
 MuseOSC.o: MuseOSC.cpp MuseOSC.h DataSource.h oscpkt/oscpkt.hh \
  oscpkt/udp.hh
 NMCFile.o: NMCFile.cpp NMCFile.h DataSource.h
 NoEEGDevice.o: NoEEGDevice.cpp NoEEGDevice.h DataSource.h
 RandomEEG.o: RandomEEG.cpp RandomEEG.h DataSource.h
-SDLTheora.o: SDLTheora.cpp SDLTheora.h /usr/include/SDL2/SDL.h \
- /usr/include/SDL2/SDL_main.h /usr/include/SDL2/SDL_stdinc.h \
- /usr/include/SDL2/SDL_config.h /usr/include/SDL2/SDL_platform.h \
- /usr/include/SDL2/begin_code.h /usr/include/SDL2/close_code.h \
- /usr/include/SDL2/SDL_assert.h /usr/include/SDL2/SDL_atomic.h \
- /usr/include/SDL2/SDL_audio.h /usr/include/SDL2/SDL_error.h \
- /usr/include/SDL2/SDL_endian.h /usr/include/SDL2/SDL_mutex.h \
- /usr/include/SDL2/SDL_thread.h /usr/include/SDL2/SDL_rwops.h \
- /usr/include/SDL2/SDL_clipboard.h /usr/include/SDL2/SDL_cpuinfo.h \
- /usr/include/SDL2/SDL_events.h /usr/include/SDL2/SDL_video.h \
- /usr/include/SDL2/SDL_pixels.h /usr/include/SDL2/SDL_rect.h \
- /usr/include/SDL2/SDL_surface.h /usr/include/SDL2/SDL_blendmode.h \
- /usr/include/SDL2/SDL_keyboard.h /usr/include/SDL2/SDL_keycode.h \
- /usr/include/SDL2/SDL_scancode.h /usr/include/SDL2/SDL_mouse.h \
- /usr/include/SDL2/SDL_joystick.h /usr/include/SDL2/SDL_gamecontroller.h \
- /usr/include/SDL2/SDL_quit.h /usr/include/SDL2/SDL_gesture.h \
- /usr/include/SDL2/SDL_touch.h /usr/include/SDL2/SDL_filesystem.h \
- /usr/include/SDL2/SDL_haptic.h /usr/include/SDL2/SDL_hints.h \
- /usr/include/SDL2/SDL_loadso.h /usr/include/SDL2/SDL_log.h \
- /usr/include/SDL2/SDL_messagebox.h /usr/include/SDL2/SDL_power.h \
- /usr/include/SDL2/SDL_render.h /usr/include/SDL2/SDL_system.h \
- /usr/include/SDL2/SDL_timer.h /usr/include/SDL2/SDL_version.h Log.h
+SDLTheora.o: SDLTheora.cpp SDLTheora.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h Log.h
 fi_iki_nop_neuromancer_ResonanzEngine.o: \
  jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp \
- jni/fi_iki_nop_neuromancer_ResonanzEngine.h ResonanzEngine.h \
- /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
- /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
- /usr/include/SDL2/SDL_platform.h /usr/include/SDL2/begin_code.h \
- /usr/include/SDL2/close_code.h /usr/include/SDL2/SDL_assert.h \
- /usr/include/SDL2/SDL_atomic.h /usr/include/SDL2/SDL_audio.h \
- /usr/include/SDL2/SDL_error.h /usr/include/SDL2/SDL_endian.h \
- /usr/include/SDL2/SDL_mutex.h /usr/include/SDL2/SDL_thread.h \
- /usr/include/SDL2/SDL_rwops.h /usr/include/SDL2/SDL_clipboard.h \
- /usr/include/SDL2/SDL_cpuinfo.h /usr/include/SDL2/SDL_events.h \
- /usr/include/SDL2/SDL_video.h /usr/include/SDL2/SDL_pixels.h \
- /usr/include/SDL2/SDL_rect.h /usr/include/SDL2/SDL_surface.h \
- /usr/include/SDL2/SDL_blendmode.h /usr/include/SDL2/SDL_keyboard.h \
- /usr/include/SDL2/SDL_keycode.h /usr/include/SDL2/SDL_scancode.h \
- /usr/include/SDL2/SDL_mouse.h /usr/include/SDL2/SDL_joystick.h \
- /usr/include/SDL2/SDL_gamecontroller.h /usr/include/SDL2/SDL_quit.h \
- /usr/include/SDL2/SDL_gesture.h /usr/include/SDL2/SDL_touch.h \
- /usr/include/SDL2/SDL_filesystem.h /usr/include/SDL2/SDL_haptic.h \
- /usr/include/SDL2/SDL_hints.h /usr/include/SDL2/SDL_loadso.h \
- /usr/include/SDL2/SDL_log.h /usr/include/SDL2/SDL_messagebox.h \
- /usr/include/SDL2/SDL_power.h /usr/include/SDL2/SDL_render.h \
- /usr/include/SDL2/SDL_system.h /usr/include/SDL2/SDL_timer.h \
- /usr/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
- /usr/include/SDL2/begin_code.h /usr/include/SDL2/close_code.h \
- /usr/local/include/SDL2/SDL_image.h /usr/include/SDL2/SDL_version.h \
- /usr/local/include/SDL2/SDL_mixer.h /usr/include/SDL2/SDL_stdinc.h \
- /usr/include/SDL2/SDL_rwops.h /usr/include/SDL2/SDL_audio.h \
- /usr/include/SDL2/SDL_endian.h DataSource.h SDLSoundSynthesis.h \
- SDLTheora.h Log.h
+ jni/fi_iki_nop_neuromancer_ResonanzEngine.h \
+ /usr/lib/jvm/java-8-openjdk-amd64/include/jni.h \
+ /usr/lib/jvm/java-8-openjdk-amd64/include/linux/jni_md.h \
+ ResonanzEngine.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h /usr/local/include/SDL2/SDL_ttf.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_image.h \
+ /usr/local/include/SDL2/SDL_mixer.h DataSource.h SDLSoundSynthesis.h \
+ SDLMicrophoneListener.h SDLTheora.h Log.h
 Log.o: Log.cpp Log.h
+hermitecurve.o: hermitecurve.cpp hermitecurve.h
+SDLMicrophoneListener.o: SDLMicrophoneListener.cpp \
+ SDLMicrophoneListener.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h
+LightstoneDevice.o: LightstoneDevice.cpp LightstoneDevice.h DataSource.h \
+ lightstone/lightstone.h Log.h
+measurements.o: measurements.cpp measurements.h DataSource.h \
+ pictureAutoencoder.h /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h
+optimizeResponse.o: optimizeResponse.cpp optimizeResponse.h
+pictureAutoencoder.o: pictureAutoencoder.cpp pictureAutoencoder.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h \
+ /usr/local/include/SDL2/SDL_image.h /usr/local/include/SDL2/SDL.h
+renaissance.o: renaissance.cpp /usr/local/include/SDL2/SDL.h \
+ /usr/local/include/SDL2/SDL_main.h /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h \
+ /usr/local/include/SDL2/SDL_image.h /usr/local/include/SDL2/SDL.h \
+ pictureAutoencoder.h measurements.h DataSource.h optimizeResponse.h \
+ stimulation.h RandomEEG.h MuseOSC.h
+stimulation.o: stimulation.cpp stimulation.h DataSource.h \
+ /usr/local/include/SDL2/SDL.h /usr/local/include/SDL2/SDL_main.h \
+ /usr/local/include/SDL2/SDL_stdinc.h \
+ /usr/local/include/SDL2/SDL_config.h \
+ /usr/local/include/SDL2/SDL_platform.h \
+ /usr/local/include/SDL2/begin_code.h \
+ /usr/local/include/SDL2/close_code.h \
+ /usr/local/include/SDL2/SDL_assert.h \
+ /usr/local/include/SDL2/SDL_atomic.h /usr/local/include/SDL2/SDL_audio.h \
+ /usr/local/include/SDL2/SDL_error.h /usr/local/include/SDL2/SDL_endian.h \
+ /usr/local/include/SDL2/SDL_mutex.h /usr/local/include/SDL2/SDL_thread.h \
+ /usr/local/include/SDL2/SDL_rwops.h \
+ /usr/local/include/SDL2/SDL_clipboard.h \
+ /usr/local/include/SDL2/SDL_cpuinfo.h \
+ /usr/local/include/SDL2/SDL_events.h /usr/local/include/SDL2/SDL_video.h \
+ /usr/local/include/SDL2/SDL_pixels.h /usr/local/include/SDL2/SDL_rect.h \
+ /usr/local/include/SDL2/SDL_surface.h \
+ /usr/local/include/SDL2/SDL_blendmode.h \
+ /usr/local/include/SDL2/SDL_keyboard.h \
+ /usr/local/include/SDL2/SDL_keycode.h \
+ /usr/local/include/SDL2/SDL_scancode.h \
+ /usr/local/include/SDL2/SDL_mouse.h \
+ /usr/local/include/SDL2/SDL_joystick.h \
+ /usr/local/include/SDL2/SDL_gamecontroller.h \
+ /usr/local/include/SDL2/SDL_quit.h /usr/local/include/SDL2/SDL_gesture.h \
+ /usr/local/include/SDL2/SDL_touch.h \
+ /usr/local/include/SDL2/SDL_filesystem.h \
+ /usr/local/include/SDL2/SDL_haptic.h /usr/local/include/SDL2/SDL_hints.h \
+ /usr/local/include/SDL2/SDL_loadso.h /usr/local/include/SDL2/SDL_log.h \
+ /usr/local/include/SDL2/SDL_messagebox.h \
+ /usr/local/include/SDL2/SDL_power.h /usr/local/include/SDL2/SDL_render.h \
+ /usr/local/include/SDL2/SDL_system.h /usr/local/include/SDL2/SDL_timer.h \
+ /usr/local/include/SDL2/SDL_version.h pictureAutoencoder.h

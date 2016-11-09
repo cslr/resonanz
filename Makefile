@@ -19,7 +19,7 @@ CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp
 
 
 

@@ -5,7 +5,7 @@
  *      Author: Tomas
  */
 
-#include "LightStoneDevice.h"
+#include "LightstoneDevice.h"
 #include "lightstone/lightstone.h"
 #include <stdio.h>
 

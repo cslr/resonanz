@@ -47,14 +47,13 @@ namespace whiteice
 	srcrect.w = pic->h;
 	srcrect.x = (pic->w - pic->h)/2;
       }
-      
-      
+
       if(SDL_BlitScaled(pic, &srcrect, scaled, NULL) != 0){
 	SDL_FreeSurface(pic);
 	SDL_FreeSurface(scaled);
 	return false;
       }
-
+      
       SDL_FreeSurface(pic);
 
       // transforms picture to a vector
@@ -160,14 +159,14 @@ namespace whiteice
 	}
       }
 
-      if(data.size() < 0)
+      if(data.size() <= 0)
 	return false;
 
       
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
       arch.push_back(picsize * picsize);
-      // arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
+      arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
 	
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
