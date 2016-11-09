@@ -393,6 +393,12 @@ bool parse_parameters(int argc, char** argv,
       char* token = strtok_r(v, ",", &ptr);
 
       targets.push_back(atof(token));
+      if(strcmp(token, "?") == 0){
+	targetVar.push_back(10e16);
+      }
+      else{
+	targetVar.push_back(1.0);
+      }
 
       while((token = strtok_r(NULL, ",", &ptr)) != NULL){
 	if(strcmp(token, "?") == 0){
