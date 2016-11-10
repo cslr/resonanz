@@ -16,6 +16,7 @@ namespace whiteice
 
     bool measureResponses(DataSource* dev,
 			  const unsigned int DISPLAYTIME, // msecs picture view time
+			  const whiteice::dataset< whiteice::math::blas_real<double> >& preprocess,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder,
 			  std::vector<std::string>& pictures,

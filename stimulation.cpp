@@ -135,7 +135,7 @@ namespace whiteice {
 	    // std::cout << input << std::endl;
 	    // std::cout << v << std::endl;
 	    
-	    const int picsize = (int)(sqrt(v.size()));
+	    const int picsize = (int)(sqrt(v.size()/3.0));
 	    
 	    if(vectorToSurface(v, picsize, scaled) == false)
 	      continue;
@@ -307,7 +307,7 @@ namespace whiteice {
 	// std::cout << input << std::endl;
 	// std::cout << v << std::endl;
 	
-	const int picsize = (int)(sqrt(v.size()));
+	const int picsize = (int)(sqrt(v.size()/3.0));
 	
 	if(vectorToSurface(v, picsize, scaled) == false)
 	  continue;

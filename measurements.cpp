@@ -8,6 +8,7 @@ namespace whiteice
 
     bool measureResponses(DataSource* dev,
 			  const unsigned int DISPLAYTIME, // msecs picture view time
+			  const whiteice::dataset< whiteice::math::blas_real<double> >& preprocess,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder,
 			  std::vector<std::string>& pictures,
@@ -16,6 +17,9 @@ namespace whiteice
     {
       if(dev == NULL || DISPLAYTIME == 0 || encoder == NULL || decoder == NULL || picsize == 0)
 	return false; // bad parameters
+
+      if(decoder->output_size() != 3*picsize*picsize || encoder->input_size() != 3*picsize*picsize)
+	return false;
       
       // open window (SDL)
 
@@ -64,7 +68,8 @@ namespace whiteice
 	whiteice::math::vertex< whiteice::math::blas_real<double> > input;
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
-	if((rand() & 3) == 0) // synthesizes picture (25%)
+	if(1)
+	// if((rand() & 3) == 0) // synthesizes picture (25%)
 	{ 
 	  input.resize(decoder->input_size());
 	  v.resize(decoder->output_size());
@@ -73,30 +78,35 @@ namespace whiteice
 	  for(unsigned int i=0;i<input.size();i++){
 	    input[i] = ((double)rand())/((double)RAND_MAX) > 0.5 ? 1.0 : 0.0;
 	  }
-	  
+
+	  // synthesizes picture..
 	  decoder->calculate(input, v);
+	  
+	  preprocess.invpreprocess(0, v); // removes preprocessings from picture
+	  
 	  
 	  // std::cout << input << std::endl;
 	  // std::cout << v << std::endl;
-	  
-	  const int picsize = (int)(sqrt(v.size()));
 	  
 	  if(vectorToSurface(v, picsize, scaled) == false)
 	    continue;
 	}
 	else{ // displays picture from disk (downscaled to picsize) [75%]
 
-	  unsigned int r = rand() % pictures.size();
+	  const unsigned int r = rand() % pictures.size();
 	  
-	  input.resize(decoder->input_size());
-	  v.resize(decoder->output_size());
+	  input.resize(encoder->output_size());
+	  v.resize(encoder->input_size());
 
 	  if(picToVector(pictures[r], picsize, v)){
-
-	    encoder->calculate(v, input); // generates features from pic
 	    
 	    if(vectorToSurface(v, picsize, scaled) == false)
 	      continue;
+	    
+	    preprocess.preprocess(0, v); // preprocesses picture vector before feeding it to encoder
+	    
+	    encoder->calculate(v, input); // generates features from preprocessed pic
+	    
 	  }
 	}
 	
@@ -127,16 +137,20 @@ namespace whiteice
 
 	std::vector<float> before, after;
 
-	if(dev->connectionOk() == false)
+	if(dev->connectionOk() == false){
+	  printf("A1\n");
 	  return false;
+	}
 
 	if(dev->data(before) == false){
+	  printf("A2\n");
 	  return false;
 	}
 
 	usleep(DISPLAYTIME*1000);
 
 	if(dev->data(after) == false){
+	  printf("A3\n");
 	  return false;
 	}
 
@@ -145,14 +159,20 @@ namespace whiteice
 	  if(data.getNumberOfClusters() != 3){
 	    data.clear();
 
-	    if(data.createCluster("input", input.size()) == false)
+	    if(data.createCluster("input", input.size()) == false){
+	      printf("A4\n");
 	      return false;
+	    }
 
-	    if(data.createCluster("before", before.size()) == false)
+	    if(data.createCluster("before", before.size()) == false){
+	      printf("A5\n");
 	      return false;
+	    }
 
-	    if(data.createCluster("after", after.size()) == false)
+	    if(data.createCluster("after", after.size()) == false){
+	      printf("A6\n");
 	      return false;
+	    }
 	  }
 
 	  whiteice::math::vertex< whiteice::math::blas_real<double> > a;
@@ -167,9 +187,9 @@ namespace whiteice
 	  for(unsigned int i=0;i<a.size();i++)
 	    a[i] = after[i];
 
-	  if(data.add(0, input) == false) return false;
-	  if(data.add(1, b) == false) return false;
-	  if(data.add(2, a)  == false) return false;
+	  if(data.add(0, input) == false){ printf("A8\n"); return false; }
+	  if(data.add(1, b) == false){ printf("A9\n"); return false; }
+	  if(data.add(2, a)  == false){ printf("A10\n"); return false; }
 	}
 	
       }

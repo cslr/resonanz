@@ -46,7 +46,8 @@ using namespace whiteice::resonanz;
 
 // processes pictures of size 8x8 for now (out of memory otherwise)
 
-#define PICTURESIZE 8
+#define PICTURESIZE 16
+
 #define DISPLAYTIME 200 // picture display time in msecs
 
 
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
     return -1;
   }
 
+  const std::string preprocessFile = dir + "/preprocess.dat"; // dataset file (for preprocessing)
   const std::string encoderFile = dir + "/encoder.model";
   const std::string decoderFile = dir + "/decoder.model";
   const std::string datasetFile = dir + "/measurements.dat";
@@ -88,8 +90,10 @@ int main(int argc, char** argv)
     whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder = nullptr;
     whiteice::nnetwork< whiteice::math::blas_real<double> >* decoder = nullptr;
 
+    whiteice::dataset< whiteice::math::blas_real<double> > preprocess;
+
     if(learnPictureAutoencoder(dir, pictures,
-			       PICTURESIZE, encoder, decoder) == false){
+			       PICTURESIZE, preprocess, encoder, decoder) == false){
       printf("ERROR: Optimizing autoencoder failed.\n");
       
       IMG_Quit();
@@ -99,11 +103,13 @@ int main(int argc, char** argv)
     }
     
     
-    // saves endoder and decoder into pictures directory
+    // saves preproces + endoder and decoder into pictures directory
     {
       
-      if(encoder->save(encoderFile) == false || decoder->save(decoderFile) == false){	
-	printf("ERROR: cannot save encoder/decoder (autoencoder) to a disk\n");
+      if(encoder->save(encoderFile) == false || decoder->save(decoderFile) == false ||
+	 preprocess.save(preprocessFile) == false)
+      {	
+	printf("ERROR: cannot save encoder/decoder (autoencoder) or preprocessing information to a disk\n");
 	
 	delete encoder;
 	delete decoder;
@@ -115,7 +121,7 @@ int main(int argc, char** argv)
     }
 
     // testing: generates random pictures using decoder
-    generateRandomPictures(decoder);
+    generateRandomPictures(preprocess, decoder);
 
     if(encoder) delete encoder;
     if(decoder) delete decoder;
@@ -129,6 +135,8 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    whiteice::dataset< whiteice::math::blas_real<double> > preprocess;
+
     whiteice::nnetwork< whiteice::math::blas_real<double> >* encoder =
       new whiteice::nnetwork< whiteice::math::blas_real<double> >();
       
@@ -139,8 +147,9 @@ int main(int argc, char** argv)
     
     // loads endoder and decoder from pictures directory
     {
-      if(encoder->load(encoderFile) == false || decoder->load(decoderFile) == false){	
-	printf("ERROR: cannot load encoder/decoder (autoencoder) from a disk\n");
+      if(preprocess.load(preprocessFile) == false ||
+	 encoder->load(encoderFile) == false || decoder->load(decoderFile) == false){	
+	printf("ERROR: cannot load preprocess/encoder/decoder (autoencoder) from a disk\n");
 	
 	delete encoder;
 	delete decoder;
@@ -186,7 +195,7 @@ int main(int argc, char** argv)
     }
       
     
-    if(measureResponses(dev, DISPLAYTIME, encoder, decoder, pictures, PICTURESIZE, data) == false){
+    if(measureResponses(dev, DISPLAYTIME, preprocess, encoder, decoder, pictures, PICTURESIZE, data) == false){
       printf("ERROR: could not measure responses to pictures\n");
 
       delete encoder;

@@ -2,7 +2,7 @@
  * SDLTheora.cpp
  *
  *  Created on: 30.6.2015
- *      Author: Tomas
+ *      Author: Tomas Ukkonen
  */
 
 #include "SDLTheora.h"

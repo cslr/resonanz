@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#include "hsv.h"
 
 namespace whiteice
 {
@@ -13,7 +14,7 @@ namespace whiteice
     
     // opens and converts (RGB) picture to picsize*picsize sized grayscale vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
-		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v)
+		     whiteice::math::vertex< whiteice::math::blas_real<double> >& vec)
     {
       if(picsize <= 0) return false;
       
@@ -56,25 +57,24 @@ namespace whiteice
       
       SDL_FreeSurface(pic);
 
-      // transforms picture to a vector
-      v.resize(picsize*picsize);
+      // transforms picture to a vector (HSV)
+      vec.resize(3*picsize*picsize);
 
       unsigned int index=0;
 
       for(int j=0;j<scaled->h;j++){
 	for(int i=0;i<scaled->w;i++){
 	  unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
-	  int r = (0x00FF0000 & pixel) >> 16;
-	  int g = (0x0000FF00 & pixel) >>  8;
-	  int b = (0x000000FF & pixel);
+	  unsigned int r = (0x00FF0000 & pixel) >> 16;
+	  unsigned int g = (0x0000FF00 & pixel) >>  8;
+	  unsigned int b = (0x000000FF & pixel);
 
-	  double value = sqrt(r*r + g*g + b*b)/sqrt(3.0*255.0*255.0);
+	  unsigned int h, s, v;
+	  rgb2hsv(r,g,b,h,s,v);
 
-	  v[index] = value; index++;
-
-	  // v[index] = (double)r/255.0; index++;
-	  // v[index] = (double)g/255.0; index++;
-	  // v[index] = (double)b/255.0; index++;
+	  vec[index] = (double)h/255.0; index++;
+	  vec[index] = (double)s/255.0; index++;
+	  vec[index] = (double)v/255.0; index++;
 	}
       }
 
@@ -85,12 +85,12 @@ namespace whiteice
     
 
     // converts picture vector to allocated picsize*picsize SDL_Surface (RGB) for displaying and further use
-    bool vectorToSurface(const whiteice::math::vertex< whiteice::math::blas_real<double> >& v,
+    bool vectorToSurface(const whiteice::math::vertex< whiteice::math::blas_real<double> >& vec,
 			 const unsigned int picsize,
 			 SDL_Surface*& surf)
     {
       if(picsize <= 0) return false;
-      if(v.size() != picsize*picsize) return false;
+      if(vec.size() != 3*picsize*picsize) return false;
       
       surf = NULL;
       
@@ -105,19 +105,23 @@ namespace whiteice
 
       for(int j=0;j<surf->h;j++){
 	for(int i=0;i<surf->w;i++){
-	  int r = 0, g = 0, b = 0;
+	  unsigned int r = 0, g = 0, b = 0;
+	  unsigned int h = 0, s = 0, v = 0;
+	  int sh = 0, ss = 0, sv = 0;
 
-	  whiteice::math::convert(r, 255.0*v[index]); index++;
-	  g = r;
-	  b = r;
-
-	  // whiteice::math::convert(r, 255.0*v[index]); index++;
-	  // whiteice::math::convert(g, 255.0*v[index]); index++;
-	  // whiteice::math::convert(b, 255.0*v[index]); index++;
+	  whiteice::math::convert(sh, 255.0*vec[index]); index++;
+	  whiteice::math::convert(ss, 255.0*vec[index]); index++;
+	  whiteice::math::convert(sv, 255.0*vec[index]); index++;
 	  
-	  if(r<0) r = 0; if(r>255) r = 255;
-	  if(g<0) g = 0; if(g>255) g = 255;
-	  if(b<0) b = 0; if(b>255) b = 255;
+	  if(sh<0) sh = 0; if(sh>255) sh = 255;
+	  if(ss<0) ss = 0; if(ss>255) ss = 255;
+	  if(sv<0) sv = 0; if(sv>255) sv = 255;
+	  
+	  h = sh;
+	  s = ss;
+	  v = sv;
+
+	  hsv2rgb(h,s,v,r,g,b);
 	  
 	  const unsigned int pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
 	  
@@ -134,6 +138,7 @@ namespace whiteice
     bool learnPictureAutoencoder(const std::string& picdir,
 				 std::vector<std::string>& pictures,
 				 unsigned int picsize,
+				 whiteice::dataset< whiteice::math::blas_real<double> >& preprocess,
 				 whiteice::nnetwork< whiteice::math::blas_real<double> >*& encoder,
 				 whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
     {
@@ -162,22 +167,36 @@ namespace whiteice
       if(data.size() <= 0)
 	return false;
 
+      // preprocessing
+      if(preprocess.createCluster("data", data[0].size()) == false)
+	return false;
+
+      {
+	if(preprocess.add(0, data) == false) return false;
+	
+	preprocess.preprocess(0,
+			      whiteice::dataset< whiteice::math::blas_real<double> >::dnCorrelationRemoval);
+	preprocess.clearData(0);
+	
+	// preprocesses data using PCA
+	if(preprocess.preprocess(0, data) == false) return false;
+      }
       
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
-      arch.push_back(picsize * picsize);
-      arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
+      arch.push_back(3*picsize * picsize);
+      // arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
-	
+      
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
       dbn.initializeWeights();
-
+      
       whiteice::math::blas_real<double> error = 0.01;
-
+      
       // does DBN pretraining..
       if(dbn.learnWeights(data, error, true) == false)
 	return false; // training failed
-      
+
       // after pre-training dbn we convert DBN into feedforward autoencoder and train it
 
       whiteice::nnetwork< whiteice::math::blas_real<double> >* net = nullptr;
@@ -194,17 +213,18 @@ namespace whiteice
 
       // create dataset<>
       whiteice::dataset< whiteice::math::blas_real<double> > ds;
-      if(ds.createCluster("input", picsize*picsize)  == false ||
-	 ds.createCluster("output", picsize*picsize) == false){
+      if(ds.createCluster("input", 3*picsize*picsize)  == false ||
+	 ds.createCluster("output", 3*picsize*picsize) == false){
 	delete net;
 	return false;
       }
-      
+
       if(ds.add(0, data) == false || ds.add(1, data) == false){
 	delete net;
 	return false;
       }
 
+      
       // NO LBFGS or optimization using gradients
 #if 0
       
@@ -304,7 +324,6 @@ namespace whiteice
 	return false;
       }
 
-      
       // HACK recreate encoder so that the last layer is linear identity layer
       //      and outputs of encoder are proper sigmoids
       {
@@ -326,7 +345,7 @@ namespace whiteice
 	    if(newEncoder->setBias(b, l) == false) throw l;
 	  }
 	  
-	  // additional extra layer
+	  // additional extra layer (identity layer)
 	  
 	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
 	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
@@ -345,6 +364,8 @@ namespace whiteice
 	}
 	catch(unsigned int l){
 	  delete newEncoder;
+	  delete encoder;
+	  delete decoder;
 	  delete net;
 	  
 	  printf("ERROR: adding extra layer to encoder failed: %d\n", l);
@@ -364,7 +385,9 @@ namespace whiteice
     
     
     
-    void generateRandomPictures(whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
+    void generateRandomPictures(whiteice::dataset< whiteice::math::blas_real<double> >& preprocess,
+				whiteice::nnetwork< whiteice::math::blas_real<double> >*& decoder)
+				
     {
       // open window (SDL)
 
@@ -423,6 +446,7 @@ namespace whiteice
 
 	
 	decoder->calculate(input, v);
+	preprocess.invpreprocess(0, v); // removes preprocessing for the decoder
 	
 	// std::cout << input << std::endl;
 	// std::cout << v << std::endl;
