@@ -49,6 +49,11 @@ namespace whiteice
       SDL_Event event;
       bool exit = false;
 
+      whiteice::math::vertex< whiteice::math::blas_real<double> > input;
+      input.resize(decoder->input_size());
+      input.zero();
+      
+
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -64,14 +69,12 @@ namespace whiteice
 	SDL_FillRect(win, NULL, 
 		   SDL_MapRGB(win->format, 0, 0, 0));
 	
-	SDL_Surface* scaled = NULL;
-	whiteice::math::vertex< whiteice::math::blas_real<double> > input;
+	SDL_Surface* scaled = NULL;	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
-	if(1)
-	// if((rand() & 3) == 0) // synthesizes picture (25%)
-	{ 
-	  input.resize(decoder->input_size());
+	//if(1)
+	if((rand() & 3) == 0) // synthesizes picture (25%)
+	{
 	  v.resize(decoder->output_size());
 	  
 	  // input values to decoder are 0/1 valued "sigmoidal" values
@@ -138,19 +141,16 @@ namespace whiteice
 	std::vector<float> before, after;
 
 	if(dev->connectionOk() == false){
-	  printf("A1\n");
 	  return false;
 	}
 
 	if(dev->data(before) == false){
-	  printf("A2\n");
 	  return false;
 	}
 
 	usleep(DISPLAYTIME*1000);
 
 	if(dev->data(after) == false){
-	  printf("A3\n");
 	  return false;
 	}
 
@@ -160,17 +160,14 @@ namespace whiteice
 	    data.clear();
 
 	    if(data.createCluster("input", input.size()) == false){
-	      printf("A4\n");
 	      return false;
 	    }
 
 	    if(data.createCluster("before", before.size()) == false){
-	      printf("A5\n");
 	      return false;
 	    }
 
 	    if(data.createCluster("after", after.size()) == false){
-	      printf("A6\n");
 	      return false;
 	    }
 	  }
@@ -187,9 +184,9 @@ namespace whiteice
 	  for(unsigned int i=0;i<a.size();i++)
 	    a[i] = after[i];
 
-	  if(data.add(0, input) == false){ printf("A8\n"); return false; }
-	  if(data.add(1, b) == false){ printf("A9\n"); return false; }
-	  if(data.add(2, a)  == false){ printf("A10\n"); return false; }
+	  if(data.add(0, input) == false){ return false; }
+	  if(data.add(1, b) == false){ return false; }
+	  if(data.add(2, a)  == false){ return false; }
 	}
 	
       }
