@@ -1,6 +1,6 @@
 
 #include "SDLMicrophoneListener.h"
-
+#include <math.h>
 
 SDLMicListener::SDLMicListener()
 {
@@ -60,7 +60,7 @@ double SDLMicListener::getInputPower()
 {
   // returns values as negative decibels
   double Pref = 32767.0*32767.0;
-  double dbel = 10.0*log10(currentPower/Pref);
+  double dbel = 10.0*(log(currentPower/Pref)/log(10.0));
   return dbel;
 }
 

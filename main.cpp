@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	srand(time(0));
 
 	if(argc > 1){
-		printf("Resonanz engine v0.55\n");
+	        printf("Resonanz engine v0.55\n");
 	}
 	else{
 	        print_usage();
@@ -80,9 +80,11 @@ int main(int argc, char** argv)
 	}
 	
 	// debugging enables floating point exceptions for NaNs
+#if 0
 	if(0){
 	  feenableexcept(FE_INVALID | FE_INEXACT);
 	}
+#endif
 
 	
 	// process command line
