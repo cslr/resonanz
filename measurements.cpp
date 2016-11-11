@@ -72,8 +72,8 @@ namespace whiteice
 	SDL_Surface* scaled = NULL;	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
-	//if(1)
-	if((rand() & 3) == 0) // synthesizes picture (25%)
+	if(1)
+	//if((rand() & 3) == 0) // synthesizes picture (25%)
 	{
 	  v.resize(decoder->output_size());
 	  

@@ -146,11 +146,11 @@ namespace whiteice
 
       std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
 
-      // data.resize(pictures.size());
+      data.resize(pictures.size());
       
       unsigned int sum = 0;
       
-      //#pragma omp parallel for shared(sum)
+#pragma omp parallel for shared(sum)
       for(unsigned int counter=0;counter<pictures.size();counter++){
       	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
@@ -159,8 +159,8 @@ namespace whiteice
 	if(picToVector(p, picsize, v) == false){
 	}
 	else{
-	  data.push_back(v);
-	  // data[counter] = v;
+	  // data.push_back(v);
+	  data[counter] = v;
 	}
       }
 
@@ -184,8 +184,8 @@ namespace whiteice
       
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
-      arch.push_back(3*picsize * picsize);
-      // arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
+      arch.push_back(3 * picsize * picsize);
+      arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
       
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
