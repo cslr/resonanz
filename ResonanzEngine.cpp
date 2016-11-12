@@ -53,6 +53,8 @@ namespace resonanz {
 
 ResonanzEngine::ResonanzEngine()
 {
+        logging.info("ResonanzEngine ctor starting");
+	
 	std::lock_guard<std::mutex> lock(thread_mutex);
 
 	// initializes random number generation here (again) this is needed?
@@ -105,16 +107,23 @@ ResonanzEngine::ResonanzEngine()
 	
 	
 	thread_initialized = false;
-	
+
 	// starts updater thread thread
 	workerThread = new std::thread(&ResonanzEngine::engine_loop, this);
 	workerThread->detach();
+
+#ifndef _WIN32	
+	// for some reason this leads to DEADLOCK on Windows ???
 	
 	// waits for thread to initialize itself properly
 	while(thread_initialized == false){
 	  std::chrono::milliseconds duration(100); // 1000ms (thread sleep/working period is something like < 100ms)
 	  std::this_thread::sleep_for(duration);
+	  logging.info("ResonanzEngine ctor waiting worker thread to init");
 	}
+#endif
+
+	logging.info("ResonanzEngine ctor finished");
 }
 
 ResonanzEngine::~ResonanzEngine()
@@ -695,6 +704,7 @@ void ResonanzEngine::engine_loop()
 {
 	logging.info("engine_loop() started");
 
+
 #ifdef _WIN32
 	{
 		// set process priority
@@ -743,8 +753,8 @@ void ResonanzEngine::engine_loop()
 	
 	// thread has started successfully
 	thread_initialized = true;
-
-
+	
+	
 	// tries to initialize SDL library functionality - and load the font
 	{
 		bool initialized = false;
@@ -754,7 +764,7 @@ void ResonanzEngine::engine_loop()
 				if(engine_SDL_init(fontname)){
 					initialized = true;
 					break;
-				}
+ 				}
 			}
 			catch(std::exception& e){ }
 
