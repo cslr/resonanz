@@ -225,8 +225,8 @@ private:
 
 	long long tick = 0; // current engine tick (one tick is TICK_MS long)
 
-	// set to 100ms
-	static const unsigned int TICK_MS = 100; // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
+	// set to 100ms (set tick back to 1000ms = 1 sec)
+	static const unsigned int TICK_MS = 100;               // how fast engine runs: engine measures ticks and executes (one) command only when tick changes
 	static const unsigned int MEASUREMODE_DELAY_MS = 1000; // how long each screen is shown when measuring response
 
 	// media resource
@@ -300,8 +300,8 @@ private:
 	whiteice::bayesian_nnetwork<>                synthModel;
 	bool dataRBFmodel = true; // don't calculate neural networks but use simple model to directly predict response from stimulus
 	
-	// number of parameters to test with synthModel before selecting the optimium one
-	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 2000;
+	// number of parameters to test with synthModel before selecting the optimium one 
+	const unsigned int SYNTH_NUM_GENERATED_PARAMS = 50; // (was 2000) reduced to 50 because of slowness(?)
 	
 	unsigned long long synthParametersChangedTime = 0ULL;
 

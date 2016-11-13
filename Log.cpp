@@ -2,7 +2,7 @@
  * Log.cpp
  *
  *  Created on: 14.6.2015
- *      Author: Tomas
+ *      Author: Tomas Ukkonen
  */
 
 #include "Log.h"
@@ -51,7 +51,10 @@ void Log::info(std::string msg){
 	std::lock_guard<std::mutex> lock(file_lock);
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "INFO %5.5f %s\n", ms, msg.c_str());
-	if(handle){ fputs(buffer, handle); fflush(handle); }	  
+	if(handle){
+	  fputs(buffer, handle);
+	  fflush(handle);
+	}	  
 }
 
 
@@ -59,21 +62,30 @@ void Log::warn(std::string msg){
 	std::lock_guard<std::mutex> lock(file_lock);
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "WARN %5.5f %s\n", ms, msg.c_str());
-	if(handle){ fputs(buffer, handle); fflush(handle); }	  
+	if(handle){
+	  fputs(buffer, handle);
+	  fflush(handle);
+	}	  
 }
 
 void Log::error(std::string msg){
 	std::lock_guard<std::mutex> lock(file_lock);
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "ERRO %5.5f %s\n", ms, msg.c_str());
-	if(handle){ fputs(buffer, handle); fflush(handle); }
+	if(handle){
+	  fputs(buffer, handle);
+	  fflush(handle);
+	}
 }
 
 void Log::fatal(std::string msg){
 	std::lock_guard<std::mutex> lock(file_lock);
 	double ms = std::chrono::duration_cast<milliseconds>(clock::now() - t0).count()/1000.0;
 	snprintf(buffer, BUFLEN, "FATA %5.5f %s\n", ms, msg.c_str());
-	if(handle){ fputs(buffer, handle); fflush(handle); }
+	if(handle){
+	  fputs(buffer, handle);
+	  fflush(handle);
+	}
 }
 
 

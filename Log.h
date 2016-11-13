@@ -2,7 +2,7 @@
  * Log.h
  *
  *  Created on: 14.6.2015
- *      Author: Tomas
+ *      Author: Tomas Ukkonen
  */
 
 #ifndef LOG_H_
