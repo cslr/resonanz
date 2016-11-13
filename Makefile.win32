@@ -13,12 +13,12 @@ MV = mv
 CP = cp
 
 
-CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" -I.
-CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" -I.
+CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" -I. -Iemotiv_insight -Iemotiv_insight/include -Ineurosky
+CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_gfx` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" -I. -Iemotiv_insight -Iemotiv_insight/include -Ineurosky
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp EmotivInsight.cpp NeuroskyEEG.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp
 
 
 
@@ -36,13 +36,13 @@ JNITARGET = resonanz-engine.dll
 SPECTRAL_TEST_OBJECTS=spectral_analysis.o tst/spectral_test.o
 SPECTRAL_TEST_TARGET=spectral_test
 
-MAXIMPACT_CFLAGS=-O -g `/usr/local/bin/sdl2-config --cflags` `pkg-config SDL2_image --cflags` `pkg-config SDL2_gfx --cflags` `aalib-config --cflags` `pkg-config dinrhiw --cflags`
+MAXIMPACT_CFLAGS=-O -g `/usr/local/bin/sdl2-config --cflags` `pkg-config SDL2_image --cflags` `pkg-config SDL2_gfx --cflags` `pkg-config dinrhiw --cflags`
 
 MAXIMPACT_CXXFLAGS=$(CFLAGS)
 
-MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_gfx --libs` `aalib-config --libs` `pkg-config dinrhiw --libs` -lncurses
+MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_gfx --libs` `pkg-config dinrhiw --libs` -lws2_32 -Lneurosky -lthinkgear64 -Lemotiv_insight -ledk -L. -llightstone
 
-MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
+MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o EmotivInsight.o NeuroskyEEG.o LightstoneDevice.o Log.o
 MAXIMPACT_TARGET=maximpact
 
 SOUND_LIBS=`/usr/local/bin/sdl2-config --libs`
