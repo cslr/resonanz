@@ -1,0 +1,4 @@
+predicta.o: predicta.cpp \
+ jni-predicta/fi_iki_nop_novelinsight_predicta_PredictaOptimizerNative.h \
+ c:/Program\ Files/Java/jdk1.8.0_111/include/jni.h \
+ c:/Program\ Files/Java/jdk1.8.0_111/include/win32/jni_md.h

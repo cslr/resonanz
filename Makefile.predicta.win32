@@ -1,0 +1,47 @@
+# GNU Make Makefile for resonanz 
+# (C) Copyright Tomas Ukkonen 2016
+############################################################
+
+CC = gcc
+CXX = g++
+MAKE = make
+MKDIR = mkdir
+AR = ar
+CD = cd
+RM = rm -f
+MV = mv
+CP = cp
+
+
+CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" 
+CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/"
+
+OBJECTS = predicta.o
+SOURCES = predicta.cpp
+
+TARGET = resonanz
+
+LIBS = `pkg-config --libs dinrhiw` -fopenmp
+
+JNILIB_OBJECTS=$(OBJECTS)
+JNITARGET = predicta.dll
+
+
+############################################################
+
+all: jnilib
+
+jnilib: $(JNILIB_OBJECTS)
+	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o $(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)
+
+clean:
+	$(RM) $(OBJECTS)
+	$(RM) $(JNITARGET)
+	$(RM) *~
+
+depend:
+	$(CXX) $(CXXFLAGS) -MM $(SOURCES) > Makefile.predicta.depend
+
+############################################################
+
+include Makefile.predicta.depend

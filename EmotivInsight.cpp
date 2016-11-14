@@ -471,7 +471,7 @@ void EmotivInsight::new_data(float t, std::vector<float>& data)
 
 void EmotivInsight::poll_events()
 {
-	int poll_freq = 20; // Hz
+	int poll_freq = 20; // 20 Hz (50ms per tick/accuracy)
 
 	double t0 = current_time();
 

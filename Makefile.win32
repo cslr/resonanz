@@ -1,5 +1,5 @@
 # GNU Make Makefile for resonanz 
-# (C) Copyright Tomas Ukkonen
+# (C) Copyright Tomas Ukkonen 2016
 ############################################################
 
 CC = gcc
@@ -40,7 +40,7 @@ MAXIMPACT_CFLAGS=-O -g `/usr/local/bin/sdl2-config --cflags` `pkg-config SDL2_im
 
 MAXIMPACT_CXXFLAGS=$(CFLAGS)
 
-MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_gfx --libs` `pkg-config dinrhiw --libs` -lws2_32 -Lneurosky -lthinkgear64 -Lemotiv_insight -ledk -L. -llightstone
+MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_gfx --libs` `pkg-config dinrhiw --libs` -lws2_32 -Lneurosky -lthinkgear64 -Lemotiv_insight -ledk -L. -llightstone -mconsole
 
 MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o EmotivInsight.o NeuroskyEEG.o LightstoneDevice.o Log.o
 MAXIMPACT_TARGET=maximpact
