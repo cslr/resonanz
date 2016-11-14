@@ -16,12 +16,12 @@ CP = cp
 CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/" 
 CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I"/c/Program Files/Java/jdk1.8.0_111/include" -I"/c/Program Files/Java/jdk1.8.0_111/include/win32/"
 
-OBJECTS = predicta.o
-SOURCES = predicta.cpp
+OBJECTS = predicta.o PredictaEngine.o
+SOURCES = predicta.cpp PredictaEngine.cpp
 
 TARGET = resonanz
 
-LIBS = `pkg-config --libs dinrhiw` -fopenmp
+LIBS = `pkg-config --libs dinrhiw` -fopenmp -mconsole
 
 JNILIB_OBJECTS=$(OBJECTS)
 JNITARGET = predicta.dll
