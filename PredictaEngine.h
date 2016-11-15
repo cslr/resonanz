@@ -5,6 +5,9 @@
 
 #include <thread>
 #include <string>
+#include <mutex>
+
+#include <dinrhiw/dinrhiw.h>
 
 
 namespace whiteice
@@ -32,9 +35,37 @@ namespace whiteice
       std::string getStatus();
       
     private:
-      std::thread workerThread;
+      void setStatus(const std::string& status);
+      void setError(const std::string& error);
+
+      std::mutex error_mutex;
+      std::string latestError;
+
+      std::mutex status_mutex;
+      std::string currentStatus;
+
+      
+      
+      bool running;
+      std::thread* worker_thread;
+
+      std::mutex optimizeLock;
+      bool optimize;
+      bool thread_idle;
+      
+      std::string trainingFile;
+      std::string scoringFile;
+      std::string resultsFile;
+      double risk;
+
+      
 
       void loop(); // worker thread
+
+
+      whiteice::dataset< whiteice::math::blas_real<double> > train;
+      whiteice::dataset< whiteice::math::blas_real<double> > scoring;
+      whiteice::dataset< whiteice::math::blas_real<double> > results;
       
     };
     

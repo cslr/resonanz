@@ -1,0 +1,45 @@
+# GNU Make Makefile for resonanz 
+# (C) Copyright Tomas Ukkonen 2016
+############################################################
+
+CC = gcc
+CXX = g++
+MAKE = make
+MKDIR = mkdir
+AR = ar
+CD = cd
+RM = rm -f
+MV = mv
+CP = cp
+
+
+CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
+CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config --cflags dinrhiw` -I. -Ijni-predicta -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
+
+OBJECTS = predicta.o PredictaEngine.o
+SOURCES = predicta.cpp PredictaEngine.cpp
+
+LIBS = `pkg-config --libs dinrhiw` -fopenmp
+
+JNILIB_OBJECTS=$(OBJECTS)
+JNITARGET = libpredicta.so
+
+
+############################################################
+
+all: jnilib
+
+jnilib: $(JNILIB_OBJECTS)
+	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o $(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)
+
+clean:
+	$(RM) $(OBJECTS)
+	$(RM) $(JNITARGET)
+	$(RM) *~
+
+depend:
+	$(CXX) $(CXXFLAGS) -MM $(SOURCES) > Makefile.predicta.depend
+
+############################################################
+
+include Makefile.predicta.depend
