@@ -372,8 +372,8 @@ namespace whiteice
 	t0 = time(0);
 	
 	// always analyzes results for given time length
-	unsigned int timeElapsed = (time(0) - executionStartedTime);
-	unsigned int totalTime = 0;
+	double timeElapsed = (time(0) - executionStartedTime);
+	double totalTime = 0;
 	
 	if(timeElapsed < optimizationTime)
 	  totalTime = optimizationTime - timeElapsed;
@@ -386,9 +386,8 @@ namespace whiteice
 	  // eta.update((float)hmc.getNumberOfSamples());
 
 	  time_t t1 = time(0);
-	  unsigned int counter =
-	    (unsigned int)(t1 - t0); // time-elapsed
-
+	  double counter = (double)(t1 - t0); // time-elapsed
+	  
 	  double timeLeft = (totalTime - counter)/60.0;
 	  if(timeLeft <= 0.0){
 	    timeLeft = 0.0;
