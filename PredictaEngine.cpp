@@ -47,7 +47,8 @@ namespace whiteice
     bool PredictaEngine::startOptimization(const std::string& trainingFile,
 					   const std::string& scoringFile,
 					   const std::string& resultsFile,
-					   double risk)
+					   double risk,
+					   double optimizationTime)
     {
       if(access(trainingFile.c_str(), R_OK) != 0){
 	setError("Cannot read training file");
@@ -64,6 +65,11 @@ namespace whiteice
 	return false;
       }
 
+      if(isnan(optimizationTime) || isinf(optimizationTime)){
+	setError("Optimization time is not finite number");
+	return false;
+      }
+
       std::lock_guard<std::mutex> lock(optimizeLock);
 
       if(optimize) return false; // already optimizing (only single process per object)
@@ -77,6 +83,7 @@ namespace whiteice
       this->scoringFile  = scoringFile;
       this->resultsFile  = resultsFile;
       this->risk = risk;
+      this->optimizationTime = optimizationTime;
 
       optimize = true;
 
@@ -149,6 +156,7 @@ namespace whiteice
 	if(!running) continue;
 
 	thread_idle = false;
+	time_t executionStartedTime = time(0);
 
 	train.clear();
 	scoring.clear();
@@ -363,8 +371,12 @@ namespace whiteice
 
 	t0 = time(0);
 	
-	// always analyzes results for 15 minutes
-	unsigned int totalTime = 15*60; 
+	// always analyzes results for given time length
+	unsigned int timeElapsed = (time(0) - executionStartedTime);
+	unsigned int totalTime = 0;
+	
+	if(timeElapsed < optimizationTime)
+	  totalTime = optimizationTime - timeElapsed;
 	
 
 	while(optimize){
@@ -380,7 +392,8 @@ namespace whiteice
 	  double timeLeft = (totalTime - counter)/60.0;
 	  if(timeLeft <= 0.0){
 	    timeLeft = 0.0;
-	    break;
+	    if(hmc.getNumberOfSamples() > 0)
+	      break; // always gets a single sample from HMC
 	  }
 
 	  char buffer[128];
