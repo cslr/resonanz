@@ -23,6 +23,8 @@ namespace whiteice
       latestError = "No error";
       currentStatus = "Initializing..";
 
+      demoVersion = true;
+
       try{
 	running = true;
 	worker_thread = new std::thread(&PredictaEngine::loop, this);
@@ -48,7 +50,8 @@ namespace whiteice
 					   const std::string& scoringFile,
 					   const std::string& resultsFile,
 					   double risk,
-					   double optimizationTime)
+					   double optimizationTime,
+					   bool demo)
     {
       if(access(trainingFile.c_str(), R_OK) != 0){
 	setError("Cannot read training file");
@@ -84,7 +87,8 @@ namespace whiteice
       this->resultsFile  = resultsFile;
       this->risk = risk;
       this->optimizationTime = optimizationTime;
-
+      this->demoVersion = demo;
+      
       optimize = true;
 
       return true;
@@ -269,9 +273,6 @@ namespace whiteice
 	
 	//////////////////////////////////////////////////////////////////////////
 	// optimize neural network using LBFGS (ML starting point for HMC sampler)
-
-	
-
 	
 	std::vector<unsigned int> arch; // use double layer wide nnetwork
 	arch.push_back(train.dimension(0));
@@ -287,6 +288,7 @@ namespace whiteice
 	nn.randomize();
 
 #if 0
+	// deep pretraining is disabled as a default
 	setStatus("Preoptimizing solution (deep learning)..");
 	if(deep_pretrain_nnetwork(&nn, train, true) == false){
 	  setError("ERROR: deep pretraining of nnetwork failed.\n");
@@ -441,8 +443,14 @@ namespace whiteice
 	}
 
 
+	unsigned int NUM = scoring.size(0);
 
-	for(unsigned int i=0;i<scoring.size(0);i++){
+	// demo version only scores 10 first examples given in a file.
+	if(demoVersion){
+	  if(NUM > 10) NUM = 10;
+	}
+	
+	for(unsigned int i=0;i<NUM;i++){
 
 	  char buffer[128];
 	  snprintf(buffer, 128, "Scoring data (%.1f%%)..",

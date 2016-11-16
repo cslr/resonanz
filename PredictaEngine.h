@@ -25,7 +25,8 @@ namespace whiteice
 			     const std::string& scoringFile,
 			     const std::string& resultsFile,
 			     double risk,
-			     double optimizationTime);
+			     double optimizationTime,
+			     bool demoVersion);
 
       bool isActive();
 
@@ -59,6 +60,8 @@ namespace whiteice
       std::string resultsFile;
       double risk;
       double optimizationTime;
+      
+      bool demoVersion;
       
 
       void loop(); // worker thread

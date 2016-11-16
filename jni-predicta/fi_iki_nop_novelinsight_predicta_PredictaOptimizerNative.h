@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     fi_iki_nop_novelinsight_predicta_PredictaOptimizerNative
  * Method:    startOptimization
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;DD)Z
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;DDZ)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_novelinsight_predicta_PredictaOptimizerNative_startOptimization
-  (JNIEnv *, jobject, jstring, jstring, jstring, jdouble, jdouble);
+  (JNIEnv *, jobject, jstring, jstring, jstring, jdouble, jdouble, jboolean);
 
 /*
  * Class:     fi_iki_nop_novelinsight_predicta_PredictaOptimizerNative

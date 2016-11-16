@@ -31,7 +31,8 @@ static whiteice::resonanz::PredictaEngine engine;
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;D)Z
  */
 JNIEXPORT jboolean JNICALL Java_fi_iki_nop_novelinsight_predicta_PredictaOptimizerNative_startOptimization
-(JNIEnv *env, jobject obj, jstring trainingFile_, jstring scoringFile_, jstring resultsFile_, jdouble riskLevel_, jdouble optimizationTime_)
+(JNIEnv *env, jobject obj, jstring trainingFile_, jstring scoringFile_, jstring resultsFile_, jdouble riskLevel_,
+ jdouble optimizationTime_, jboolean demoVersion_)
 {
   const char *str1 = env->GetStringUTFChars(trainingFile_, 0);
   const char *str2 = env->GetStringUTFChars(scoringFile_, 0);
@@ -42,12 +43,13 @@ JNIEXPORT jboolean JNICALL Java_fi_iki_nop_novelinsight_predicta_PredictaOptimiz
   std::string resultsFile  = str3;
   double risk = riskLevel_;
   double optimizationTime = optimizationTime_;
+  bool demo = (bool)demoVersion_;
 
   env->ReleaseStringUTFChars(trainingFile_, str1);
   env->ReleaseStringUTFChars(scoringFile_ , str2);
   env->ReleaseStringUTFChars(resultsFile_ , str3);
 
-  bool rv = engine.startOptimization(trainingFile, scoringFile, resultsFile, risk, optimizationTime);
+  bool rv = engine.startOptimization(trainingFile, scoringFile, resultsFile, risk, optimizationTime, demo);
 
   return (jboolean)rv;
 }
