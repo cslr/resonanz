@@ -1,4 +1,18 @@
+
 TODO
+
+- Novel Insight Scoring (Predicta)
+
+  * add Optimization time
+    	5 minutes
+	10 minutes
+	30 minutes
+	1 hour
+	6 hours
+	12 hours
+	24 hours
+
+
 
 - renaissance: 
  

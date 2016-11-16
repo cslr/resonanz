@@ -20,8 +20,8 @@ namespace whiteice
       optimize = false;
       worker_thread = nullptr;
 
-      latestError = "no error";
-      currentStatus = "initializing..";
+      latestError = "No error";
+      currentStatus = "Initializing..";
 
       try{
 	running = true;
@@ -69,7 +69,7 @@ namespace whiteice
       if(optimize) return false; // already optimizing (only single process per object)
 
       if(thread_idle == false){
-	setError("previous optimization is still running");
+	setError("Previous optimization is still running");
 	return false; // thread is still running
       }
 
@@ -132,14 +132,18 @@ namespace whiteice
     // worker thread
     void PredictaEngine::loop()
     {
-      setStatus("waiting..");
+      setStatus("Waiting..");
       thread_idle = true;
 
       while(running){
 	while(!optimize && running){
 	  thread_idle = true;
-	  setStatus("waiting..");
+	  setStatus("Waiting..");
 	  usleep(100000); // 100ms (waits for action
+
+	  train.clear();
+	  scoring.clear();
+	  results.clear();
 	}
 
 	if(!running) continue;
@@ -150,23 +154,21 @@ namespace whiteice
 	scoring.clear();
 	results.clear();
 
-	printf("P1\n"); fflush(stdout);
-	
 	//////////////////////////////////////////////////////////////////////////
-	// attempt to load all data or 1.000.000 (million) lines of data to memory
+	// loads at most 100.000 = 100k lines of data to memory
 
-	setStatus("loading data (examples)..");
+	setStatus("Loading data (examples)..");
 
-	if(train.importAscii(trainingFile, 1000000) == false){
+	if(train.importAscii(trainingFile, 100000) == false){
 	  std::string error = "Cannot load file: " + trainingFile;
 	  setError(error);	  
 	  optimize = false;
 	  continue;
 	}
 
-	setStatus("loading data (to be scored data)..");
+	setStatus("Loading data (to be scored data)..");
 
-	if(scoring.importAscii(scoringFile, 1000000) == false){
+	if(scoring.importAscii(scoringFile, 100000) == false){
 	  std::string error = "Cannot load file: " + scoringFile;
 	  train.clear();
 	  scoring.clear();
@@ -175,9 +177,7 @@ namespace whiteice
 	  continue;
 	}
 
-	printf("P2\n"); fflush(stdout);
-
-	setStatus("checking data validity..");
+	setStatus("Checking data validity..");
 
 	train.removeBadData();
 	scoring.removeBadData();
@@ -215,8 +215,6 @@ namespace whiteice
 	  continue;
 	}
 
-	printf("P3\n"); fflush(stdout);
-	
 	//////////////////////////////////////////////////////////////////////////
 	// preprocess data using PCA (if PCA cannot be calculated the whole process fails)
 
@@ -249,15 +247,13 @@ namespace whiteice
 	}
 
 	if(optimize == false)
-	  continue; // error
-
-	printf("P4\n"); fflush(stdout);
+	  continue; // abort computations
 
 	train = tmp;
 	
-	setStatus("preprocessing (PCA) data..");
+	setStatus("Preprocessing data..");
 
-	if(train.preprocess(0) == false || train.preprocess(1) == false){
+	if(train.preprocess(0) == false /*|| train.preprocess(1) == false*/){
 	  setError("Bad/singular data please add more variance to data");
 	  optimize = false;
 	  continue;
@@ -266,14 +262,14 @@ namespace whiteice
 	//////////////////////////////////////////////////////////////////////////
 	// optimize neural network using LBFGS (ML starting point for HMC sampler)
 
-	printf("P5\n"); fflush(stdout);
+	
 
-	setStatus("preoptimizing solution..");
-
+	
 	std::vector<unsigned int> arch; // use double layer wide nnetwork
 	arch.push_back(train.dimension(0));
-	arch.push_back(10*train.dimension(0));
-	arch.push_back(10*train.dimension(0));
+	// arch.push_back(100*train.dimension(0));
+	arch.push_back(train.dimension(0) < 10 ? 10 : train.dimension(0));
+	arch.push_back(train.dimension(0) < 10 ? 10 : train.dimension(0));
 	arch.push_back(train.dimension(1));
 
 	whiteice::nnetwork< whiteice::math::blas_real<double> > nn(arch);
@@ -281,6 +277,17 @@ namespace whiteice
 	whiteice::math::vertex< whiteice::math::blas_real<double> > w;
 
 	nn.randomize();
+
+#if 0
+	setStatus("Preoptimizing solution (deep learning)..");
+	if(deep_pretrain_nnetwork(&nn, train, true) == false){
+	  setError("ERROR: deep pretraining of nnetwork failed.\n");
+	  optimize = false;
+	  continue;
+	}
+#endif
+
+	
 	nn.exportdata(w);
 	bfgs.minimize(w);
 
@@ -289,41 +296,45 @@ namespace whiteice
 	whiteice::math::blas_real<double> error;
 
 
-	while(bfgs.solutionConverged() == false && bfgs.isRunning() == true){
+	while(optimize && bfgs.solutionConverged() == false && bfgs.isRunning() == true){
 	  if(optimize == false){ // we lost license to do this anymore..
-	    setStatus("aborting optimization");
-	    continue;
+	    setStatus("Aborting optimization");
+	    break;
 	  }
 
 	  time_t t1 = time(0);
 	  unsigned int counter = (unsigned int)(t1 - t0); // time-elapsed
 
 	  if(bfgs.getSolution(w, error, iterations) == false){ // we lost license to continue..
-	    setStatus("aborting optimization");
+	    setStatus("Aborting optimization");
 	    setError("LBFGS::getSolution() failed");
 	    optimize = false;
-	    continue;
+	    break;
 	  }
 
-	  char buffer[80];
-	  snprintf(buffer, 80, "preoptimizing solution (%d iterations, %f minutes): %f",
+	  char buffer[128];
+	  snprintf(buffer, 128, "Preoptimizing solution (%d iterations, %.2f minutes): %f",
 		   iterations, counter/60.0f, error.c[0]);
 
 	  setStatus(buffer);
-	  
-	  sleep(1);
+
+	  // update results only every 5 seconds
+	  sleep(5);
 	}
 
+	if(optimize == false){
+	  bfgs.stopComputation();
+	  continue; // abort computation
+	}
+
+	
 	// after convergence, get the best solution
 	if(bfgs.getSolution(w, error, iterations) == false){ // we lost license to continue..
-	  setStatus("aborting optimization");
+	  setStatus("Aborting optimization");
 	  setError("LBFGS::getSolution() failed");
 	  optimize = false;
 	  continue;
 	}
-
-	if(optimize == false)
-	  continue; // abort computation
 
 	nn.importdata(w);
 
@@ -332,48 +343,151 @@ namespace whiteice
 
 	setStatus("Analyzing uncertainty..");
 
-	printf("P6\n"); fflush(stdout);
-
-	whiteice::UHMC< whiteice::math::blas_real<double> > hmc(nn, train, true);
-	whiteice::linear_ETA<float> eta;
+	// whiteice::UHMC< whiteice::math::blas_real<double> > hmc(nn, train, true);
+	whiteice::HMC< whiteice::math::blas_real<double> > hmc(nn, train, true);
+	// whiteice::linear_ETA<float> eta;
 
 	// for high quality..
-	// we get 10.000 samples and throw away the first 5.000 samples
-	const unsigned int NUMSAMPLES = 10000;
-	eta.start(0.0f, NUMSAMPLES);
+	// we use just 50 samples
+	// const unsigned int NUMSAMPLES = 1000;
+	// eta.start(0.0f, NUMSAMPLES);
 
-	hmc.startSampler();
+	if(hmc.startSampler() == false){
+	  setStatus("Starting sampler failed (internal error)");
+	  setError("Cannot start sampler");
+	  optimize = false;
+	  continue;
+	}
 
-	unsigned int samples = 0;
+	// unsigned int samples = 0;
+
+	t0 = time(0);
+	
+	// always analyzes results for 15 minutes
+	unsigned int totalTime = 15*60; 
+	
 
 	while(optimize){
-	  samples = hmc.getNumberOfSamples();
-	  if(samples >= NUMSAMPLES) break;
+	  unsigned int samples = hmc.getNumberOfSamples();
+	  // if(samples >= NUMSAMPLES) break;
 	  
-	  eta.update((float)hmc.getNumberOfSamples());
+	  // eta.update((float)hmc.getNumberOfSamples());
 
-	  char buffer[128];
-	  snprintf(buffer, 128, "Analyzing uncertainty (%d samples. %f error. ETA %f minutes)",
-		   samples, hmc.getMeanError(25).c[0], eta.estimate()/60.0);
+	  time_t t1 = time(0);
+	  unsigned int counter =
+	    (unsigned int)(t1 - t0); // time-elapsed
 
-	  setStatus(buffer);
-
-	  if(optimize == false){ // we lost license to live..
-	    setStatus("Uncertainty analysis aborted");
-	    optimize = false;
+	  double timeLeft = (totalTime - counter)/60.0;
+	  if(timeLeft <= 0.0){
+	    timeLeft = 0.0;
 	    break;
 	  }
 
-	  sleep(1);
+	  char buffer[128];
+	  snprintf(buffer, 128,
+		   "Analyzing uncertainty (%d iterations. %.2f%% error. ETA %.2f minutes)",
+		   // 100.0*((double)samples/((double)NUMSAMPLES)),
+		   samples,
+		   100.0*hmc.getMeanError(1).c[0]/error.c[0],
+		   timeLeft);
+		   // eta.estimate()/60.0);
+
+	  setStatus(buffer);
+
+	  if(optimize == false){ // we lost license to continue..
+	    setStatus("Uncertainty analysis aborted");
+	    break;
+	  }
+
+	  // updates only every 5 seconds so that we do not take too much resources
+	  sleep(5); 
 	}
 
-	printf("P7\n"); fflush(stdout);
+	if(optimize == false)
+	  continue; // abort computation
+
+	hmc.stopSampler();
 	
 	//////////////////////////////////////////////////////////////////////////
 	// estimate mean and variance of output given inputs in 'scoring'
 
-	// TODO
+	setStatus("Calculating scoring..");
+
+	whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > bnn;
 	
+	if(hmc.getNetwork(bnn) == false){
+	  setStatus("Exporting prediction model failed");
+	  setError("Internal software error");
+	  optimize = false;
+	  continue;
+	}
+	
+	if(results.createCluster("results", 1) == false){
+	  setError("Internal software error");
+	  optimize = false;
+	  continue;
+	}
+
+
+
+	for(unsigned int i=0;i<scoring.size(0);i++){
+
+	  char buffer[128];
+	  snprintf(buffer, 128, "Scoring data (%.1f%%)..",
+		   100.0*((double)i)/((double)scoring.size(0)));
+	  setStatus(buffer);
+	  
+	  
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > mean;
+	  whiteice::math::matrix< whiteice::math::blas_real<double> > cov;
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > score;
+	  auto tmp = scoring[i];
+
+	  if(train.preprocess(0, tmp) == false){
+	    setStatus("Calculating prediction failed (preprocess)");
+	    setError("Internal software error");
+	    optimize = false;
+	    break;
+	  }
+	  
+	  if(bnn.calculate(tmp, mean, cov) == false){
+	    setStatus("Calculating prediction failed");
+	    setError("Internal software error");
+	    optimize = false;
+	    break;
+	  }
+
+	  score.resize(1);
+	  score[0] = mean[0] + risk*cov(0,0);
+
+	  if(results.add(0, score) == false){
+	    setStatus("Calculating prediction failed (storage)");
+	    setError("Internal software error");
+	    optimize = false;
+	    break;
+	  }
+
+	  if(optimize == false)
+	    break; // lost our license to continue
+	}
+
+	if(optimize == false)
+	  continue; // lost our license to continue
+
+
+	// finally save the results
+	setStatus("Saving prediction results to file..");
+
+	if(results.exportAscii(resultsFile) == false){
+	  setStatus("Saving prediction results failed");
+	  setError("Internal software error");
+	  optimize = false;
+	  break;
+	}
+
+	setStatus("Computations complete");
+	
+	optimize = false;
       }
     }
     
