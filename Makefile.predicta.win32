@@ -44,4 +44,4 @@ depend:
 
 ############################################################
 
-include Makefile.predicta.depend
+include Makefile.predicta.depend.win32

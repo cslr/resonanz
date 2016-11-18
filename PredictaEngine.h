@@ -37,6 +37,9 @@ namespace whiteice
       std::string getStatus();
       
     private:
+      std::thread* worker_thread;
+      bool running;
+
       void setStatus(const std::string& status);
       void setError(const std::string& error);
 
@@ -47,10 +50,6 @@ namespace whiteice
       std::string currentStatus;
 
       
-      
-      bool running;
-      std::thread* worker_thread;
-
       std::mutex optimizeLock;
       bool optimize;
       bool thread_idle;
@@ -65,8 +64,7 @@ namespace whiteice
       
 
       void loop(); // worker thread
-
-
+      
       whiteice::dataset< whiteice::math::blas_real<double> > train;
       whiteice::dataset< whiteice::math::blas_real<double> > scoring;
       whiteice::dataset< whiteice::math::blas_real<double> > results;

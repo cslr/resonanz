@@ -136,6 +136,7 @@ namespace whiteice
     void PredictaEngine::setError(const std::string& error){
       std::lock_guard<std::mutex> lock(error_mutex);
       latestError = error;
+      printf("PredictaEngine error: %s\n", error.c_str());
     }
 
     
