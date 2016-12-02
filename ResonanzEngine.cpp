@@ -52,10 +52,12 @@ namespace resonanz {
 
 
 ResonanzEngine::ResonanzEngine()
-{
+{        
         logging.info("ResonanzEngine ctor starting");
 	
 	std::lock_guard<std::mutex> lock(thread_mutex);
+
+	logging.info("ResonanzEngine() ctor started");
 
 	// initializes random number generation here (again) this is needed?
 	// so that JNI implementation gets different random numbers and experiments don't repeat each other..
@@ -117,9 +119,9 @@ ResonanzEngine::ResonanzEngine()
 	
 	// waits for thread to initialize itself properly
 	while(thread_initialized == false){
-	  std::chrono::milliseconds duration(100); // 1000ms (thread sleep/working period is something like < 100ms)
-	  std::this_thread::sleep_for(duration);
 	  logging.info("ResonanzEngine ctor waiting worker thread to init");
+	  std::chrono::milliseconds duration(1000); // 1000ms (thread sleep/working period is something like < 100ms)
+	  std::this_thread::sleep_for(duration);
 	}
 #endif
 

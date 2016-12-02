@@ -44,9 +44,9 @@ using namespace whiteice::resonanz;
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-// processes pictures of size 8x8 for now (out of memory otherwise)
+// processes pictures of size (16x16) 8x8 for now (out of memory otherwise)
 
-#define PICTURESIZE 16
+#define PICTURESIZE 4
 
 #define DISPLAYTIME 200 // picture display time in msecs
 
@@ -191,6 +191,15 @@ int main(int argc, char** argv)
 	IMG_Quit();
 	SDL_Quit();
 	return -1;
+      }
+
+      if(data.dimension(0) != decoder->input_size() ||
+	 data.dimension(0) != encoder->output_size() ||
+	 data.dimension(1) != dev->getNumberOfSignals() ||
+	 data.dimension(1) != dev->getNumberOfSignals()){
+	
+	printf("WARN: dataset dimensions mismatch so emptying dataset\n");
+	data.clear();
       }
     }
       

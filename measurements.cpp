@@ -18,8 +18,13 @@ namespace whiteice
       if(dev == NULL || DISPLAYTIME == 0 || encoder == NULL || decoder == NULL || picsize == 0)
 	return false; // bad parameters
 
-      if(decoder->output_size() != 3*picsize*picsize || encoder->input_size() != 3*picsize*picsize)
+      if(decoder->output_size() != 3*picsize*picsize || encoder->input_size() != 3*picsize*picsize){
+	printf("ERROR: encoder/decoder wrong output/input dimensions\n");
 	return false;
+      }
+
+      encoder->printInfo();
+      decoder->printInfo();
       
       // open window (SDL)
 
@@ -72,7 +77,7 @@ namespace whiteice
 	SDL_Surface* scaled = NULL;	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
-	if(1)
+	if(0)
 	//if((rand() & 3) == 0) // synthesizes picture (25%)
 	{
 	  v.resize(decoder->output_size());
@@ -112,6 +117,9 @@ namespace whiteice
 	    
 	  }
 	}
+
+	std::cout << "input = " << input << std::endl;
+	
 	
 	SDL_Rect imageRect;
 	
@@ -141,33 +149,41 @@ namespace whiteice
 	std::vector<float> before, after;
 
 	if(dev->connectionOk() == false){
+	  printf("ERROR: dev->connectionOk() returned false\n");
 	  return false;
 	}
 
 	if(dev->data(before) == false){
+	  printf("ERROR: dev->data(before) returned false\n");
 	  return false;
 	}
 
 	usleep(DISPLAYTIME*1000);
 
 	if(dev->data(after) == false){
+	  printf("ERROR: dev->data(after) returned false\n");
 	  return false;
 	}
 
 	// stores measurement results to dataset
 	{
 	  if(data.getNumberOfClusters() != 3){
+	    printf("Creating new dataset clusters\n");
+	    
 	    data.clear();
 
 	    if(data.createCluster("input", input.size()) == false){
+	      printf("ERROR: data.createCluster(1) failed\n");
 	      return false;
 	    }
 
 	    if(data.createCluster("before", before.size()) == false){
+	      printf("ERROR: data.createCluster(2) failed\n");
 	      return false;
 	    }
 
 	    if(data.createCluster("after", after.size()) == false){
+	      printf("ERROR: data.createCluster(3) failed\n");
 	      return false;
 	    }
 	  }
@@ -184,9 +200,9 @@ namespace whiteice
 	  for(unsigned int i=0;i<a.size();i++)
 	    a[i] = after[i];
 
-	  if(data.add(0, input) == false){ return false; }
-	  if(data.add(1, b) == false){ return false; }
-	  if(data.add(2, a)  == false){ return false; }
+	  if(data.add(0, input) == false){ printf("Adding data to cluster(0) failed\n"); return false; }
+	  if(data.add(1, b) == false){ printf("Adding data to cluster(1) failed\n"); return false; }
+	  if(data.add(2, a)  == false){ printf("Adding data to cluster(2) failed\n"); return false; }
 	}
 	
       }

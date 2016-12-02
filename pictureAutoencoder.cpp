@@ -146,53 +146,58 @@ namespace whiteice
 
       std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
 
-      data.resize(pictures.size());
+      // data.resize(pictures.size());
       
       unsigned int sum = 0;
+      unsigned int counter = 0;
       
-#pragma omp parallel for shared(sum)
-      for(unsigned int counter=0;counter<pictures.size();counter++){
+      // #pragma omp parallel for shared(sum)
+      for(counter=0;counter<pictures.size();counter++){
       	
 	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 	const auto& p = pictures[counter];
 	
 	if(picToVector(p, picsize, v) == false){
+	  printf("Cannot load picture: %s\n", pictures[counter].c_str());
 	}
 	else{
-	  // data.push_back(v);
-	  data[counter] = v;
+	  data.push_back(v);
+	  // data[counter] = v;
+	  sum++;
 	}
       }
 
-      if(data.size() <= 0)
+      if(data.size() <= 0){
 	return false;
+      }
 
       // preprocessing
-      if(preprocess.createCluster("data", data[0].size()) == false)
+      if(preprocess.createCluster("data", data[0].size()) == false){
 	return false;
+      }
 
       {
 	if(preprocess.add(0, data) == false) return false;
 	
-	preprocess.preprocess(0,
-			      whiteice::dataset< whiteice::math::blas_real<double> >::dnCorrelationRemoval);
+	preprocess.preprocess(0,whiteice::dataset< whiteice::math::blas_real<double> >::dnMeanVarianceNormalization);
+	// preprocess.preprocess(0,whiteice::dataset< whiteice::math::blas_real<double> >::dnCorrelationRemoval);
 	preprocess.clearData(0);
 	
-	// preprocesses data using PCA
+	// preprocesses data using 
 	if(preprocess.preprocess(0, data) == false) return false;
       }
-      
+
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
       arch.push_back(3 * picsize * picsize);
-      arch.push_back(10 * picsize * picsize); // feature extraction layer (SLOW)
+      arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
       arch.push_back(picsize);
       
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
       dbn.initializeWeights();
       
       whiteice::math::blas_real<double> error = 0.01;
-      
+
       // does DBN pretraining..
       if(dbn.learnWeights(data, error, true) == false)
 	return false; // training failed
@@ -202,7 +207,7 @@ namespace whiteice
       whiteice::nnetwork< whiteice::math::blas_real<double> >* net = nullptr;
       
       if(dbn.convertToAutoEncoder(net) == false)
-	return false; // if true is returned then net is always non-null
+	return false; // if false is returned then net is always null
 
       whiteice::math::vertex< whiteice::math::blas_real<double> > x0;
 
@@ -374,9 +379,59 @@ namespace whiteice
 	}
       }
 
-      // dbn imported networks are stochastic
-      encoder->setStochastic(true);
-      decoder->setStochastic(true);
+
+      // also transforms decoder to have final identity layer so that stochasticSigmoids are used in other layers
+      {
+	std::vector<unsigned int>  arch3;
+	
+	decoder->getArchitecture(arch3);
+	const unsigned int dim = arch3[arch3.size()-1];
+	
+	arch3.push_back(dim);
+	auto newDecoder = new whiteice::nnetwork< whiteice::math::blas_real<double> >(arch3);
+	
+	try {
+	  for(unsigned int l=0;l<decoder->getLayers();l++){
+	    whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	    whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	    if(decoder->getWeights(W, l) == false) throw l;
+	    if(decoder->getBias(b, l) == false) throw l;
+	    if(newDecoder->setWeights(W, l) == false) throw l;
+	    if(newDecoder->setBias(b, l) == false) throw l;
+	  }
+	  
+	  // additional extra layer (identity layer)
+	  
+	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
+	  
+	  W.resize(dim, dim);
+	  b.resize(dim);
+	  
+	  W.identity();
+	  b.zero();
+	  
+	  if(newDecoder->setWeights(W,decoder->getLayers()) == false) throw decoder->getLayers();
+	  if(newDecoder->setBias(b, decoder->getLayers()) == false) throw decoder->getLayers();
+	  
+	  delete decoder;
+	  decoder = newDecoder;
+	}
+	catch(unsigned int l){
+	  delete newDecoder;
+	  delete encoder;
+	  delete decoder;
+	  delete net;
+	  
+	  printf("ERROR: adding extra layer to decoder failed: %d\n", l);
+	  
+	  return false;
+	}
+      }
+
+      // dbn imported networks to have stochastic non-linearities
+      encoder->setNonlinearity(whiteice::nnetwork< whiteice::math::blas_real<double> >::stochasticSigmoid);
+      decoder->setNonlinearity(whiteice::nnetwork< whiteice::math::blas_real<double> >::stochasticSigmoid);
 
       // hack we use full net instead to create random pictures (...)
       

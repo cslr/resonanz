@@ -86,6 +86,9 @@ maximpact: $(MAXIMPACT_OBJECTS)
 
 clean:
 	$(RM) $(OBJECTS)
+	$(RM) $(MAXIMPACT_OBJECTS)
+	$(RM) $(R9E_OBJECTS)
+	$(RM) $(SPECTRAL_TEST_OBJECTS)
 	$(RM) $(TARGET)
 	$(RM) *~
 
