@@ -114,8 +114,8 @@ namespace whiteice
 	    preprocess.preprocess(0, v); // preprocesses picture vector before feeding it to encoder
 	    
 	    encoder->calculate(v, input); // generates features from preprocessed pic
-	    
 	  }
+	  else continue;
 	}
 
 	std::cout << "input = " << input << std::endl;

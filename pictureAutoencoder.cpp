@@ -176,6 +176,7 @@ namespace whiteice
 	return false;
       }
 
+      // preprocessing..
       {
 	if(preprocess.add(0, data) == false) return false;
 	
@@ -189,9 +190,9 @@ namespace whiteice
 
       // 2. trains DBN given data
       std::vector<unsigned int> arch; // architecture of DBN
-      arch.push_back(3 * picsize * picsize);
-      arch.push_back(10 * 3 * picsize * picsize); // feature extraction layer (SLOW)
-      arch.push_back(picsize);
+      arch.push_back(3 * picsize * picsize); // 48
+      arch.push_back(100 * 3 * picsize * picsize); // 4800: feature extraction layer (SLOW)
+      arch.push_back(50); // 1024 different pictures.. (out of 2**16 = 65535 grayscale pictures)
       
       whiteice::DBN< whiteice::math::blas_real<double> > dbn(arch);
       dbn.initializeWeights();
@@ -209,6 +210,7 @@ namespace whiteice
       if(dbn.convertToAutoEncoder(net) == false)
 	return false; // if false is returned then net is always null
 
+#if 0      
       whiteice::math::vertex< whiteice::math::blas_real<double> > x0;
 
       if(net->exportdata(x0) == false){
@@ -231,7 +233,7 @@ namespace whiteice
 
       
       // NO LBFGS or optimization using gradients
-#if 0
+
       
       whiteice::LBFGS_nnetwork< whiteice::math::blas_real<double> > optimizer(*net, ds, false);
 
@@ -266,7 +268,9 @@ namespace whiteice
       // because last layer of dinrhiw's nnetwork implementation is always linear and
       // encoder's last layer shoud be sigmoidal, I add one extra identity function
       // layer to encoder
-      
+
+      // encoder: picture to feature vector (coded vector) [codes pictures as feature vector]
+      // decoder: feature vector to picture [synthesizer]
       
       std::vector<unsigned int>  arch2;
       std::vector<unsigned int>& encoderArch = arch;
@@ -301,6 +305,8 @@ namespace whiteice
 	  if(net->getWeights(W, i) == false) throw i;
 	  if(encoder->setBias(b, i) == false) throw i;
 	  if(encoder->setWeights(W, i) == false) throw i;
+	  if(encoder->setNonlinearity
+	     (i, net->getNonlinearity(i)) == false) throw i;
 	}
 
 	const int L = encoderArch.size()-1; // continue from L:th layer
@@ -312,6 +318,8 @@ namespace whiteice
 	  if(net->getWeights(W, L+i) == false) throw (L+i);
 	  if(decoder->setBias(b, i) == false)  throw (L+i);
 	  if(decoder->setWeights(W, i) == false) throw (L+i);
+	  if(decoder->setNonlinearity
+	     (i, net->getNonlinearity(L+i)) == false) throw (L+i);
 	}
 	
       }
@@ -348,6 +356,8 @@ namespace whiteice
 	    if(encoder->getBias(b, l) == false) throw l;
 	    if(newEncoder->setWeights(W, l) == false) throw l;
 	    if(newEncoder->setBias(b, l) == false) throw l;
+	    if(newEncoder->setNonlinearity
+	       (l, encoder->getNonlinearity(l)) == false) throw l;
 	  }
 	  
 	  // additional extra layer (identity layer)
@@ -363,6 +373,9 @@ namespace whiteice
 	  
 	  if(newEncoder->setWeights(W, encoder->getLayers()) == false) throw encoder->getLayers();
 	  if(newEncoder->setBias(b, encoder->getLayers()) == false) throw encoder->getLayers();
+	  newEncoder->setNonlinearity
+	    (encoder->getLayers(),
+	     whiteice::nnetwork< whiteice::math::blas_real<double> >::pureLinear);
 	  
 	  delete encoder;
 	  encoder = newEncoder;
@@ -380,60 +393,35 @@ namespace whiteice
       }
 
 
-      // also transforms decoder to have final identity layer so that stochasticSigmoids are used in other layers
-      {
-	std::vector<unsigned int>  arch3;
-	
-	decoder->getArchitecture(arch3);
-	const unsigned int dim = arch3[arch3.size()-1];
-	
-	arch3.push_back(dim);
-	auto newDecoder = new whiteice::nnetwork< whiteice::math::blas_real<double> >(arch3);
-	
-	try {
-	  for(unsigned int l=0;l<decoder->getLayers();l++){
-	    whiteice::math::matrix< whiteice::math::blas_real<double> > W;
-	    whiteice::math::vertex< whiteice::math::blas_real<double> > b;
-	    if(decoder->getWeights(W, l) == false) throw l;
-	    if(decoder->getBias(b, l) == false) throw l;
-	    if(newDecoder->setWeights(W, l) == false) throw l;
-	    if(newDecoder->setBias(b, l) == false) throw l;
-	  }
-	  
-	  // additional extra layer (identity layer)
-	  
-	  whiteice::math::matrix< whiteice::math::blas_real<double> > W;
-	  whiteice::math::vertex< whiteice::math::blas_real<double> > b;
-	  
-	  W.resize(dim, dim);
-	  b.resize(dim);
-	  
-	  W.identity();
-	  b.zero();
-	  
-	  if(newDecoder->setWeights(W,decoder->getLayers()) == false) throw decoder->getLayers();
-	  if(newDecoder->setBias(b, decoder->getLayers()) == false) throw decoder->getLayers();
-	  
-	  delete decoder;
-	  decoder = newDecoder;
-	}
-	catch(unsigned int l){
-	  delete newDecoder;
-	  delete encoder;
-	  delete decoder;
-	  delete net;
-	  
-	  printf("ERROR: adding extra layer to decoder failed: %d\n", l);
-	  
-	  return false;
-	}
-      }
-
       // dbn imported networks to have stochastic non-linearities
       encoder->setNonlinearity(whiteice::nnetwork< whiteice::math::blas_real<double> >::stochasticSigmoid);
       decoder->setNonlinearity(whiteice::nnetwork< whiteice::math::blas_real<double> >::stochasticSigmoid);
 
-      // hack we use full net instead to create random pictures (...)
+      // testing: tests output from DBN and nnetwork are the same
+      for(unsigned int k=0;k<data.size();k++)
+      {
+	whiteice::math::vertex< whiteice::math::blas_real<double> >& d = data[k];
+	whiteice::math::vertex< whiteice::math::blas_real<double> > out1;
+	whiteice::math::vertex< whiteice::math::blas_real<double> > out2;
+
+	if(dbn.setVisible(d) == false){
+	  std::cout << "ERROR: cannot set DBN visible vector" << std::endl;
+	}
+
+	if(dbn.reconstructData(2) == false){
+	  std::cout << "ERROR: cannot calculate DBN hidden vector" << std::endl;
+	}
+
+	out1 = dbn.getHidden();
+	
+	if(encoder->calculate(d, out2) == false){
+	  std::cout << "ERROR: cannot encode picture to feature vector (nnetwork)" << std::endl;
+	}
+
+	std::cout << "DBN OUT : " << out1 << std::endl;
+	std::cout << "NET OUT : " << out2 << std::endl;
+      }
+
       
       return true;
     }

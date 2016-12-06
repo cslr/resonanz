@@ -26,9 +26,14 @@
 #include "DataSource.h"
 #include "RandomEEG.h"
 #include "MuseOSC.h"
+
+#ifndef __linux__
+
 #include "EmotivInsight.h"
 #include "NeuroskyEEG.h"
 #include "LightstoneDevice.h"
+
+#endif
 
 // uncomment define to create command-line tool
 // that cannot process muse commands.
@@ -175,12 +180,14 @@ int main(int argc, char** argv)
 
   if(device == "muse")
     dev = new whiteice::resonanz::MuseOSC(4545);
+#ifndef __linux__
   else if(device == "insight")
     dev = new whiteice::resonanz::EmotivInsight();
   else if(device == "neurosky")
     dev = new whiteice::resonanz::NeuroskyEEG();
   else if(device == "lightstone")
     dev = new whiteice::resonanz::LightstoneDevice();
+#endif
   else if(device == "random"){
     dev = new whiteice::resonanz::RandomEEG();
   }
@@ -214,11 +221,12 @@ int main(int argc, char** argv)
 
 
   std::vector<SDL_Surface*> pics;
+  std::vector<std::string> loadedPictures;
 
   for(auto p : pictures){
     SDL_Surface* pic = IMG_Load(p.c_str());
     
-    if(pic == NULL) break;
+    if(pic == NULL) continue;
     
       // converts picture to scaled version of itself that fits to the window
     SDL_Surface* scaled = NULL;
@@ -229,8 +237,12 @@ int main(int argc, char** argv)
       scaled = SDL_CreateRGBSurface(0, (int)(pic->w*wscale), (int)(pic->h*wscale), 32,
 				    0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
       
-      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
-	return -1;
+      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0){
+	SDL_FreeSurface(pic);
+	SDL_FreeSurface(scaled);
+
+	continue;
+      }
     }
     else{
       double hscale = ((double)H)/((double)pic->h);
@@ -238,14 +250,21 @@ int main(int argc, char** argv)
       scaled = SDL_CreateRGBSurface(0, (int)(pic->w*hscale), (int)(pic->h*hscale), 32,
 				    0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
       
-      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0)
-	return -1;
+      if(SDL_BlitScaled(pic, NULL, scaled, NULL) != 0){
+	SDL_FreeSurface(pic);
+	SDL_FreeSurface(scaled);
+	continue;
+      }
     }
     
     SDL_FreeSurface(pic);
     
     pics.push_back(scaled);
+    loadedPictures.push_back(p);
   }
+
+  pictures = loadedPictures;
+  loadedPictures.clear();
 
   
   if(pics.size() == 0){
