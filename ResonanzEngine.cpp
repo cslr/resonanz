@@ -1860,7 +1860,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 	  synthModel.downsample(100); // keeps only 100 random models
 	}
 
-	// returns true if could load at least one model for keywords and models
+	// returns true if could load at least one model for pictures
 	return (pictureModelsLoaded > 0);
 }
 
