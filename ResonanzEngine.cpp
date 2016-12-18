@@ -1823,7 +1823,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 			continue;
 		}
 		
-		keywordModels[i].downsample(100); // keeps only 100 random models
+		keywordModels[i].downsample(100); // keeps only 100 random samples
 
 		keywordModelsLoaded++;
 		
@@ -3559,7 +3559,13 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 	
 	// reports average samples in each dataset
 	{
-	  keyword_num_samples /= keywordData.size();
+	  if(keywordData.size() > 0){
+	    keyword_num_samples /= keywordData.size();
+	  }
+	  else{
+	    keyword_num_samples = 0.0f;
+	  }
+	  
 	  picture_num_samples /= pictureData.size();
 	  synth_num_samples   /= 1;
 	  

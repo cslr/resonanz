@@ -1,16 +1,10 @@
 
 TODO
 
-- Novel Insight Scoring (Predicta)
+- novel insight scoring (known bugs)
 
-  * add Optimization time
-    	5 minutes
-	10 minutes
-	30 minutes
-	1 hour
-	6 hours
-	12 hours
-	24 hours
+  - when calculating results keep only 50% newest samples
+  - UI: disable all UI elements while optimizing
 
 
 
