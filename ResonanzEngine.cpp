@@ -2341,7 +2341,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 // executes program blindly based on Monte Carlo sampling and prediction models
 // [only works for low dimensional target signals and well-trained models]
 bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
-		const std::vector<float>& eegTargetVariance, float timestep_)
+						     const std::vector<float>& eegTargetVariance, float timestep_)
 {
 	int bestKeyword = -1;
 	int bestPicture = -1;
@@ -2357,7 +2357,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	}
 
 	if(mcsamples.size() <= 0)
-		return false; // internal program error should have MC samples
+	        return false; // internal program error should have MC samples
 
 
 	for(unsigned int index=0;index<keywordModels.size();index++){
@@ -2492,17 +2492,25 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 
 		engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
-
-	if(bestKeyword < 0 || bestPicture < 0){
+	
+	if(bestPicture < 0){
 		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
 		engine_pollEvents();
 		return false;
 	}
 	else{
-		char buffer[80];
-		snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
-				keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
-		logging.info(buffer);
+	        if(bestKeyword < 0 || bestPicture < 0){
+		  char buffer[80];
+		  snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
+			   keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
+		  logging.info(buffer);
+		}
+		else{
+		  char buffer[80];
+		  snprintf(buffer, 80, "prediction model selected best picture: %s",
+			   pictures[bestPicture].c_str());
+		  logging.info(buffer);
+		}
 	}
 
 
@@ -2514,7 +2522,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	{
 		for(auto& x : mcsamples){
 
-			if((rand()&1) == 0){ // use keyword model to predict the outcome
+			if((rand()&1) == 0 && bestKeyword >= 0){ // use keyword model to predict the outcome
 				const auto& index = bestKeyword;
 
 				whiteice::bayesian_nnetwork<>& model = keywordModels[index];
@@ -2588,11 +2596,8 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	}
 
 	// now we have best picture and keyword that is predicted
-	// to change users state to target value: show them
+	// to change users state to target value: show them	
 
-	std::string message = keywords[bestKeyword];
-	
-	
 	{
 	  std::vector<float> synthParams;
 	  if(synth){
@@ -2601,7 +2606,14 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	      synthParams[i] = 0.0f;
 	  }
 
-	  engine_showScreen(message, bestPicture, synthParams);
+	  if(bestKeyword >= 0){
+	    std::string message = keywords[bestKeyword];
+	    engine_showScreen(message, bestPicture, synthParams);
+	  }
+	  else{
+	    std::string message = " ";
+	    engine_showScreen(message, bestPicture, synthParams);
+	  }
 	}
 
 	engine_updateScreen();
@@ -3270,9 +3282,15 @@ bool ResonanzEngine::engine_loadMedia(const std::string& picdir, const std::stri
 
 	// first we get picture names from directories and keywords from keyfile
 	if(this->loadWords(keyfile, tempKeywords) == false){
+	  logging.warn("loading keyword file FAILED.");
+	}
+
+#if 0
+	if(this->loadWords(keyfile, tempKeywords) == false){
 	  logging.error("loading keyword file FAILED.");
 	  return false;
 	}
+#endif
 		
 
 	std::vector<std::string> tempPictures;

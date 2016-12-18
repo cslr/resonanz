@@ -44,7 +44,7 @@ bool SDLSoundSynthesis::play()
     // prints audio devices
     const int numDevices = SDL_GetNumAudioDevices(0);
     if(numDevices >= 0)
-      printf("Number of audio devices: %ḍn", numDevices);
+      printf("Number of audio devices: %ḍ\n", numDevices);
     
     for(int i=0;i<numDevices;i++){
       printf("Audio device %d: %s\n", i, SDL_GetAudioDeviceName(i, 0));
