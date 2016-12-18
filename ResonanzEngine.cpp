@@ -1770,8 +1770,8 @@ void ResonanzEngine::engine_loop()
 // loads prediction models for program execution, returns false in case of failure
 bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 {
-	if(keywords.size() <= 0 || pictures.size() <= 0)
-		return false; // no loaded keywords or pictures       	
+	if(pictures.size() <= 0)
+		return false; // no loaded pictures       	
 
 	pictureModels.resize(pictures.size());
 	
@@ -1861,7 +1861,7 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 	}
 
 	// returns true if could load at least one model for keywords and models
-	return (pictureModelsLoaded > 0 && keywordModelsLoaded > 0);
+	return (pictureModelsLoaded > 0);
 }
 
 
@@ -4524,27 +4524,27 @@ bool ResonanzEngine::measureColor(SDL_Surface* image, SDL_Color& averageColor)
 
 bool ResonanzEngine::loadWords(const std::string filename, std::vector<std::string>& words) const
 {
-	FILE* handle = fopen(filename.c_str(), "rt");
-
-	if(handle == 0)
-		return false;
-
-	char buffer[256];
-
-	while(fgets(buffer, 256, handle) == buffer){
-		const int N = strlen(buffer);
-
-		for(int i=0;i<N;i++)
-			if(buffer[i] == '\n')
-				buffer[i] = '\0';
-
-		if(strlen(buffer) > 1)
-			words.push_back(buffer);
-	}
-
-	fclose(handle);
-
-	return true;
+  FILE* handle = fopen(filename.c_str(), "rt");
+  
+  if(handle == 0)
+    return false;
+  
+  char buffer[256];
+  
+  while(fgets(buffer, 256, handle) == buffer){
+    const int N = strlen(buffer);
+    
+    for(int i=0;i<N;i++)
+      if(buffer[i] == '\n' || buffer[i] == '\r')
+	buffer[i] = '\0';
+    
+    if(strlen(buffer) > 1)
+      words.push_back(buffer);
+  }
+  
+  fclose(handle);
+  
+  return true;
 }
 
 
