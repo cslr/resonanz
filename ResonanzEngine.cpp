@@ -1184,7 +1184,7 @@ void ResonanzEngine::engine_loop()
 						mcsamples.clear();
 
 						for(unsigned int i=0;i<MONTE_CARLO_SIZE;i++){
-							math::vertex<> u(names.size());
+						        math::vertex<> u(names.size());
 							for(unsigned int j=0;j<u.size();j++)
 							        u[j] = rng.uniform(); // [0,1] valued signals sampled from [0,1]^D
 							mcsamples.push_back(u);
@@ -2589,6 +2589,12 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 			for(unsigned int i=0;i<x.size();i++){
 				if(x[i] < 0.0f) x[i] = 0.0f;
 				else if(x[i] > 1.0f) x[i] = 1.0f;
+			}
+
+			// 20% of the samples will be reset to random points (viewer state "resets")
+			if(rng.uniform() < 0.20){
+			  for(unsigned int j=0;j<x.size();j++)
+			    x[j] = rng.uniform(); // [0,1] valued signals sampled from [0,1]^D
 			}
 
 			engine_pollEvents(); // polls for incoming events in case there are lots of samples
