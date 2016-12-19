@@ -2494,12 +2494,12 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 	}
 	
 	if(bestPicture < 0){
-		logging.error("Execute command couldn't find picture or keyword command to show (no models?)");
+		logging.error("Execute command couldn't find picture to show (no models?)");
 		engine_pollEvents();
 		return false;
 	}
 	else{
-	        if(bestKeyword < 0 || bestPicture < 0){
+	        if(bestKeyword >= 0 && bestPicture >= 0){
 		  char buffer[80];
 		  snprintf(buffer, 80, "prediction model selected keyword/best picture: %s %s",
 			   keywords[bestKeyword].c_str(), pictures[bestPicture].c_str());
