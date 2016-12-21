@@ -1437,10 +1437,9 @@ void ResonanzEngine::engine_loop()
 
 				engine_pollEvents();
 
-				
 				if(engine_storeMeasurement(pic, key, eegBefore, eegAfter,
 							   synthBefore, synthCurrent) == false)
-				  logging.error("store measurement failed");
+				  logging.error("Store measurement failed");
 			}
 			else if(pictures.size() > 0){
 				unsigned int pic = rng.rand() % pictures.size();
@@ -1999,7 +1998,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  
 	  if(mean_ratio > 1.0f){
 	    char buffer[80];
-	    snprintf(buffer, 80, "Optimizing program: KEYWORD PREDICTOR ERROR LARGER THAN OUTPUT (%.2fx larger)", mean_ratio);
+	    snprintf(buffer, 80, "Optimizing program: KEYWORD PREDICTOR ERROR LARGER THAN OUTPUT (%.2f larger)", mean_ratio);
 	    logging.warn(buffer);	    
 	  }
 	}
@@ -2105,7 +2104,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  
 	  if(mean_ratio > 1.0f){
 	    char buffer[80];
-	    snprintf(buffer, 80, "Optimizing program: PICTURE PREDICTOR ERROR LARGER THAN OUTPUT (%.2fx larger)", mean_ratio);
+	    snprintf(buffer, 80, "Optimizing program: PICTURE PREDICTOR ERROR LARGER THAN OUTPUT (%.2f larger)", mean_ratio);
 	    logging.warn(buffer);	    
 	  }
 	}
@@ -3668,6 +3667,11 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 		t1[i] = eegBefore[i];
 		t2[i] = (eegAfter[i] - eegBefore[i])/delta; // stores aprox "derivate": dEEG/dt
 	}
+
+	std::cout << "== DELTA EEG ==" << std::endl;
+	for(unsigned int i=0;i<t2.size();i++)
+	  std::cout << t2[i] << " ";
+	std::cout << std::endl;
 
 	if(key < keywordData.size()){
 	  if(keywordData[key].add(0, t1) == false || keywordData[key].add(1, t2) == false){
