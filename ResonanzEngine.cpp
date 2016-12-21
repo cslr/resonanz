@@ -706,7 +706,7 @@ bool ResonanzEngine::setParameter(const std::string& parameter, const std::strin
 
 void ResonanzEngine::engine_loop()
 {
-	logging.info("engine_loop() started");
+        logging.info("engine_loop() started");
 
 
 #ifdef _WIN32
@@ -728,6 +728,8 @@ void ResonanzEngine::engine_loop()
 
 	long long lastTickProcessed = -1;
 	tick = 0;
+	
+	long long eegLastTickConnectionOk = tick;
 
 	// later autodetected to good values based on display screen resolution
 	SCREEN_WIDTH  = 800;
@@ -798,13 +800,13 @@ void ResonanzEngine::engine_loop()
 			if(tick < currentTick)
 			 	tick = currentTick;
 			else
-				engine_sleep(TICK_MS/5);
+				engine_sleep(TICK_MS/10);
 		}
 
 		lastTickProcessed = tick;
-
-
-
+		
+		
+		
 		ResonanzCommand prevCommand = currentCommand;
 		if(engine_checkIncomingCommand() == true){
 			logging.info("new engine command received");
@@ -1203,7 +1205,7 @@ void ResonanzEngine::engine_loop()
 					auto t0ms = std::chrono::duration_cast<std::chrono::milliseconds>(t0).count();
 					programStarted = t0ms;
 					lastProgramSecond = -1;
-
+					
 					// RMS performance error calculation
 					programRMS = 0.0f;
 					programRMS_N = 0;
@@ -1346,8 +1348,14 @@ void ResonanzEngine::engine_loop()
 						logging.warn("random stimulus: engine_showScreen() failed.");
 				}
 				else{
-					unsigned int pic = rng.rand() % pictures.size();
-
+				        auto& pic = currentPic;
+					
+				        if(tick - latestKeyPicChangeTick > SHOWTIME_TICKS){
+					  pic = rng.rand() % pictures.size();
+					  
+					  latestKeyPicChangeTick = tick;
+					}
+					
 					std::vector<float> sndparams;
 
 					if(synth != NULL){
@@ -1368,7 +1376,7 @@ void ResonanzEngine::engine_loop()
 			engine_setStatus("resonanz-engine: measuring eeg-responses..");
 
 			if(eeg->connectionOk() == false){
-			        eegConnectionDownTime += TICK_MS;
+			        eegConnectionDownTime = TICK_MS*(tick - eegLastTickConnectionOk);
 				
 				if(eegConnectionDownTime >= 2000){
 				  logging.info("measure command: eeg connection failed => aborting measurements");
@@ -1382,6 +1390,7 @@ void ResonanzEngine::engine_loop()
 			}
 			else{
 			  eegConnectionDownTime = 0;
+			  eegLastTickConnectionOk = tick;
 			}
 			
 
@@ -1506,195 +1515,210 @@ void ResonanzEngine::engine_loop()
 
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_EXECUTE){
-		        logging.info("resonanz-engine: executing program..");
-			engine_setStatus("resonanz-engine: executing program..");
-
-			engine_stopHibernation();
-
-			auto t1 = std::chrono::system_clock::now().time_since_epoch();
-			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
-
-			long long currentSecond = (long long)
-					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
+		  logging.info("resonanz-engine: executing program..");
+		  engine_setStatus("resonanz-engine: executing program..");
+		  
+		  engine_stopHibernation();
+		  
+		  auto t1 = std::chrono::system_clock::now().time_since_epoch();
+		  auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+		  
+		  long long currentSecond = (long long)
+		    (programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
 			
-			
-			if(loopMode){
+		  
+		  if(loopMode){
+		    
+		    if(currentSecond/programHz >= program[0].size()){ // => restarts program
+		      currentSecond = 0;
+		      lastProgramSecond = -1;
+		      
+		      auto t1 = std::chrono::system_clock::now().time_since_epoch();
+		      auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+		      
+		      programStarted = (long long)t1ms;
+		    }
+		  }
+		  
+		  if(currentSecond > lastProgramSecond && lastProgramSecond >= 0){
+		    eeg->data(eegCurrent);
 
-			  if(currentSecond >= program[0].size()){ // => restarts program
-			    currentSecond = 0;
-			    lastProgramSecond = -1;
-			    
-			    auto t1 = std::chrono::system_clock::now().time_since_epoch();
-			    auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
-			    
-			    programStarted = (long long)t1ms;
-			  }
-			}
-
-			if(currentSecond > lastProgramSecond && lastProgramSecond >= 0){
-				eeg->data(eegCurrent);
-
-				logging.info("Calculating RMS error");
-
-				// calculates RMS error
-				std::vector<float> current;
-				std::vector<float> target;
-				std::vector<float> eegTargetVariance;
-
-				target.resize(program.size());
-				eegTargetVariance.resize(program.size());
-
-				for(unsigned int i=0;i<program.size();i++){
-					// what was our target BEFORE this time tick [did we move to target state]
-					target[i] = program[i][lastProgramSecond];
-					eegTargetVariance[i] = programVar[i][lastProgramSecond];
-				}
-
-				eeg->data(current);
-
-				if(target.size() == current.size()){
-					float rms = 0.0f;
-					for(unsigned int i=0;i<target.size();i++){
-						rms += (current[i] - target[i])*(current[i] - target[i])/eegTargetVariance[i];
-					}
-					
-					rms = sqrt(rms);
-					
-					{
-					  char buffer[80];
-					  snprintf(buffer, 80, "Program current RMS error: %.2f (average RMS error: %.2f)",
-						   rms, programRMS/programRMS_N);
-					  logging.info(buffer);
-					}
-					
-					// adds current rms to the global RMS
-					programRMS += rms;
-					programRMS_N++;
-				}
-			}
-			else if(currentSecond > lastProgramSecond && lastProgramSecond < 0){
-				eeg->data(eegCurrent);
-			}
-
-			lastProgramSecond = currentSecond;
-
-			{
-			  char buffer[80];
-			  snprintf(buffer, 80, "Executing program (pseudo)second: %d/%d", currentSecond, program[0].size());
-			  logging.info(buffer);
-			}
-
-
-			if(currentSecond < (signed)program[0].size()){
-			        logging.info("Executing program: calculating current targets");
-				
-				// executes program
-				std::vector<float> eegTarget;
-				std::vector<float> eegTargetVariance;
-
-				eegTarget.resize(eegCurrent.size());
-				eegTargetVariance.resize(eegCurrent.size());
-
-				for(unsigned int i=0;i<eegTarget.size();i++){
-					eegTarget[i] = program[i][currentSecond];
-					eegTargetVariance[i] = programVar[i][currentSecond];
-				}
-
-				// shows picture/keyword which model predicts to give closest match to target
-				// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
-
-				const float timedelta = 1.0f; // current delta between pictures [in seconds]
-
-				if(currentCommand.blindMonteCarlo == false)
-					engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance, timedelta);
-				else
-					engine_executeProgramMonteCarlo(eegTarget, eegTargetVariance, timedelta);
-			}
-			else{
-
-				// program has run to the end => stop
-				logging.info("Executing the given program has stopped [program stop time].");
-
-				if(video){
-					auto t1 = std::chrono::system_clock::now().time_since_epoch();
-					auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
-
-					logging.info("stopping theora video encoding.");
-
-					video->stopEncoding(t1ms - programStarted);
-					delete video;
-					video = nullptr;
-				}
-
-				cmdStopCommand();
-			}
+		    logging.info("Calculating RMS error");
+		    
+		    // calculates RMS error
+		    std::vector<float> current;
+		    std::vector<float> target;
+		    std::vector<float> eegTargetVariance;
+		    
+		    target.resize(program.size());
+		    eegTargetVariance.resize(program.size());
+		    
+		    for(unsigned int i=0;i<program.size();i++){
+		      // what was our target BEFORE this time tick [did we move to target state]
+		      target[i] = program[i][lastProgramSecond/programHz];
+		      eegTargetVariance[i] = programVar[i][lastProgramSecond/programHz];
+		    }
+		    
+		    eeg->data(current);
+		    
+		    if(target.size() == current.size()){
+		      float rms = 0.0f;
+		      for(unsigned int i=0;i<target.size();i++){
+			rms += (current[i] - target[i])*(current[i] - target[i])/eegTargetVariance[i];
+		      }
+		      
+		      rms = sqrt(rms);
+		      
+		      // adds current rms to the global RMS
+		      programRMS += rms;
+		      programRMS_N++;
+		      
+		      {
+			char buffer[256];
+			snprintf(buffer, 256, "Program current RMS error: %.2f (average RMS error: %.2f)",
+				 rms, programRMS/programRMS_N);
+			logging.info(buffer);
+		      }					
+		    }
+		  }
+		  else if(currentSecond > lastProgramSecond && lastProgramSecond < 0){
+		    eeg->data(eegCurrent);
+		  }
+		  
+		  lastProgramSecond = currentSecond;
+		  
+		  {
+		    char buffer[80];
+		    snprintf(buffer, 80, "Executing program (pseudo)second: %d/%d",
+			     (unsigned int)(currentSecond/programHz), program[0].size());
+		    logging.info(buffer);
+		  }
+		  
+		  
+		  if(currentSecond/programHz < (signed)program[0].size()){
+		    logging.info("Executing program: calculating current targets");
+		    
+		    // executes program
+		    std::vector<float> eegTarget;
+		    std::vector<float> eegTargetVariance;
+		    
+		    eegTarget.resize(eegCurrent.size());
+		    eegTargetVariance.resize(eegCurrent.size());
+			  
+		    for(unsigned int i=0;i<eegTarget.size();i++){
+		      eegTarget[i] = program[i][currentSecond/programHz];
+		      eegTargetVariance[i] = programVar[i][currentSecond/programHz];
+		    }
+		    
+		    // shows picture/keyword which model predicts to give closest match to target
+		    // minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
+		    
+		    const float timedelta = 1.0f/programHz; // current delta between pictures [in seconds]
+		    
+		    if(currentCommand.blindMonteCarlo == false)
+		      engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance, timedelta);
+		    else
+		      engine_executeProgramMonteCarlo(eegTarget, eegTargetVariance, timedelta);
+		  }
+		  else{
+		    
+		    // program has run to the end => stop
+		    logging.info("Executing the given program has stopped [program stop time].");
+		    
+		    if(video){
+		      auto t1 = std::chrono::system_clock::now().time_since_epoch();
+		      auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+		      
+		      logging.info("stopping theora video encoding.");
+		      
+		      video->stopEncoding(t1ms - programStarted);
+		      delete video;
+		      video = nullptr;
+		    }
+		    
+		    cmdStopCommand();
+		  }
 		}
 		else if(currentCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
-			engine_setStatus("resonanz-engine: measuring program..");
+		  engine_setStatus("resonanz-engine: measuring program..");
+		  
+		  engine_stopHibernation();
+		  
+		  auto t1 = std::chrono::system_clock::now().time_since_epoch();
+		  auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
+		  
+		  long long currentSecond = (long long)
+		    (programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
+		  
+		  if(currentSecond <= lastProgramSecond)
+		    continue; // nothing to do
 
-			engine_stopHibernation();
+		  // measures new measurements
+		  for(;lastProgramSecond <= currentSecond; lastProgramSecond++){
+		    // measurement program continues: just measures values and do nothing
+		    // as the background thread currently handles playing of the music
+		    // LATER: do video decoding and showing..
+		    
+		    std::vector<float> values(eeg->getNumberOfSignals());
+		    eeg->data(values);
+		    
+		    for(unsigned int i=0;i<rawMeasuredSignals.size();i++)
+		      rawMeasuredSignals[i].push_back(values[i]);
+		  }
+		  
+		  
+		  if(currentSecond < currentCommand.programLengthTicks){
+		    engine_updateScreen();
+		    engine_pollEvents();
+		  }
+		  else{
+		    // stops measuring program:
+		    // transforms raw signals into measuredProgram values
+		    
+		    std::lock_guard<std::mutex> lock(measure_program_mutex);
+		    
+		    std::vector<std::string> names;
+		    eeg->getSignalNames(names);
+		    
+		    measuredProgram.resize(currentCommand.signalName.size());
+			  
+		    for(unsigned int i=0;i<measuredProgram.size();i++){
+		      measuredProgram[i].resize(currentCommand.programLengthTicks);
+		      for(auto& m : measuredProgram[i])
+			m = -1.0f;
+		    }
+		    
+		    for(unsigned int j=0;j<currentCommand.signalName.size();j++){
+		      for(unsigned int n=0;n<names.size();n++){
+			if(names[n] == currentCommand.signalName[j]){ // finds a matching signal in a command
+			  unsigned int MIN = measuredProgram[j].size();
+			  if(rawMeasuredSignals[n].size() < MIN*programHz)
+			    MIN = rawMeasuredSignals[n].size()/programHz;
+			  
+			  for(unsigned int i=0;i<MIN;i++){
+			    auto mean = 0.0f;
+			    auto N = 0.0f;
+			    for(unsigned int k=0;k<programHz;k++){
+			      if(rawMeasuredSignals[n][i*programHz + k] >= 0.0f){
+				mean += rawMeasuredSignals[n][i*programHz + k];
+				N++;
+			      }
+			    }
 
-			auto t1 = std::chrono::system_clock::now().time_since_epoch();
-			auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
-
-			long long currentSecond = (long long)
-					(programHz*(t1ms - programStarted)/1000.0f); // gets current second for the program value
-
-			if(currentSecond <= lastProgramSecond)
-				continue; // nothing to do
-
-			lastProgramSecond = currentSecond;
-
-			if(currentSecond < currentCommand.programLengthTicks){
-				// measurement program continues: just measures values and do nothing
-				// as the background thread currently handles playing of the music
-				// LATER: do video decoding and showing..
-
-				std::vector<float> values(eeg->getNumberOfSignals());
-				eeg->data(values);
-
-				for(unsigned int i=0;i<rawMeasuredSignals.size();i++)
-					rawMeasuredSignals[i].push_back(values[i]);
-
-				engine_updateScreen();
-				engine_pollEvents();
+			    if(N > 0.0f)
+			      measuredProgram[j][i] = mean / N;
+			    else
+			      measuredProgram[j][i] = 0.5f;
+			  }
+			  
 			}
-			else{
-				// stops measuring program:
-				// transforms raw signals into measuredProgram values
-
-				std::lock_guard<std::mutex> lock(measure_program_mutex);
-
-				std::vector<std::string> names;
-				eeg->getSignalNames(names);
-
-				measuredProgram.resize(currentCommand.signalName.size());
-
-				for(unsigned int i=0;i<measuredProgram.size();i++){
-					measuredProgram[i].resize(currentCommand.programLengthTicks);
-					for(auto& m : measuredProgram[i])
-						m = -1.0f;
-				}
-
-				for(unsigned int j=0;j<currentCommand.signalName.size();j++){
-					for(unsigned int n=0;n<names.size();n++){
-						if(names[n] == currentCommand.signalName[j]){ // finds a matching signal in a command
-							unsigned int MIN = measuredProgram[j].size();
-							if(rawMeasuredSignals[n].size() < MIN)
-								MIN = rawMeasuredSignals[n].size();
-							for(unsigned int i=0;i<MIN;i++){
-								if(rawMeasuredSignals[n][i] >= 0.0f){
-									measuredProgram[j][i] = rawMeasuredSignals[n][i];
-								}
-							}
-						}
-					}
-				}
-
-				cmdStopCommand();
-			}
+		      }
+		    }
+		    
+		    cmdStopCommand();
+		  }
 		}
-
+		
 		engine_pollEvents();
 
 		if(keypress()){
@@ -1704,7 +1728,7 @@ void ResonanzEngine::engine_loop()
 			}
 		}
 
-		// monitors current emotiv eeg values and logs them into log file
+		// monitors current eeg values and logs them into log file
 		{
 			std::lock_guard<std::mutex> lock(eeg_mutex); // mutex might change below use otherwise..
 
