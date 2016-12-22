@@ -89,7 +89,7 @@ ResonanzEngine::ResonanzEngine()
 		
 		std::vector<unsigned int> nnArchitecture;
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
-		// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
@@ -450,7 +450,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		{
 			std::vector<unsigned int> nnArchitecture;
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
-			// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
 
@@ -513,7 +513,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		{
 			std::vector<unsigned int> nnArchitecture;
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
-			// nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
 
@@ -921,11 +921,12 @@ void ResonanzEngine::engine_loop()
 				}
 			}
 			else if(prevCommand.command == ResonanzCommand::CMD_DO_MEASURE_PROGRAM){
-				// clears internal data structure
-				rawMeasuredSignals.clear();
 
-				if(prevCommand.audioFile.length() > 0)
-					engine_stopAudioFile();
+			  // clears internal data structure
+			  rawMeasuredSignals.clear();
+		    
+			  if(prevCommand.audioFile.length() > 0)
+			    engine_stopAudioFile();
 			}
 
 			// state exit/entry actions:
@@ -1613,6 +1614,7 @@ void ResonanzEngine::engine_loop()
 		    // minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 		    
 		    const float timedelta = 1.0f/programHz; // current delta between pictures [in seconds]
+
 		    
 		    if(currentCommand.blindMonteCarlo == false)
 		      engine_executeProgram(eegCurrent, eegTarget, eegTargetVariance, timedelta);
@@ -1671,7 +1673,8 @@ void ResonanzEngine::engine_loop()
 		    engine_pollEvents();
 		  }
 		  else{
-		    // stops measuring program:
+		    // stops measuring program
+
 		    // transforms raw signals into measuredProgram values
 		    
 		    std::lock_guard<std::mutex> lock(measure_program_mutex);
@@ -1680,7 +1683,7 @@ void ResonanzEngine::engine_loop()
 		    eeg->getSignalNames(names);
 		    
 		    measuredProgram.resize(currentCommand.signalName.size());
-			  
+		    
 		    for(unsigned int i=0;i<measuredProgram.size();i++){
 		      measuredProgram[i].resize(currentCommand.programLengthTicks);
 		      for(auto& m : measuredProgram[i])
@@ -1695,6 +1698,7 @@ void ResonanzEngine::engine_loop()
 			    MIN = rawMeasuredSignals[n].size()/programHz;
 			  
 			  for(unsigned int i=0;i<MIN;i++){
+			    
 			    auto mean = 0.0f;
 			    auto N = 0.0f;
 			    for(unsigned int k=0;k<programHz;k++){
@@ -1703,16 +1707,18 @@ void ResonanzEngine::engine_loop()
 				N++;
 			      }
 			    }
-
+			    
 			    if(N > 0.0f)
 			      measuredProgram[j][i] = mean / N;
 			    else
 			      measuredProgram[j][i] = 0.5f;
+			    
 			  }
 			  
 			}
 		      }
 		    }
+		    
 		    
 		    cmdStopCommand();
 		  }
@@ -1721,10 +1727,12 @@ void ResonanzEngine::engine_loop()
 		engine_pollEvents();
 
 		if(keypress()){
-			if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING){
-				logging.info("Received keypress: stopping command..");
-				cmdStopCommand();
-			}
+		  if(currentCommand.command != ResonanzCommand::CMD_DO_NOTHING &&
+		     currentCommand.command != ResonanzCommand::CMD_DO_MEASURE_PROGRAM)
+		  {
+		    logging.info("Received keypress: stopping command..");
+		    cmdStopCommand();
+		  }
 		}
 
 		// monitors current eeg values and logs them into log file
@@ -1903,7 +1911,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 	math::vertex<> target(eegTarget.size());
 	math::vertex<> targetVariance(eegTargetVariance.size());
-	whiteice::math::blas_real<float> timestep = timestep_;
+	const whiteice::math::blas_real<float> timestep = timestep_;
 
 	for(unsigned int i=0;i<target.size();i++){
 		target[i] = eegTarget[i];
@@ -1943,7 +1951,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 				continue; // bad model/data => ignore
 			}
 
-			if(model.calculate(x, m, cov) == false){
+			if(model.calculate(x, m, cov, 1, 0) == false){
 				logging.warn("skipping bad keyword prediction model");
 				continue;
 			}
@@ -1990,6 +1998,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	
 	
 	// estimates quality of results
+	if(model_error_ratio.size() > 0)
 	{
 	  float mean_ratio = 0.0f;
 	  for(auto& r : model_error_ratio)
@@ -2050,10 +2059,11 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 				continue; // bad model/data => ignore
 			}
 
-			if(model.calculate(x, m, cov) == false){
+			if(model.calculate(x, m, cov, 1, 0) == false){
 				logging.warn("skipping bad picture prediction model");
 				continue;
 			}
+
 		}
 
 		if(pictureData[index].invpreprocess(1, m) == false){
@@ -2090,12 +2100,13 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		p.second = index;
 
 		results[index] = p;
-
+		
 		// engine_pollEvents(); // polls for incoming events in case there are lots of models
 	}
 	
 	
 	// estimates quality of results
+	if(model_error_ratio.size() > 0)
 	{
 	  float mean_ratio = 0.0f;
 	  for(auto& r : model_error_ratio)
@@ -2223,7 +2234,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		continue; // bad model/data => ignore
 	      }
 	      
-	      if(model.calculate(x, m, cov) == false){
+	      if(model.calculate(x, m, cov, 1, 0) == false){
 		logging.warn("skipping bad synth prediction model");
 		continue;
 	      }
@@ -2406,7 +2417,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 			math::vertex<> m;
 			math::matrix<> cov;
 
-			if(model.calculate(x, m, cov) == false){
+			if(model.calculate(x, m, cov, 1, 0) == false){
 				logging.warn("skipping bad keyword prediction model");
 				continue;
 			}
@@ -2474,7 +2485,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 			math::vertex<> m;
 			math::matrix<> cov;
 
-			if(model.calculate(x, m, cov) == false){
+			if(model.calculate(x, m, cov, 1, 0) == false){
 				logging.warn("skipping bad picture prediction model");
 				continue;
 			}
@@ -2558,7 +2569,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				math::vertex<> m;
 				math::matrix<> cov;
 
-				if(model.calculate(x, m, cov) == false){
+				if(model.calculate(x, m, cov, 1 ,0) == false){
 					logging.warn("skipping bad keyword prediction model");
 					continue;
 				}
@@ -2588,7 +2599,7 @@ bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& e
 				math::vertex<> m;
 				math::matrix<> cov;
 
-				if(model.calculate(x, m, cov) == false){
+				if(model.calculate(x, m, cov, 1, 0) == false){
 					logging.warn("skipping bad picture prediction model");
 					continue;
 				}
@@ -3214,52 +3225,48 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 bool ResonanzEngine::engine_estimateNN(const whiteice::math::vertex<>& x, const whiteice::dataset<>& data,
 		whiteice::math::vertex<>& m, whiteice::math::matrix<>& cov)
 {
-	bool bad_data = false;
-
-	if(data.size(0) <= 1) bad_data = true;
-	if(data.getNumberOfClusters() != 2) bad_data = true;
-	if(bad_data == false){
-		if(data.size(0) != data.size(1))
-			bad_data = true;
-	}
-
-	if(bad_data){
-		m = x;
-		cov.resize(x.size(), x.size());
-		cov.identity();
-
-		return true;
-	}
-
-	m.resize(x.size());
-	m.zero();
-	cov.resize(x.size(),x.size());
-	cov.zero();
-	const float epsilon    = 1.0f;
-	math::blas_real<float> sumweights = 0.0f;
-
-	for(unsigned int i=0;i<data.size(0);i++){
-	        // char buffer[80];
-		// snprintf(buffer, 80, "x size: %d data size: %d", x.size(), data.access(0,i).size());
-		// logging.info(buffer);
-
-		auto delta = x - data.access(0, i);
-		auto w = math::blas_real<float>(1.0f / (epsilon + delta.norm().c[0]));
-
-		auto v = data.access(1, i);
-
-		m += w*v;
-		cov += w*v.outerproduct();
-
-		sumweights += w;
-	}
-
-	m /= sumweights;
-	cov /= sumweights;
-
-	cov -= m.outerproduct();
-
-	return true;
+  bool bad_data = false;
+  
+  if(data.size(0) <= 1) bad_data = true;
+  if(data.getNumberOfClusters() != 2) bad_data = true;
+  if(bad_data == false){
+    if(data.size(0) != data.size(1))
+      bad_data = true;
+  }
+  
+  if(bad_data){
+    m = x;
+    cov.resize(x.size(), x.size());
+    cov.identity();
+    
+    return true;
+  }
+  
+  m.resize(x.size());
+  m.zero();
+  cov.resize(x.size(),x.size());
+  cov.zero();
+  const float epsilon    = 1.0f;
+  math::blas_real<float> sumweights = 0.0f;
+  
+  for(unsigned int i=0;i<data.size(0);i++){
+    auto delta = x - data.access(0, i);
+    auto w = math::blas_real<float>(1.0f / (epsilon + delta.norm().c[0]));
+	  
+    auto v = data.access(1, i);
+    
+    m += w*v;
+    cov += w*v.outerproduct();
+    
+    sumweights += w;
+  }
+  
+  m /= sumweights;
+  cov /= sumweights;
+  
+  cov -= m.outerproduct();
+  
+  return true;
 }
 
 
@@ -3667,11 +3674,6 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
 		t1[i] = eegBefore[i];
 		t2[i] = (eegAfter[i] - eegBefore[i])/delta; // stores aprox "derivate": dEEG/dt
 	}
-
-	std::cout << "== DELTA EEG ==" << std::endl;
-	for(unsigned int i=0;i<t2.size();i++)
-	  std::cout << t2[i] << " ";
-	std::cout << std::endl;
 
 	if(key < keywordData.size()){
 	  if(keywordData[key].add(0, t1) == false || keywordData[key].add(1, t2) == false){
@@ -4696,7 +4698,7 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir) const
 
 				auto x = ds.access(0, i);
 
-				if(nnet.calculate(x, m, cov) == false)
+				if(nnet.calculate(x, m, cov, 1, 0) == false)
 					continue;
 
 				auto y = ds.access(1, i);
@@ -4780,7 +4782,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	  math::vertex<> m;
 	  math::matrix<> C;
 	  
-	  if(bnn.calculate(input, m, C)){
+	  if(bnn.calculate(input, m, C, 1, 0)){
 	    auto output = data.access(1, j);
 	    
 	    // we must inv-postprocess data before calculation error
@@ -4829,7 +4831,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	  math::vertex<> m;
 	  math::matrix<> C;
 	  
-	  if(bnn.calculate(input, m, C)){
+	  if(bnn.calculate(input, m, C, 1, 0)){
 	    auto output = data.access(1, j);
 	    
 	    // we must inv-postprocess data before calculation error
@@ -4880,7 +4882,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	  math::vertex<> m;
 	  math::matrix<> C;
 	  
-	  if(bnn.calculate(input, m, C)){
+	  if(bnn.calculate(input, m, C, 1, 0)){
 	    auto output = data.access(1, j);
 	    
 	    // we must inv-postprocess data before calculation error
