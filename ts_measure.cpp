@@ -85,12 +85,10 @@ namespace whiteice{
 
 	  if(W < H) picsize = W;
 
-	  printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
+	  // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	  
 	  if(picToVector(pictures[r], picsize, v, false)){
-	    printf("A\n");
 	    if(vectorToSurface(v, picsize, scaled, false) == false){
-	      printf("B\n");
 	      continue;
 	    }
 	  }
@@ -178,7 +176,17 @@ namespace whiteice{
       
       SDL_DestroyWindow(window);
 
+      
       // stores timeseries to dataset
+      bool timeseriesValid = false;
+
+      if(timeseries.getNumberOfClusters() == 1){
+	if(timeseries.dimension(0) == dev->getNumberOfSignals()){
+	  timeseriesValid = true;
+	}
+      }
+      
+      if(timeseriesValid == false)
       {
 	timeseries.clear();
 	timeseries.createCluster("input", dev->getNumberOfSignals());
@@ -193,7 +201,20 @@ namespace whiteice{
 	  
 	  timeseries.add(0, a);
 	}
+      }
+      else{
+	// just adds extra data
 	
+	whiteice::math::vertex< whiteice::math::blas_real<double> > a;
+	a.resize(dev->getNumberOfSignals());
+
+	for(unsigned int t=0;t<timeseriesData.size();t++){
+	  for(unsigned int i=0;i<a.size();i++){
+	    a[i] = timeseriesData[t][i];
+	  }
+	  
+	  timeseries.add(0, a);
+	}
       }
       
       

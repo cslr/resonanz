@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #include <dinrhiw/dinrhiw.h>
 
@@ -86,22 +87,32 @@ int main(int argc, char** argv)
   
   //////////////////////////////////////////////////////////////////////
 
-  if(cmd == "--measure"){
-
+  if(cmd == "--measure1"){
     DataSource* dev = nullptr;
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    timeseries.load(timeseriesFile); // attempts to load previously measured time-series
     
     if(measureRandomPicturesAndTimeSeries(dev, pictures,
 					  DISPLAYTIME, timeseries) == false)
     {
-      printf("ERROR: measuring and/or saving time series failed\n");
+      printf("ERROR: measuring time series failed\n");
 
       delete dev;
+      IMG_Quit();
+      SDL_Quit();
 
+      return -1;
+    }
+
+    if(timeseries.save(timeseriesFile) == false){
+      printf("ERROR: saving time series measurements to file failed\n");
+      
+      delete dev;
       IMG_Quit();
       SDL_Quit();
 
@@ -111,7 +122,121 @@ int main(int argc, char** argv)
     delete dev;
   }
   else if(cmd == "--learn"){
-    return -1;
+
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    
+    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
+    const unsigned int HIDDEN_STATES   = 5;
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    std::vector<unsigned int> observations;
+
+    // discretizes observations
+    std::vector<double> m, s;
+
+    // calculates parameters (mean and standard deviation)
+
+    m.resize(dev->getNumberOfSignals());
+    s.resize(dev->getNumberOfSignals());
+
+    for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
+      m[i] = 0.0;
+      s[i] = 0.0;
+    }
+    
+    for(unsigned int i=0;i<timeseries.size(0);i++){
+      auto& v = timeseries[i];
+      
+      for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
+	m[k] += v[k].c[0];
+	s[k] += v[k].c[0]*v[k].c[0];
+      }
+    }
+    
+    for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
+      m[i] /= dev->getNumberOfSignals();
+      s[i] /= dev->getNumberOfSignals();
+
+      s[i] = m[i]*m[i];
+      s[i] = sqrt(fabs(s[i]));
+    }
+
+    // DISCRETIZATION
+    
+    for(unsigned int i=0;i<timeseries.size(0);i++){
+      auto& v = timeseries[i];
+
+      unsigned int state = 0;
+
+      std::vector<unsigned int> o;
+
+      for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
+	const auto& x = v[k].c[0];
+
+	if(fabs(x - m[k]) <= 0.5*s[k]){ // within 34% of the mean
+	  o.push_back(0);
+	}
+	else if(x - m[k] <= -0.5*s[k]){
+	  o.push_back(1);
+	}
+	else{ // (x - m[k] >= +0.5*s[k])
+	  o.push_back(2);
+	}
+      }
+
+      unsigned int base = 1;
+
+      for(unsigned int k=0;k<o.size();k++){
+	state += o[k]*base;
+	base = base*3;
+      }
+
+      observations.push_back(state);
+    }
+      
+    // learns from data
+    try{
+      double logp = hmm.train(observations);
+
+      printf("DATA LIKELIHOOD: %f\n", logp);
+      
+    }
+    catch(std::invalid_argument& e){
+      printf("ERROR: learning from HMM data failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    if(hmm.save(hmmFile) == false){
+      printf("ERROR: saving HMM model failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    return 0;
   }
   else if(cmd == "--predict"){
     return -1;
@@ -133,9 +258,10 @@ int main(int argc, char** argv)
 void print_usage()
 {
   printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
-  printf("       <cmd> = \"--measure\"     stimulates cns randomly and collects time-series measurements\n");
+  printf("       <cmd> = \"--measure1\"    stimulates cns randomly and collects time-series measurements\n");
   printf("       <cmd> = \"--learn\"       optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
   printf("       <cmd> = \"--predict\"     predicts and outputs currently predicted hidden state\n");
+  printf("       <cmd> = \"--measure2\"    stimulates cns randomly and collects picture-wise information\n"); 
   printf("       <cmd> = \"--stimulate\"   uses model, pictures in directory and neural network models to push brain towards target state\n");
   printf("       <device>                'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>             path to directory (png and model files)\n");
@@ -162,9 +288,10 @@ bool parse_parameters(int argc, char** argv,
   pictures.clear();
   targets.clear();
 
-  if(cmd != "--measure" &&
+  if(cmd != "--measure1" &&
      cmd != "--learn" &&
      cmd != "--predict" &&
+     cmd != "--measure2" && 
      cmd != "--stimulate")
     return false;
 
