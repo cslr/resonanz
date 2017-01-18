@@ -15,12 +15,12 @@ namespace whiteice
     
     // opens and converts (RGB) picture to picsize*picsize sized (grayscale) vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
-		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v);
+		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v, bool hsv=true);
 
     // converts picture vector to allocated picsize*picsize SDL_Surface (RGB grayscale) for displaying and further use
     bool vectorToSurface(const whiteice::math::vertex< whiteice::math::blas_real<double> >& v,
 			 const unsigned int picsize,
-			 SDL_Surface*& surf);
+			 SDL_Surface*& surf, bool hsv=true);
 
     // optimizes/learns autoencoder for processing pictures
     bool learnPictureAutoencoder(const std::string& picdir,

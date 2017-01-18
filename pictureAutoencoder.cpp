@@ -14,10 +14,10 @@ namespace whiteice
     
     // opens and converts (RGB) picture to picsize*picsize sized grayscale vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
-		     whiteice::math::vertex< whiteice::math::blas_real<double> >& vec)
+		     whiteice::math::vertex< whiteice::math::blas_real<double> >& vec, bool hsv)
     {
       if(picsize <= 0) return false;
-      
+
       // tries to open picture
       SDL_Surface* pic = IMG_Load(picture.c_str());
 
@@ -54,7 +54,7 @@ namespace whiteice
 	SDL_FreeSurface(scaled);
 	return false;
       }
-      
+
       SDL_FreeSurface(pic);
 
       // transforms picture to a vector (HSV)
@@ -64,17 +64,29 @@ namespace whiteice
 
       for(int j=0;j<scaled->h;j++){
 	for(int i=0;i<scaled->w;i++){
-	  unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
-	  unsigned int r = (0x00FF0000 & pixel) >> 16;
-	  unsigned int g = (0x0000FF00 & pixel) >>  8;
-	  unsigned int b = (0x000000FF & pixel);
+	  if(hsv){
+	    unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
+	    unsigned int r = (0x00FF0000 & pixel) >> 16;
+	    unsigned int g = (0x0000FF00 & pixel) >>  8;
+	    unsigned int b = (0x000000FF & pixel);
+	    
+	    unsigned int h, s, v;
+	    rgb2hsv(r,g,b,h,s,v);
+	    
+	    vec[index] = (double)h/255.0; index++;
+	    vec[index] = (double)s/255.0; index++;
+	    vec[index] = (double)v/255.0; index++;
+	  }
+	  else{
+	    unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
+	    unsigned int r = (0x00FF0000 & pixel) >> 16;
+	    unsigned int g = (0x0000FF00 & pixel) >>  8;
+	    unsigned int b = (0x000000FF & pixel);
 
-	  unsigned int h, s, v;
-	  rgb2hsv(r,g,b,h,s,v);
-
-	  vec[index] = (double)h/255.0; index++;
-	  vec[index] = (double)s/255.0; index++;
-	  vec[index] = (double)v/255.0; index++;
+	    vec[index] = (double)r/255.0; index++;
+	    vec[index] = (double)g/255.0; index++;
+	    vec[index] = (double)b/255.0; index++;
+	  }
 	}
       }
 
@@ -87,7 +99,7 @@ namespace whiteice
     // converts picture vector to allocated picsize*picsize SDL_Surface (RGB) for displaying and further use
     bool vectorToSurface(const whiteice::math::vertex< whiteice::math::blas_real<double> >& vec,
 			 const unsigned int picsize,
-			 SDL_Surface*& surf)
+			 SDL_Surface*& surf, bool hsv)
     {
       if(picsize <= 0) return false;
       if(vec.size() != 3*picsize*picsize) return false;
@@ -105,27 +117,40 @@ namespace whiteice
 
       for(int j=0;j<surf->h;j++){
 	for(int i=0;i<surf->w;i++){
-	  unsigned int r = 0, g = 0, b = 0;
-	  unsigned int h = 0, s = 0, v = 0;
-	  int sh = 0, ss = 0, sv = 0;
+	  if(hsv){
+	    unsigned int r = 0, g = 0, b = 0;
+	    unsigned int h = 0, s = 0, v = 0;
+	    int sh = 0, ss = 0, sv = 0;
+	    
+	    whiteice::math::convert(sh, 255.0*vec[index]); index++;
+	    whiteice::math::convert(ss, 255.0*vec[index]); index++;
+	    whiteice::math::convert(sv, 255.0*vec[index]); index++;
+	    
+	    if(sh<0) sh = 0; if(sh>255) sh = 255;
+	    if(ss<0) ss = 0; if(ss>255) ss = 255;
+	    if(sv<0) sv = 0; if(sv>255) sv = 255;
+	    
+	    h = sh;
+	    s = ss;
+	    v = sv;
+	    
+	    hsv2rgb(h,s,v,r,g,b);
+	    
+	    const unsigned int pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
+	    
+	    ((unsigned int*)(((char*)surf->pixels) + j*surf->pitch))[i] = pixel;
+	  }
+	  else{
+	    unsigned int r = 0, g = 0, b = 0;
+	    
+	    whiteice::math::convert(r, 255.0*vec[index]); index++;
+	    whiteice::math::convert(g, 255.0*vec[index]); index++;
+	    whiteice::math::convert(b, 255.0*vec[index]); index++;
 
-	  whiteice::math::convert(sh, 255.0*vec[index]); index++;
-	  whiteice::math::convert(ss, 255.0*vec[index]); index++;
-	  whiteice::math::convert(sv, 255.0*vec[index]); index++;
-	  
-	  if(sh<0) sh = 0; if(sh>255) sh = 255;
-	  if(ss<0) ss = 0; if(ss>255) ss = 255;
-	  if(sv<0) sv = 0; if(sv>255) sv = 255;
-	  
-	  h = sh;
-	  s = ss;
-	  v = sv;
-
-	  hsv2rgb(h,s,v,r,g,b);
-	  
-	  const unsigned int pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
-	  
-	  ((unsigned int*)(((char*)surf->pixels) + j*surf->pitch))[i] = pixel;
+	    const unsigned int pixel = (((unsigned int)r)<<16) + (((unsigned int)g)<<8) + (((unsigned int)b)<<0) + 0xFF000000;
+	    
+	    ((unsigned int*)(((char*)surf->pixels) + j*surf->pitch))[i] = pixel;
+	  }
 	}
       }
       

@@ -84,10 +84,15 @@ namespace whiteice{
 	  unsigned int picsize = H;
 
 	  if(W < H) picsize = W;
+
+	  printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	  
-	  if(picToVector(pictures[r], picsize, v)){
-	    if(vectorToSurface(v, picsize, scaled) == false)
-	      continue;	    
+	  if(picToVector(pictures[r], picsize, v, false)){
+	    printf("A\n");
+	    if(vectorToSurface(v, picsize, scaled, false) == false){
+	      printf("B\n");
+	      continue;
+	    }
 	  }
 	  else continue;
 	}
