@@ -119,6 +119,8 @@ int main(int argc, char** argv)
       return -1;
     }
 
+    printf("Saving %d step length time series observation..\n", timeseries.size(0));
+
     delete dev;
   }
   else if(cmd == "--learn"){

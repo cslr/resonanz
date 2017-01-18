@@ -14,10 +14,11 @@ namespace whiteice{
     using namespace std::chrono;
     
 
-    bool measureRandomPicturesAndTimeSeries(DataSource* dev,
-					    std::vector<std::string>& pictures,
-					    const unsigned int DISPLAYTIME,
-					    whiteice::dataset< whiteice::math::blas_real<double> >& timeseries)
+    bool measureRandomPicturesAndTimeSeries
+    (DataSource* dev,
+     std::vector<std::string>& pictures,
+     const unsigned int DISPLAYTIME,
+     whiteice::dataset< whiteice::math::blas_real<double> >& timeseries)
     {
       if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0)
 	return false;
@@ -217,8 +218,7 @@ namespace whiteice{
 	}
       }
       
-      
-      
+      return true;
     }
     
   }
