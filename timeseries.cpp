@@ -241,6 +241,51 @@ int main(int argc, char** argv)
     return 0;
   }
   else if(cmd == "--predict"){
+    
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
+    const unsigned int HIDDEN_STATES   = 5;
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    if(predictHiddenState(dev, hmm, pictures,
+			  DISPLAYTIME, timeseries) == false)
+    {
+      printf("ERROR: measuring time series failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+
+    
     return -1;
   }
   else if(cmd == "--stimulate"){
