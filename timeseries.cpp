@@ -171,8 +171,8 @@ int main(int argc, char** argv)
     }
     
     for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-      m[i] /= dev->getNumberOfSignals();
-      s[i] /= dev->getNumberOfSignals();
+      m[i] /= ((double)timeseries.size(0));
+      s[i] /= ((double)timeseries.size(0));
 
       s[i] = m[i]*m[i];
       s[i] = sqrt(fabs(s[i]));
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
       
     }
     catch(std::invalid_argument& e){
-      printf("ERROR: learning from HMM data failed\n");
+      printf("ERROR: learning from HMM data failed: %s\n", e.what());
 
       delete dev;
       IMG_Quit();
