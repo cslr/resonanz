@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
     delete dev;
   }
-  else if(cmd == "--learn"){
+  else if(cmd == "--learn1"){
 
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
@@ -286,10 +286,104 @@ int main(int argc, char** argv)
 
       return -1;
     }
+    
+    return 0;
+  }
+  else if(cmd == "--measure2"){
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
+
+    {
+      for(unsigned int i=0;i<pictures.size();i++){
+	sprintf(buffer, "%s.%s.dat", pictures[i].c_str(), device.c_str());
+	std::string file = buffer;
+	picmeasurements[i].load(file); // attempts to load the previous measurements
+      }
+    }
+
+    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
+    const unsigned int HIDDEN_STATES   = 5;
 
     
-    return -1;
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    
+    if(measureRandomPictures(dev, hmm, pictures, DISPLAYTIME,
+			     timeseries,
+			     picmeasurements) == false)
+    {
+      printf("ERROR: measuring picture-wise responses failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    unsigned int maxsize = 0;
+    unsigned int minsize = picmeasurements[0].size(0);
+    unsigned int measurements = 0;
+
+    {
+      for(unsigned int i=0;i<pictures.size();i++){
+	sprintf(buffer, "%s.%s.dat", pictures[i].c_str(), device.c_str());
+	std::string file = buffer;
+	if(picmeasurements[i].save(file) == false){ // attempts to save measurements
+	  printf("ERROR: saving picture-wise (%d) measurements FAILED\n", i);
+	  delete dev;
+	  IMG_Quit();
+	  SDL_Quit();
+	  
+	  return -1;
+	}
+
+	if(picmeasurements[i].getNumberOfClusters() > 0){
+	  if(picmeasurements[i].size(0) > maxsize)
+	    maxsize = picmeasurements[i].size(0);
+	  if(picmeasurements[i].size(0) < minsize)
+	    minsize = picmeasurements[i].size(0);
+
+	  measurements += picmeasurements[i].size(0);
+	}
+	else{
+	  minsize = 0;
+	}
+      }
+
+      printf("Picture (%d pics) measurements (total %d) saved to disk (max %d, min %d measurements per pic)\n",
+	     pictures.size(), measurements, maxsize, minsize);
+      fflush(stdout);
+    }
+
+    delete dev;
+    
   }
   else if(cmd == "--stimulate"){
     return -1;
@@ -309,9 +403,10 @@ void print_usage()
 {
   printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
   printf("       <cmd> = \"--measure1\"    stimulates cns randomly and collects time-series measurements\n");
-  printf("       <cmd> = \"--learn\"       optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
+  printf("       <cmd> = \"--learn1\"      optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
   printf("       <cmd> = \"--predict\"     predicts and outputs currently predicted hidden state\n");
-  printf("       <cmd> = \"--measure2\"    stimulates cns randomly and collects picture-wise information\n"); 
+  printf("       <cmd> = \"--measure2\"    stimulates cns randomly and collects picture-wise information (incl. hidden states)\n");
+  printf("       <cmd> = \"--learn2\"      optimizes neural network model per picture using input and additional hidden states\n");
   printf("       <cmd> = \"--stimulate\"   uses model, pictures in directory and neural network models to push brain towards target state\n");
   printf("       <device>                'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>             path to directory (png and model files)\n");
@@ -339,9 +434,10 @@ bool parse_parameters(int argc, char** argv,
   targets.clear();
 
   if(cmd != "--measure1" &&
-     cmd != "--learn" &&
+     cmd != "--learn1" &&
      cmd != "--predict" &&
-     cmd != "--measure2" && 
+     cmd != "--measure2" &&
+     cmd != "--learn2" && 
      cmd != "--stimulate")
     return false;
 
