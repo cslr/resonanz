@@ -229,13 +229,16 @@ int main(int argc, char** argv)
     }
 
     if(hmm.save(hmmFile) == false){
-      printf("ERROR: saving HMM model failed\n");
+      printf("ERROR: saving HMM model failed.\n");
 
       delete dev;
       IMG_Quit();
       SDL_Quit();
 
       return -1;
+    }
+    else{
+      printf("Saving HMM model file succeed.\n");
     }
 
     return 0;

@@ -235,11 +235,8 @@ namespace whiteice{
       
 
       // initial distribution of states
-      auto& pi = hmm.getPI();
-      std::vector<double> currentState(pi.size());
-
-      for(unsigned int i=0;i<pi.size();i++)
-	currentState[i] = pi[i].getDouble();
+      auto pi = hmm.getPI();
+      unsigned int currentState = hmm.sample(pi);
 
       
       // discretizes observations
@@ -411,21 +408,14 @@ namespace whiteice{
 	  
 	  const unsigned int o = discretize(afterd, m, s);
 
-	  std::vector<unsigned int> observations;
-	  observations.push_back(o);
+	  unsigned int nextState = currentState;
+	  
+	  double p = hmm.next_state(currentState, nextState, o);
 
-	  std::vector<unsigned int> hidden;
+	  printf("HIDDEN STATE: %d\n", nextState);
+	  fflush(stdout);
 
-	  double p = hmm.ml_states(currentState, hidden, observations);
-
-	  if(hidden.size() <= 0){
-	    printf("ERROR: HMM internal failure\n");
-	    return false;
-	  }
-
-	  int state = hidden[hidden.size()-1];
-
-	  printf("HIDDEN STATE: %d\n", state);
+	  currentState = nextState;
 	}
 	
 	
@@ -459,7 +449,7 @@ namespace whiteice{
 	}
       }
 
-      unsigned int state = 0;
+      unsigned int state = 0; // observation
       unsigned int base = 1;
 
       for(unsigned int k=0;k<o.size();k++){
