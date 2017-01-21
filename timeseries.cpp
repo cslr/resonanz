@@ -373,6 +373,8 @@ int main(int argc, char** argv)
 	  measurements += picmeasurements[i].size(0);
 	}
 	else{
+	  printf("Zero measurements: %d %s\n", i, pictures[i].c_str());
+	  fflush(stdout);
 	  minsize = 0;
 	}
       }
