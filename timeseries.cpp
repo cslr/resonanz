@@ -12,8 +12,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <dinrhiw/dinrhiw.h>
-
 #include <SDL.h>
 #include <SDL_image.h>
 
@@ -385,6 +383,81 @@ int main(int argc, char** argv)
     }
 
     delete dev;
+    
+  }
+  else if(cmd == "--learn2"){
+
+    std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
+
+    {
+      for(unsigned int i=0;i<pictures.size();i++){
+	sprintf(buffer, "%s.%s.dat", pictures[i].c_str(), device.c_str());
+	std::string file = buffer;
+	picmeasurements[i].load(file); // attempts to load the previous measurements
+      }
+    }
+
+    std::vector<double> errors;
+
+    whiteice::linear_ETA<double> eta;
+
+    eta.start(0.0, (double)pictures.size());
+
+    // optimizes picture-wise neural network
+    for(unsigned int i=0;i<pictures.size();i++){
+      sprintf(buffer, "%s.%s.model", pictures[i].c_str(), device.c_str());
+      std::string file = buffer;
+
+      whiteice::nnetwork< whiteice::math::blas_real<double> > net;
+      double error = 0.0;
+
+      printf("Optimizing neural network model %d/%d [ETA %.2f minutes]\n", i+1, pictures.size(), eta.estimate()/60.0);
+      fflush(stdout);
+
+      if(optimizeNeuralnetworkModel(picmeasurements[i], net, error) == false){
+	printf("ERROR: optimizing neural network prediction model %d/%d failed\n", i+1, pictures.size());
+	
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
+
+      whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > bnet;
+      bnet.importNetwork(net);
+
+      if(bnet.save(file) == false){
+	printf("ERROR: saving neural network prediction model %d/%d failed\n", i+1, pictures.size());
+	
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
+
+      eta.update((double)(1.0+i));
+
+      errors.push_back(error);
+    }
+
+    // calculates statistics of errors
+    {
+      double me = 0.0, se = 0.0;
+
+      for(auto& e : errors){
+	me += e;
+	se += e*e;
+      }
+
+      me /= ((double)errors.size());
+      se /= ((double)errors.size());
+
+      se = sqrt(fabs(se - me*me));
+
+      printf("MEAN ERROR: %f +- (st.dev) %f\n", se, me);
+      fflush(stdout);
+    }
+    
     
   }
   else if(cmd == "--stimulate"){

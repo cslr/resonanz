@@ -2847,7 +2847,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 			nn->randomize();
 			nn->exportdata(w);
-
+			
 			optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
 			optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
@@ -3160,7 +3160,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				{
 					char buffer[512];
 					snprintf(buffer, 512, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
-							currentKeywordModel, iterations, error.c[0]);
+						 currentKeywordModel, iterations, error.c[0]);
 					logging.info(buffer);
 				}
 

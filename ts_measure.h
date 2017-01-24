@@ -34,6 +34,10 @@ namespace whiteice{
 	unsigned int discretize(const std::vector<double>& data,
 				const std::vector<double>& m,
 				const std::vector<double>& s);
+
+	bool optimizeNeuralnetworkModel(const whiteice::dataset< whiteice::math::blas_real<double> >& data,
+					whiteice::nnetwork< whiteice::math::blas_real<double> >& net,
+					double& netError);
 	
   }
 }

@@ -645,7 +645,7 @@ namespace whiteice{
 	  if(store.getNumberOfClusters() != 2){
 	    store.clear();
 
-	    if(store.createCluster("before", before.size() + hmm.getNumVisibleStates()) == false)
+	    if(store.createCluster("before", before.size() + hmm.getNumHiddenStates()) == false)
 	      return false;
 	    
 	    if(store.createCluster("after", after.size()) == false)
@@ -653,7 +653,7 @@ namespace whiteice{
 	  }
 
 	  whiteice::math::vertex< whiteice::math::blas_real<double> > dat;
-	  dat.resize(before.size() + hmm.getNumVisibleStates());
+	  dat.resize(before.size() + hmm.getNumHiddenStates());
 	  dat.zero();
 
 	  for(unsigned int i=0;i<before.size();i++)
@@ -698,6 +698,75 @@ namespace whiteice{
       return true;
     }
 
+
+    bool optimizeNeuralnetworkModel(const whiteice::dataset< whiteice::math::blas_real<double> >& data,
+				    whiteice::nnetwork< whiteice::math::blas_real<double> >& net,
+				    double& netError)
+    {
+      netError = 0.0;
+      
+      if(data.getNumberOfClusters() != 2) return false;
+      if(data.size(0) <= 0 || data.size(1) <= 1) return false;
+      
+      const unsigned int inputDimension  = data.dimension(0);
+      const unsigned int outputDimension = data.dimension(1);
+
+      std::vector<unsigned int> arch;
+
+      // creates deep 5-layer neural network
+      arch.push_back(inputDimension);
+      arch.push_back(inputDimension*10);
+      arch.push_back(inputDimension*10);
+      arch.push_back(inputDimension*10);
+      arch.push_back(inputDimension*10);
+      arch.push_back(outputDimension);
+
+
+
+      whiteice::math::vertex< whiteice::math::blas_real<double> > w;
+
+      net.setArchitecture(arch,
+			  whiteice::nnetwork< whiteice::math::blas_real<double> >::halfLinear);
+
+      printf("NNETWORK: ");
+      for(unsigned int i=1;i<arch.size();i++){
+	printf("%dx%d ", arch[i-1], arch[i]);
+      }      
+      printf(" (%d elements)\n", net.exportdatasize());
+      
+      net.randomize();
+      net.exportdata(w);
+
+      auto* optimizer = new whiteice::pLBFGS_nnetwork<whiteice::math::blas_real<double> >(net, data, false, false);
+      optimizer->minimize(4); // uses 4 threads
+
+      unsigned int iterations = 0;
+      whiteice::math::blas_real<double> error = 1000.0f;
+      
+      do{
+	const unsigned int old_iters = iterations;
+	optimizer->getSolution(w, error, iterations);
+
+	if(old_iters != iterations){
+	  printf("OPTIMIZATION ERROR: %f (%d iters)\n", error.c[0], iterations);
+	  fflush(stdout);
+	}
+	
+	sleep(1); // checks status every 1 sec
+      }
+      while(iterations < 1000);
+
+      optimizer->stopComputation();
+      optimizer->getSolution(w, error, iterations);
+
+      net.importdata(w);
+
+      delete optimizer;
+
+      netError = error.c[0];
+
+      return true;
+    }
     
   }
 }
