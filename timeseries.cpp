@@ -454,7 +454,7 @@ int main(int argc, char** argv)
 
       se = sqrt(fabs(se - me*me));
 
-      printf("MEAN ERROR: %f +- (st.dev) %f\n", se, me);
+      printf("MEAN ERROR: %f +- (st.dev) %f\n", me, se);
       fflush(stdout);
     }
     

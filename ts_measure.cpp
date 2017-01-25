@@ -737,16 +737,21 @@ namespace whiteice{
       net.randomize();
       net.exportdata(w);
 
-      auto* optimizer = new whiteice::pLBFGS_nnetwork<whiteice::math::blas_real<double> >(net, data, false, false);
-      optimizer->minimize(4); // uses 4 threads
+      // auto* optimizer = new whiteice::pLBFGS_nnetwork<whiteice::math::blas_real<double> >(net, data, false, false);
+      // optimizer->minimize(4); // uses 4 threads
+
+      auto* optimizer = new whiteice::math::NNGradDescent<whiteice::math::blas_real<double> >();
+      optimizer->startOptimize(data, net, 4);
 
       unsigned int iterations = 0;
       whiteice::math::blas_real<double> error = 1000.0f;
       
       do{
 	const unsigned int old_iters = iterations;
-	optimizer->getSolution(w, error, iterations);
 
+	// optimizer->getSolution(w, error, iterations);
+	optimizer->getSolution(net, error, iterations);
+	
 	if(old_iters != iterations){
 	  printf("OPTIMIZATION ERROR: %f (%d iters)\n", error.c[0], iterations);
 	  fflush(stdout);
@@ -757,9 +762,10 @@ namespace whiteice{
       while(iterations < 1000);
 
       optimizer->stopComputation();
-      optimizer->getSolution(w, error, iterations);
+      // optimizer->getSolution(w, error, iterations);
+      optimizer->getSolution(net, error, iterations);
 
-      net.importdata(w);
+      // net.importdata(w);
 
       delete optimizer;
 
