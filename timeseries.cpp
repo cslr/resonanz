@@ -32,8 +32,8 @@ bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
 		      std::string& device,
 		      std::string& dir,
-		      std::vector<float>& targets, 
-		      std::vector<float>& targetVar,
+		      std::vector<double>& targets, 
+		      std::vector<double>& targetVar,
 		      std::vector<std::string>& pictures);
 
 
@@ -53,8 +53,8 @@ int main(int argc, char** argv)
   std::string device;
   std::string dir;
   std::vector<std::string> pictures;
-  std::vector<float> targetVector;
-  std::vector<float> targetVar;
+  std::vector<double> targetVector;
+  std::vector<double> targetVar;
 
   if(!parse_parameters(argc, argv, cmd, device, dir, targetVector, targetVar, pictures)){
     print_usage();
@@ -461,7 +461,92 @@ int main(int argc, char** argv)
     
   }
   else if(cmd == "--stimulate"){
-    return -1;
+
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
+      printf("ERROR: No proper target vector for stimulation\n");
+      
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
+
+    {
+      for(unsigned int i=0;i<pictures.size();i++){
+	sprintf(buffer, "%s.%s.dat", pictures[i].c_str(), device.c_str());
+	std::string file = buffer;
+	picmeasurements[i].load(file); // attempts to load the previous measurements
+      }
+    }
+
+    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
+    const unsigned int HIDDEN_STATES   = 5;
+
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+
+    std::vector< whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > > nets;
+    nets.resize(pictures.size());
+
+    for(unsigned int i=0;i<pictures.size();i++){
+      sprintf(buffer, "%s.%s.model", pictures[i].c_str(), device.c_str());
+      std::string file = buffer;
+
+      if(nets[i].load(file) == false){
+	printf("ERROR: loading picture response model (neural network) %d/%d from file failed\n",
+	       i+1, pictures.size());
+
+	delete dev;
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
+    }
+    
+    if(stimulateUsingModel(dev, hmm, nets, pictures, DISPLAYTIME,
+			   timeseries, targetVector, targetVar) == false)
+    {
+      printf("ERROR: stimulating cns using pictures failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
   }
 
   
@@ -495,8 +580,8 @@ bool parse_parameters(int argc, char** argv,
 		      std::string& cmd,
 		      std::string& device,
 		      std::string& dir,
-		      std::vector<float>& targets, // negative values mean given target value is ignored
-		      std::vector<float>& targetVar,
+		      std::vector<double>& targets, // negative values mean given target value is ignored
+		      std::vector<double>& targetVar,
 		      std::vector<std::string>& pictures)
 {
   if(argc != 4 && argc != 5)

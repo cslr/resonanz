@@ -773,6 +773,284 @@ namespace whiteice{
 
       return true;
     }
+
+
+    bool stimulateUsingModel(DataSource* dev,
+			     const whiteice::HMM& hmm,
+			     const std::vector< whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > >& nets,
+			     const std::vector<std::string>& pictures,
+			     const unsigned int DISPLAYTIME,
+			     const whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
+			     const std::vector<double>& target,
+			     const std::vector<double>& targetVar)
+    {
+
+      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
+	 timeseries.getNumberOfClusters() != 1)
+	return false;
+      
+
+      // initial distribution of states
+      auto pi = hmm.getPI();
+      unsigned int currentState = hmm.sample(pi);
+
+      
+      // discretizes observations
+      std::vector<double> m, s;
+
+      // calculates parameters (mean and standard deviation)
+      {
+	
+	
+	m.resize(dev->getNumberOfSignals());
+	s.resize(dev->getNumberOfSignals());
+	
+	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
+	  m[i] = 0.0;
+	  s[i] = 0.0;
+	}
+	
+	for(unsigned int i=0;i<timeseries.size(0);i++){
+	  auto& v = timeseries[i];
+	  
+	  for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
+	    m[k] += v[k].c[0];
+	    s[k] += v[k].c[0]*v[k].c[0];
+	  }
+	}
+	
+	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
+	  m[i] /= ((double)timeseries.size(0));
+	  s[i] /= ((double)timeseries.size(0));
+	  
+	  s[i] = m[i]*m[i];
+	  s[i] = sqrt(fabs(s[i]));
+	}
+	
+      }
+
+      
+      // open window (SDL)
+
+      SDL_Window* window = NULL;
+      
+      int W = 640;
+      int H = 480;
+      
+      
+      SDL_DisplayMode mode;
+      
+      if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
+	W = (3*mode.w)/4;
+	H = (3*mode.h)/4;
+      }
+
+      window = SDL_CreateWindow("Time Series Analysis",
+				SDL_WINDOWPOS_CENTERED,
+				SDL_WINDOWPOS_CENTERED,
+				W, H,
+				SDL_WINDOW_ALWAYS_ON_TOP |
+				SDL_WINDOW_INPUT_FOCUS);
+
+      if(window == NULL)
+	return false;
+      
+      SDL_RaiseWindow(window);
+      SDL_UpdateWindowSurface(window);
+      SDL_RaiseWindow(window);
+
+      SDL_Event event;
+      bool exit = false;
+
+      unsigned int start_ms =
+	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+      
+      while(!exit){
+	
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+	
+
+	std::vector<float> before, after;
+	
+	if(dev->connectionOk() == false){
+	  printf("ERROR: dev->connectionOk() returned false\n");
+	  return false;
+	}
+
+	if(dev->data(before) == false){
+	  printf("ERROR: dev->data(before) returned false\n");
+	  return false;
+	}
+
+	unsigned int r = rand() % pictures.size();
+
+	// selects picture that should move closest to the target state
+	{
+	  double best_error = 1000000.0;
+
+	  for(unsigned int i=0;i<nets.size();i++){
+
+	    whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	    
+	    v.resize(before.size() + hmm.getNumHiddenStates());
+	    v.zero();
+
+	    for(unsigned int i=0;i<before.size();i++)
+	      v[i] = before[i];
+
+	    // sets indicator variable for hidden state
+	    v[before.size() + currentState] = 1.0;
+
+	    whiteice::nnetwork< whiteice::math::blas_real<double> > nn;
+	    std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > weights;
+	    
+	    if(nets[i].exportSamples(nn, weights) == false){
+	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
+	      return false;
+	    }
+
+	    if(weights.size() < 1){
+	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
+	      return false;
+	    }
+
+	    if(nn.importdata(weights[0]) == false){
+	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
+	      return false;
+	    }
+
+	    whiteice::math::vertex< whiteice::math::blas_real<double> > out;
+	    out.resize(before.size());
+	    out.zero();
+
+	    if(nn.calculate(v, out) == false){
+	      printf("ERROR: nnetwork.calculate() %d/%d failed\n", i+1, nets.size());
+	      return false;
+	    }
+
+	    if(out.size() != target.size()){
+	      printf("ERROR: nnetwork.calculate() output mismatch %d/%d\n",
+		     i+1, nets.size());
+	      return false;
+	    }
+
+	    double err = 0.0;
+
+	    for(unsigned int j=0;j<out.size();j++){
+	      err += (out[j].c[0]-target[j])*(out[j].c[0]-target[j])/targetVar[j];
+	    }
+
+	    if(err < best_error){
+	      best_error = err;
+	      r = i;
+	    }
+	  }
+	  
+	  
+	}
+
+
+	// displays picture
+	{
+	  SDL_Surface* win = SDL_GetWindowSurface(window);
+	  
+	  SDL_FillRect(win, NULL, 
+		       SDL_MapRGB(win->format, 0, 0, 0));
+	  
+	  SDL_Surface* scaled = NULL;	
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	  
+	  { // displays picture from disk (downscaled to picsize) [75%]
+	    
+	    unsigned int picsize = H;
+	    
+	    if(W < H) picsize = W;
+	    
+	    // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
+	    
+	    if(picToVector(pictures[r], picsize, v, false)){
+	      if(vectorToSurface(v, picsize, scaled, false) == false){
+		continue;
+	      }
+	    }
+	    else continue;
+	  }
+	  
+	  SDL_Rect imageRect;
+	  
+	  if(win->w < win->h){
+	    imageRect.w = win->w;
+	    imageRect.h = win->w;
+	    imageRect.x = 0;
+	    imageRect.y = (H - win->w)/2;
+	  }
+	  else{
+	    imageRect.w = win->h;
+	    imageRect.h = win->h;
+	    imageRect.x = (W - win->h)/2;
+	    imageRect.y = 0;
+	    
+	  }
+	  
+	  SDL_BlitScaled(scaled, NULL, win, &imageRect);
+	  
+	  SDL_FreeSurface(scaled);
+	  
+	  SDL_UpdateWindowSurface(window);
+	  SDL_ShowWindow(window);
+	  SDL_FreeSurface(win);
+	}
+
+
+
+	
+	{
+	  const unsigned int end_ms = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	  
+	  unsigned int delta_ms = end_ms - start_ms;
+	  if(delta_ms < DISPLAYTIME){
+	    usleep((DISPLAYTIME - delta_ms)*1000);
+	  }
+	  
+	  start_ms =
+	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	}
+
+	if(dev->data(after) == false){
+	  printf("ERROR: dev->data(after) returned false\n");
+	  return false;
+	}
+
+	// updates hidden state
+	{
+	  std::vector<double> afterd(after.size());
+
+	  for(unsigned int i=0;i<afterd.size();i++)
+	    afterd[i] = after[i];
+	  
+	  const unsigned int o = discretize(afterd, m, s);
+
+	  unsigned int nextState = currentState;
+	  
+	  double p = hmm.next_state(currentState, nextState, o);
+	  
+	  currentState = nextState;
+	}
+	
+	
+      }
+      
+      SDL_DestroyWindow(window);      
+
+      return true;
+      
+    }
+    
     
   }
 }

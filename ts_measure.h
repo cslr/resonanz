@@ -38,6 +38,15 @@ namespace whiteice{
 	bool optimizeNeuralnetworkModel(const whiteice::dataset< whiteice::math::blas_real<double> >& data,
 					whiteice::nnetwork< whiteice::math::blas_real<double> >& net,
 					double& netError);
+
+	bool stimulateUsingModel(DataSource* dev,
+				 const whiteice::HMM& hmm,
+				 const std::vector< whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > >& nets,
+				 const std::vector<std::string>& pictures,
+				 const unsigned int DISPLAYTIME,
+				 const whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
+				 const std::vector<double>& target,
+				 const std::vector<double>& targetVar);
 	
   }
 }
