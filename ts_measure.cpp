@@ -788,6 +788,8 @@ namespace whiteice{
       if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
 	 timeseries.getNumberOfClusters() != 1)
 	return false;
+
+      std::vector<double> targetErrors; // error (distance) to target for each step
       
 
       // initial distribution of states
@@ -951,7 +953,7 @@ namespace whiteice{
 	    }
 	  }
 	  
-	  
+	  targetErrors.push_back(best_error);
 	}
 
 
@@ -1045,7 +1047,20 @@ namespace whiteice{
 	
       }
       
-      SDL_DestroyWindow(window);      
+      SDL_DestroyWindow(window);
+
+      // reports average error during stimulation sequence
+      {
+	double E = 0.0;
+	
+	for(auto& e : targetErrors){
+	  E += e / ((double)targetErrors.size());
+	}
+
+	printf("Average error during stimulation: %f\n", E);
+      }
+
+      
 
       return true;
       
