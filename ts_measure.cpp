@@ -894,7 +894,14 @@ namespace whiteice{
 	// selects picture that should move closest to the target state
 	{
 	  double best_error = 1000000.0;
+	  
+	  std::vector<double> errors;
+	  errors.resize(nets.size());
 
+	  bool failure = false;
+	  
+			
+#pragma omp parallel for 
 	  for(unsigned int i=0;i<nets.size();i++){
 
 	    whiteice::math::vertex< whiteice::math::blas_real<double> > v;
@@ -913,17 +920,20 @@ namespace whiteice{
 	    
 	    if(nets[i].exportSamples(nn, weights) == false){
 	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
-	      return false;
+	      failure = true;
+	      continue;
 	    }
 
 	    if(weights.size() < 1){
 	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
-	      return false;
+	      failure = true;
+	      continue;
 	    }
 
 	    if(nn.importdata(weights[0]) == false){
 	      printf("ERROR: accessing nnetwork %d/%d failed\n", i+1, nets.size());
-	      return false;
+	      failure = true;
+	      continue;
 	    }
 
 	    whiteice::math::vertex< whiteice::math::blas_real<double> > out;
@@ -932,13 +942,15 @@ namespace whiteice{
 
 	    if(nn.calculate(v, out) == false){
 	      printf("ERROR: nnetwork.calculate() %d/%d failed\n", i+1, nets.size());
-	      return false;
+	      failure = true;
+	      continue;
 	    }
 
 	    if(out.size() != target.size()){
 	      printf("ERROR: nnetwork.calculate() output mismatch %d/%d\n",
 		     i+1, nets.size());
-	      return false;
+	      failure = true;
+	      continue;
 	    }
 
 	    double err = 0.0;
@@ -947,12 +959,21 @@ namespace whiteice{
 	      err += (out[j].c[0]-target[j])*(out[j].c[0]-target[j])/targetVar[j];
 	    }
 
-	    if(err < best_error){
-	      best_error = err;
+	    err = sqrt(err);
+
+	    errors[i] = err;
+	  }
+
+	  if(failure) return false; // internal failure
+
+	  // selects the smallest error
+	  for(unsigned int i=0;i<errors.size();i++){
+	    if(errors[i] < best_error){
+	      best_error = errors[i];
 	      r = i;
 	    }
 	  }
-	  
+
 	  targetErrors.push_back(best_error);
 	}
 
