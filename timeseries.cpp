@@ -37,7 +37,7 @@ bool parse_parameters(int argc, char** argv,
 		      std::vector<std::string>& pictures);
 
 
-#define DISPLAYTIME 500 // picture display time in msecs
+#define DISPLAYTIME 250 // picture display time in msecs
 
 
 using namespace whiteice::resonanz;

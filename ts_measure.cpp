@@ -36,9 +36,15 @@ namespace whiteice{
       SDL_DisplayMode mode;
       
       if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-	W = (3*mode.w)/4;
-	H = (3*mode.h)/4;
+	// W = (3*mode.w)/4;
+	// H = (3*mode.h)/4;
+	W = mode.w;
+	H = mode.h;
       }
+      else return false;
+
+      if(W > H) W = H;
+      else if(H > W) H = W;
 
       window = SDL_CreateWindow("Time Series Analysis",
 				SDL_WINDOWPOS_CENTERED,
@@ -57,9 +63,6 @@ namespace whiteice{
       SDL_Event event;
       bool exit = false;
 
-      unsigned int start_ms =
-	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
-      
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -120,6 +123,9 @@ namespace whiteice{
 	SDL_ShowWindow(window);
 	SDL_FreeSurface(win);
 
+	unsigned int start_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	
 	std::vector<float> before, after;
 
 	if(dev->connectionOk() == false){
@@ -134,15 +140,16 @@ namespace whiteice{
 
 	
 	{
-	  const unsigned int end_ms = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
-	  
+	  const unsigned int end_ms =
+	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 	  unsigned int delta_ms = end_ms - start_ms;
+
+	  // printf("delta ms: %d (display ms: %d)\n", delta_ms, DISPLAYTIME);
+	  
 	  if(delta_ms < DISPLAYTIME){
 	    usleep((DISPLAYTIME - delta_ms)*1000);
 	  }
 	  
-	  start_ms =
-	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 	}
 
 	if(dev->data(after) == false){
@@ -285,9 +292,15 @@ namespace whiteice{
       SDL_DisplayMode mode;
       
       if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-	W = (3*mode.w)/4;
-	H = (3*mode.h)/4;
+	// W = (3*mode.w)/4;
+	// H = (3*mode.h)/4;
+	W = mode.w;
+	H = mode.h;
       }
+      else return false;
+
+      if(W > H) W = H;
+      else if(H > W) H = W;
 
       window = SDL_CreateWindow("Time Series Analysis",
 				SDL_WINDOWPOS_CENTERED,
@@ -306,9 +319,6 @@ namespace whiteice{
       SDL_Event event;
       bool exit = false;
 
-      unsigned int start_ms =
-	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
-      
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -369,6 +379,9 @@ namespace whiteice{
 	SDL_ShowWindow(window);
 	SDL_FreeSurface(win);
 
+	unsigned int start_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();      
+	
 	std::vector<float> before, after;
 	
 	if(dev->connectionOk() == false){
@@ -390,8 +403,6 @@ namespace whiteice{
 	    usleep((DISPLAYTIME - delta_ms)*1000);
 	  }
 	  
-	  start_ms =
-	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 	}
 
 	if(dev->data(after) == false){
@@ -524,9 +535,16 @@ namespace whiteice{
       SDL_DisplayMode mode;
       
       if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-	W = (3*mode.w)/4;
-	H = (3*mode.h)/4;
+	// W = (3*mode.w)/4;
+	// H = (3*mode.h)/4;
+	W = mode.w;
+	H = mode.h;
       }
+      else return false;
+
+      if(W > H) W = H;
+      else if(H > W) H = W;
+
 
       window = SDL_CreateWindow("Time Series Analysis",
 				SDL_WINDOWPOS_CENTERED,
@@ -545,9 +563,6 @@ namespace whiteice{
       SDL_Event event;
       bool exit = false;
 
-      unsigned int start_ms =
-	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
-      
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -608,6 +623,9 @@ namespace whiteice{
 	SDL_ShowWindow(window);
 	SDL_FreeSurface(win);
 
+	unsigned int start_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	
 	std::vector<float> before, after;
 	
 	if(dev->connectionOk() == false){
@@ -629,8 +647,6 @@ namespace whiteice{
 	    usleep((DISPLAYTIME - delta_ms)*1000);
 	  }
 	  
-	  start_ms =
-	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 	}
 
 	if(dev->data(after) == false){
@@ -843,9 +859,15 @@ namespace whiteice{
       SDL_DisplayMode mode;
       
       if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
-	W = (3*mode.w)/4;
-	H = (3*mode.h)/4;
+	// W = (3*mode.w)/4;
+	// H = (3*mode.h)/4;
+	W = mode.w;
+	H = mode.h;
       }
+      else return false;
+
+      if(W > H) W = H;
+      else if(H > W) H = W;
 
       window = SDL_CreateWindow("Time Series Analysis",
 				SDL_WINDOWPOS_CENTERED,
@@ -864,8 +886,24 @@ namespace whiteice{
       SDL_Event event;
       bool exit = false;
 
-      unsigned int start_ms =
+      unsigned start_ms =
 	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+      
+      std::vector<float> before, after;
+      
+      if(dev->connectionOk() == false){
+	printf("ERROR: dev->connectionOk() returned false\n");
+	return false;
+      }
+
+      if(dev->data(before) == false){
+	printf("ERROR: dev->data(after) returned false\n");
+	return false;
+      }
+
+      after = before;
+
+      
       
       while(!exit){
 	
@@ -875,23 +913,11 @@ namespace whiteice{
 	    continue;
 	  }
 	}
-	
 
-	std::vector<float> before, after;
-	
-	if(dev->connectionOk() == false){
-	  printf("ERROR: dev->connectionOk() returned false\n");
-	  return false;
-	}
-
-	if(dev->data(before) == false){
-	  printf("ERROR: dev->data(before) returned false\n");
-	  return false;
-	}
 
 	unsigned int r = rand() % pictures.size();
 
-	// selects picture that should move closest to the target state
+	// selects next picture that should move closest to the target state
 	{
 	  double best_error = 1000000.0;
 	  
@@ -901,7 +927,7 @@ namespace whiteice{
 	  bool failure = false;
 	  
 			
-#pragma omp parallel for 
+#pragma omp parallel for schedule(dynamic) 
 	  for(unsigned int i=0;i<nets.size();i++){
 
 	    whiteice::math::vertex< whiteice::math::blas_real<double> > v;
@@ -977,8 +1003,22 @@ namespace whiteice{
 	  targetErrors.push_back(best_error);
 	}
 
+	
+	{
+	  const unsigned int end_ms = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	  
+	  unsigned int delta_ms = end_ms - start_ms;
 
-	// displays picture
+	  // printf("delta ms: %d (DISPLAYTIME: %d)\n", delta_ms, DISPLAYTIME);
+	  
+	  if(delta_ms < DISPLAYTIME){
+	    usleep((DISPLAYTIME - delta_ms)*1000);
+	  }
+	}
+	
+	
+	
+	// displays next picture picture
 	{
 	  SDL_Surface* win = SDL_GetWindowSurface(window);
 	  
@@ -1028,20 +1068,15 @@ namespace whiteice{
 	  SDL_ShowWindow(window);
 	  SDL_FreeSurface(win);
 	}
-
-
-
 	
-	{
-	  const unsigned int end_ms = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
-	  
-	  unsigned int delta_ms = end_ms - start_ms;
-	  if(delta_ms < DISPLAYTIME){
-	    usleep((DISPLAYTIME - delta_ms)*1000);
-	  }
-	  
-	  start_ms =
-	    duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	
+	start_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	
+	
+	if(dev->connectionOk() == false){
+	  printf("ERROR: dev->connectionOk() returned false\n");
+	  return false;
 	}
 
 	if(dev->data(after) == false){
@@ -1049,14 +1084,16 @@ namespace whiteice{
 	  return false;
 	}
 
+	before = after;
+	
 	// updates hidden state
 	{
-	  std::vector<double> afterd(after.size());
+	  std::vector<double> stated(before.size());
 
-	  for(unsigned int i=0;i<afterd.size();i++)
-	    afterd[i] = after[i];
+	  for(unsigned int i=0;i<stated.size();i++)
+	    stated[i] = before[i];
 	  
-	  const unsigned int o = discretize(afterd, m, s);
+	  const unsigned int o = discretize(stated, m, s);
 
 	  unsigned int nextState = currentState;
 	  
@@ -1065,8 +1102,8 @@ namespace whiteice{
 	  currentState = nextState;
 	}
 	
-	
       }
+      
       
       SDL_DestroyWindow(window);
 
