@@ -23,8 +23,6 @@ namespace whiteice{
       if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0)
 	return false;
 
-      std::vector< std::vector<double> > timeseriesData;
-
       // open window (SDL)
 
       SDL_Window* window = NULL;
@@ -130,7 +128,7 @@ namespace whiteice{
 
 	if(dev->connectionOk() == false){
 	  printf("ERROR: dev->connectionOk() returned false\n");
-	  return false;
+	  return true;
 	}
 
 	if(dev->data(before) == false){
@@ -171,60 +169,36 @@ namespace whiteice{
 	  for(unsigned int i=0;i<a.size();i++)
 	    a[i] = after[i];
 
-	  std::vector<double> m;
-	  m.resize(after.size());
 
-	  for(unsigned int i=0;i<m.size();i++)
-	    m[i] = after[i];
+	  // stores timeseries to dataset
+	  bool timeseriesValid = false;
 
-	  timeseriesData.push_back(m);
+	  if(timeseries.getNumberOfClusters() == 1){
+	    if(timeseries.dimension(0) == dev->getNumberOfSignals()){
+	      timeseriesValid = true;
+	    }
+	  }
+
+
+	  if(timeseriesValid == false)
+	  {
+	    timeseries.clear();
+	    timeseries.createCluster("input", dev->getNumberOfSignals());
+	    
+	    timeseries.add(0, a);
+	  }
+	  else{
+	    // just adds extra data
+	  
+	    timeseries.add(0, a);
+	  }
 	}
 	
       }
       
       SDL_DestroyWindow(window);
 
-      
-      // stores timeseries to dataset
-      bool timeseriesValid = false;
-
-      if(timeseries.getNumberOfClusters() == 1){
-	if(timeseries.dimension(0) == dev->getNumberOfSignals()){
-	  timeseriesValid = true;
-	}
-      }
-      
-      if(timeseriesValid == false)
-      {
-	timeseries.clear();
-	timeseries.createCluster("input", dev->getNumberOfSignals());
-
-	whiteice::math::vertex< whiteice::math::blas_real<double> > a;
-	a.resize(dev->getNumberOfSignals());
-
-	for(unsigned int t=0;t<timeseriesData.size();t++){
-	  for(unsigned int i=0;i<a.size();i++){
-	    a[i] = timeseriesData[t][i];
-	  }
-	  
-	  timeseries.add(0, a);
-	}
-      }
-      else{
-	// just adds extra data
-	
-	whiteice::math::vertex< whiteice::math::blas_real<double> > a;
-	a.resize(dev->getNumberOfSignals());
-
-	for(unsigned int t=0;t<timeseriesData.size();t++){
-	  for(unsigned int i=0;i<a.size();i++){
-	    a[i] = timeseriesData[t][i];
-	  }
-	  
-	  timeseries.add(0, a);
-	}
-      }
-      
+            
       return true;
     }
 
@@ -386,7 +360,7 @@ namespace whiteice{
 	
 	if(dev->connectionOk() == false){
 	  printf("ERROR: dev->connectionOk() returned false\n");
-	  return false;
+	  return true;
 	}
 
 	if(dev->data(before) == false){
@@ -630,7 +604,7 @@ namespace whiteice{
 	
 	if(dev->connectionOk() == false){
 	  printf("ERROR: dev->connectionOk() returned false\n");
-	  return false;
+	  return true;
 	}
 
 	if(dev->data(before) == false){
@@ -684,7 +658,7 @@ namespace whiteice{
 	  dat.zero();
 	  
 	  for(unsigned int i=0;i<after.size();i++)
-	    dat[i] = after[i];
+	    dat[i] = (after[i] - before[i])/((double)DISPLAYTIME);
 
 	  if(store.add(1, dat) == false) return false;
 	}
@@ -893,7 +867,7 @@ namespace whiteice{
       
       if(dev->connectionOk() == false){
 	printf("ERROR: dev->connectionOk() returned false\n");
-	return false;
+	return true;
       }
 
       if(dev->data(before) == false){
@@ -977,6 +951,10 @@ namespace whiteice{
 		     i+1, nets.size());
 	      failure = true;
 	      continue;
+	    }
+
+	    for(unsigned int j=0;j<out.size();j++){
+	      out[j] = out[j]*((double)DISPLAYTIME) + before[j];
 	    }
 
 	    double err = 0.0;
@@ -1076,7 +1054,7 @@ namespace whiteice{
 	
 	if(dev->connectionOk() == false){
 	  printf("ERROR: dev->connectionOk() returned false\n");
-	  return false;
+	  return true;
 	}
 
 	if(dev->data(after) == false){
