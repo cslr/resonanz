@@ -61,6 +61,13 @@ int main(int argc, char** argv)
     return -1;
   }
 
+  bool random = false; // shows random pictures instead of ones computed to be most effective
+  
+  if(cmd == "--stimulater"){
+    cmd = "--stimulate";
+    random = true;
+  }
+
   char buffer[128];
 
   sprintf(buffer, "%s/%s-measurements.dat", dir.c_str(), device.c_str());
@@ -385,6 +392,30 @@ int main(int argc, char** argv)
     delete dev;
     
   }
+  else if(cmd == "--list"){
+
+    std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
+
+    {
+      for(unsigned int i=0;i<pictures.size();i++){
+	sprintf(buffer, "%s.%s.dat", pictures[i].c_str(), device.c_str());
+	std::string file = buffer;
+	picmeasurements[i].load(file); // attempts to load the previous measurements
+      }
+    }
+
+    // optimizes picture-wise neural network
+    for(unsigned int i=0;i<pictures.size();i++){
+      whiteice::dataset< whiteice::math::blas_real<double> >& data = picmeasurements[i];
+      
+      for(unsigned int s=0;s<data.size(1);s++){
+	std::cout << data.access(1, s) << std::endl;
+      }
+      
+    }
+
+    
+  }
   else if(cmd == "--learn2"){
 
     std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
@@ -454,7 +485,7 @@ int main(int argc, char** argv)
 
       se = sqrt(fabs(se - me*me));
 
-      printf("MEAN ERROR: %f +- (st.dev) %f\n", me, se);
+      printf("MEAN ERROR: %e +- (st.dev) %e\n", me, se);
       fflush(stdout);
     }
     
@@ -536,7 +567,7 @@ int main(int argc, char** argv)
     }
     
     if(stimulateUsingModel(dev, hmm, nets, pictures, DISPLAYTIME,
-			   timeseries, targetVector, targetVar) == false)
+			   timeseries, targetVector, targetVar, random) == false)
     {
       printf("ERROR: stimulating cns using pictures failed\n");
 
@@ -568,6 +599,8 @@ void print_usage()
   printf("       <cmd> = \"--measure2\"    stimulates cns randomly and collects picture-wise information (incl. hidden states)\n");
   printf("       <cmd> = \"--learn2\"      optimizes neural network model per picture using input and additional hidden states\n");
   printf("       <cmd> = \"--stimulate\"   uses model, pictures in directory and neural network models to push brain towards target state\n");
+  printf("       <cmd> = \"--stimulater\"  stimulates cns using random pictures this can be used for comparision when analyzing efectiveness\n");
+  printf("       <cmd> = \"--list\"        lists collected data (output cluster)\n");
   printf("       <device>                'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>             path to directory (png and model files)\n");
   printf("       --target=<vector>       optimization target [0,1]^6 vector. (?) value means value can be anything\n");
@@ -584,7 +617,7 @@ bool parse_parameters(int argc, char** argv,
 		      std::vector<double>& targetVar,
 		      std::vector<std::string>& pictures)
 {
-  if(argc != 4 && argc != 5)
+  if(argc != 4 && argc != 6)
     return false;
 
   cmd = argv[1];
@@ -598,48 +631,62 @@ bool parse_parameters(int argc, char** argv,
      cmd != "--predict" &&
      cmd != "--measure2" &&
      cmd != "--learn2" && 
-     cmd != "--stimulate")
+     cmd != "--stimulate" && 
+     cmd != "--list" &&
+     cmd != "--stimulater")
     return false;
 
   if(device != "muse" &&
      device != "random")
     return false;
 
-  if(argc != 5 && (cmd == "--stimulate"))
+  if((argc != 6) && (cmd == "--stimulate" || cmd == "--stimulater"))
     return false;
 
-  if(cmd == "--stimulate"){
+  if(cmd == "--stimulate" || cmd == "--stimulater"){
     if(strncmp(argv[4], "--target=", 9) == 0){
       char* v = argv[4] + 9;
       char* ptr = NULL;
       char* token = strtok_r(v, ",", &ptr);
 
       targets.push_back(atof(token));
-      if(strcmp(token, "?") == 0){
-	targetVar.push_back(10e16);
-      }
-      else{
-	targetVar.push_back(1.0);
-      }
 
       while((token = strtok_r(NULL, ",", &ptr)) != NULL){
 	if(strcmp(token, "?") == 0){
 	  targets.push_back(0.0);
-	  targetVar.push_back(10e16); // very large value for this dimension
 	}
 	else{
 	  targets.push_back(atof(token));
-	  targetVar.push_back(1.0);
+	}
+      }
+    }
+    else
+      return false;
+
+    if(strncmp(argv[5], "--target-var=", 13) == 0){
+      char* v = argv[5] + 13;
+      char* ptr = NULL;
+      char* token = strtok_r(v, ",", &ptr);
+      
+      targetVar.push_back(atof(token));
+      
+      while((token = strtok_r(NULL, ",", &ptr)) != NULL){
+	if(strcmp(token, "?") == 0){
+	  targetVar.push_back(10e16); // very large value for this dimension
+	}
+	else{
+	  targetVar.push_back(atof(token));
 	}
       }
     }
     else
       return false; // unknown parameter
 
-    if(targets.size() != 6)
+    if(targets.size() != 6 || targetVar.size() != 6)
       return false; // there should be six tokens in targets (interaxon muse)
   }
 
+  
   DIR *dirh;
   struct dirent *ent;
 

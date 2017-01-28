@@ -46,7 +46,8 @@ namespace whiteice{
 				 const unsigned int DISPLAYTIME,
 				 const whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
 				 const std::vector<double>& target,
-				 const std::vector<double>& targetVar);
+				 const std::vector<double>& targetVar,
+				 bool random);
 	
   }
 }

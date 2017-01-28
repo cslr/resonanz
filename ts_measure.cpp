@@ -6,6 +6,8 @@
 
 #include "pictureAutoencoder.h"
 
+#include <map>
+
 
 namespace whiteice{
   
@@ -58,8 +60,29 @@ namespace whiteice{
       SDL_UpdateWindowSurface(window);
       SDL_RaiseWindow(window);
 
+      unsigned int picsize = H;
+      if(W < H) picsize = W;
+
+      // loads pictures
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > v;
+      v.resize(pictures.size());
+
       SDL_Event event;
       bool exit = false;
+      
+      for(unsigned int i=0;i<v.size() && !exit;i++){
+	if(picToVector(pictures[i], picsize, v[i], false) == false){
+	  return false;
+	}
+
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+      }
+	  
 
       while(!exit){
 	
@@ -77,24 +100,16 @@ namespace whiteice{
 		     SDL_MapRGB(win->format, 0, 0, 0));
 	
 	SDL_Surface* scaled = NULL;	
-	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
-
+	
 	{ // displays picture from disk (downscaled to picsize) [75%]
 
 	  const unsigned int r = rand() % pictures.size();
 
-	  unsigned int picsize = H;
-
-	  if(W < H) picsize = W;
-
 	  // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	  
-	  if(picToVector(pictures[r], picsize, v, false)){
-	    if(vectorToSurface(v, picsize, scaled, false) == false){
-	      continue;
-	    }
+	  if(vectorToSurface(v[r], picsize, scaled, false) == false){
+	    continue;
 	  }
-	  else continue;
 	}
 
 	SDL_Rect imageRect;
@@ -289,9 +304,31 @@ namespace whiteice{
       SDL_RaiseWindow(window);
       SDL_UpdateWindowSurface(window);
       SDL_RaiseWindow(window);
+      
+      unsigned int picsize = H;
+      if(W < H) picsize = W;
 
       SDL_Event event;
       bool exit = false;
+      
+      // loads pictures
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > v;
+      v.resize(pictures.size());
+      
+      for(unsigned int i=0;i<v.size() && !exit;i++){
+	if(picToVector(pictures[i], picsize, v[i], false) == false){
+	  return false;
+	}
+
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+	
+      }
+
 
       while(!exit){
 	
@@ -309,24 +346,16 @@ namespace whiteice{
 		     SDL_MapRGB(win->format, 0, 0, 0));
 	
 	SDL_Surface* scaled = NULL;	
-	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
-
+	
 	{ // displays picture from disk (downscaled to picsize) [75%]
 
 	  const unsigned int r = rand() % pictures.size();
 
-	  unsigned int picsize = H;
-
-	  if(W < H) picsize = W;
-
 	  // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	  
-	  if(picToVector(pictures[r], picsize, v, false)){
-	    if(vectorToSurface(v, picsize, scaled, false) == false){
-	      continue;
-	    }
+	  if(vectorToSurface(v[r], picsize, scaled, false) == false){
+	    continue;
 	  }
-	  else continue;
 	}
 
 	SDL_Rect imageRect;
@@ -534,9 +563,32 @@ namespace whiteice{
       SDL_UpdateWindowSurface(window);
       SDL_RaiseWindow(window);
 
+      unsigned int picsize = H;
+      if(W < H) picsize = W;
+      
+      // loads pictures
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > v;
+      v.resize(pictures.size());
+
       SDL_Event event;
       bool exit = false;
 
+      
+      for(unsigned int i=0;i<v.size() && !exit;i++){
+	if(picToVector(pictures[i], picsize, v[i], false) == false){
+	  return false;
+	}
+
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+      }
+
+      
+      
       while(!exit){
 	
 	while(SDL_PollEvent(&event)){
@@ -552,25 +604,18 @@ namespace whiteice{
 	SDL_FillRect(win, NULL, 
 		     SDL_MapRGB(win->format, 0, 0, 0));
 	
-	SDL_Surface* scaled = NULL;	
-	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	SDL_Surface* scaled = NULL;
 
 	const unsigned int r = rand() % pictures.size();
 	
 	{ // displays picture from disk (downscaled to picsize) [75%]
 
-	  unsigned int picsize = H;
-
-	  if(W < H) picsize = W;
-
 	  // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	  
-	  if(picToVector(pictures[r], picsize, v, false)){
-	    if(vectorToSurface(v, picsize, scaled, false) == false){
-	      continue;
-	    }
+	  if(vectorToSurface(v[r], picsize, scaled, false) == false){
+	    continue;
 	  }
-	  else continue;
+	  
 	}
 
 	SDL_Rect imageRect;
@@ -743,7 +788,7 @@ namespace whiteice{
 	optimizer->getSolution(net, error, iterations);
 	
 	if(old_iters != iterations){
-	  printf("OPTIMIZATION ERROR: %f (%d iters)\n", error.c[0], iterations);
+	  printf("OPTIMIZATION ERROR: %e (%d iters)\n", error.c[0], iterations);
 	  fflush(stdout);
 	}
 	
@@ -772,7 +817,8 @@ namespace whiteice{
 			     const unsigned int DISPLAYTIME,
 			     const whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
 			     const std::vector<double>& target,
-			     const std::vector<double>& targetVar)
+			     const std::vector<double>& targetVar,
+			     bool random)
     {
 
       if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
@@ -857,8 +903,28 @@ namespace whiteice{
       SDL_UpdateWindowSurface(window);
       SDL_RaiseWindow(window);
 
+      unsigned int picsize = H;
+      if(W < H) picsize = W;
+
+      // loads pictures
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > v;
+      v.resize(pictures.size());
+
       SDL_Event event;
       bool exit = false;
+      
+      for(unsigned int i=0;i<v.size() && !exit;i++){
+	if(picToVector(pictures[i], picsize, v[i], false) == false){
+	  return false;
+	}
+
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+      }
 
       unsigned start_ms =
 	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
@@ -890,7 +956,7 @@ namespace whiteice{
 
 
 	unsigned int r = rand() % pictures.size();
-
+	
 	// selects next picture that should move closest to the target state
 	{
 	  double best_error = 1000000.0;
@@ -971,14 +1037,32 @@ namespace whiteice{
 	  if(failure) return false; // internal failure
 
 	  // selects the smallest error
-	  for(unsigned int i=0;i<errors.size();i++){
-	    if(errors[i] < best_error){
-	      best_error = errors[i];
-	      r = i;
+	  {
+	    std::multimap<double, unsigned int> orderedList;
+	    
+	    for(unsigned int i=0;i<errors.size();i++){
+	      orderedList.insert( std::pair<double, unsigned int>(errors[i], i));
 	    }
+
+	    while(orderedList.size() > 3){
+	      orderedList.erase( std::prev( orderedList.end() ) );
+	    }
+
+	    unsigned int selected = rand() % orderedList.size();
+
+	    auto e = orderedList.begin();
+
+	    while(selected > 0){
+	      e++;
+	      selected--;
+	    }
+
+	    r = e->second;
+	    best_error = e->first;
 	  }
 
-	  targetErrors.push_back(best_error);
+	  if(random)
+	    r = rand() % pictures.size();
 	}
 
 	
@@ -1004,22 +1088,14 @@ namespace whiteice{
 		       SDL_MapRGB(win->format, 0, 0, 0));
 	  
 	  SDL_Surface* scaled = NULL;	
-	  whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 	  
 	  { // displays picture from disk (downscaled to picsize) [75%]
 	    
-	    unsigned int picsize = H;
-	    
-	    if(W < H) picsize = W;
-	    
 	    // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
 	    
-	    if(picToVector(pictures[r], picsize, v, false)){
-	      if(vectorToSurface(v, picsize, scaled, false) == false){
-		continue;
-	      }
+	    if(vectorToSurface(v[r], picsize, scaled, false) == false){
+	      continue;
 	    }
-	    else continue;
 	  }
 	  
 	  SDL_Rect imageRect;
@@ -1063,6 +1139,19 @@ namespace whiteice{
 	}
 
 	before = after;
+
+	// calculates current error (distance from target state)
+	{
+	  double err = 0.0;
+	  
+	  for(unsigned int j=0;j<after.size();j++){
+	    err += (after[j]-target[j])*(after[j]-target[j])/targetVar[j];
+	  }
+	  
+	  err = sqrt(err);
+
+	  targetErrors.push_back(err);
+	}
 	
 	// updates hidden state
 	{
