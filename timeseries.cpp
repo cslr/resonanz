@@ -69,6 +69,11 @@ int main(int argc, char** argv)
     random = true;
   }
 
+  if(cmd == "--reinforcementr"){
+    cmd = "--reinforcement";
+    random = true;
+  }
+
   char buffer[128];
 
   sprintf(buffer, "%s/%s-measurements.dat", dir.c_str(), device.c_str());
@@ -634,6 +639,8 @@ int main(int argc, char** argv)
 	system(dev, hmm, timeseries, pictures, DISPLAYTIME,
 	       targetVector, targetVar);
 
+      system.setRandom(random);
+
       system.setLearningMode(true);
       system.setEpsilon(0.90);
       
@@ -671,16 +678,17 @@ int main(int argc, char** argv)
 
 void print_usage()
 {
-  printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0]\n");
+  printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0] [--target-var=1.0,1.0,1.0,1.0,1.0,1.0\n");
   printf("       <cmd> = \"--measure1\"       stimulates cns randomly and collects time-series measurements\n");
   printf("       <cmd> = \"--learn1\"         optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
   printf("       <cmd> = \"--predict\"        predicts and outputs currently predicted hidden state\n");
   printf("       <cmd> = \"--measure2\"       stimulates cns randomly and collects picture-wise information (incl. hidden states)\n");
   printf("       <cmd> = \"--learn2\"         optimizes neural network model per picture using input and additional hidden states\n");
   printf("       <cmd> = \"--stimulate\"      uses model, pictures in directory and neural network models to push brain towards target state\n");
-  printf("       <cmd> = \"--stimulater\"     stimulates cns using random pictures this can be used for comparision when analyzing effectiveness\n");
+  printf("       <cmd> = \"--stimulater\"     stimulates cns using random pictures [for comparing effectiveness]\n");
   printf("       <cmd> = \"--list\"           lists collected data (output cluster)\n");
   printf("       <cmd> = \"--reinforcement\"  reinforcement learning (requires --measure1 and --learn1)\n");
+  printf("       <cmd> = \"--reinforcementr\" reinforcement learning: random mode [for compaing effectiveness] (requires --measure1 and --learn1)\n");
   printf("       <device>                   'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>                path to directory (png and model files)\n");
   printf("       --target=<vector>          optimization target [0,1]^6 vector. (?) value means value can be anything\n");
@@ -714,17 +722,18 @@ bool parse_parameters(int argc, char** argv,
      cmd != "--stimulate" && 
      cmd != "--list" &&
      cmd != "--stimulater" &&
-     cmd != "--reinforcement")
+     cmd != "--reinforcement" && 
+     cmd != "--reinforcementr")
     return false;
 
   if(device != "muse" &&
      device != "random")
     return false;
 
-  if((argc != 6) && (cmd == "--stimulate" || cmd == "--stimulater" || cmd == "--reinforcement"))
+  if((argc != 6) && (cmd == "--stimulate" || cmd == "--stimulater" || cmd == "--reinforcement" || cmd == "--reinforcementr"))
     return false;
 
-  if(cmd == "--stimulate" || cmd == "--stimulater" || cmd == "--reinforcement"){
+  if(cmd == "--stimulate" || cmd == "--stimulater" || cmd == "--reinforcement" || cmd == "--reinforcementr"){
     if(strncmp(argv[4], "--target=", 9) == 0){
       char* v = argv[4] + 9;
       char* ptr = NULL;

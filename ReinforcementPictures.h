@@ -33,6 +33,10 @@ namespace whiteice
     bool getKeypress();
 
     bool getDisplayIsRunning();
+
+    // sets random mode (if true) instead of showing the best pic,
+    // displays randomly chosen pic while doing all the calculations etc.
+    void setRandom(bool r);
     
   protected:
     const DataSource* dev;
@@ -43,6 +47,8 @@ namespace whiteice
     
     std::vector<double> target;
     std::vector<double> targetVar;
+
+    bool random; // random mode for comparing effects to user
 
     whiteice::RNG<T> rng;
 

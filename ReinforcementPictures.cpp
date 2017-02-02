@@ -48,6 +48,8 @@ namespace whiteice
 
     this->fontname = "Vera.ttf";
 
+    this->random = false;
+
     // starts display thread
     {
       running = true;
@@ -80,6 +82,13 @@ namespace whiteice
   bool ReinforcementPictures<T>::getDisplayIsRunning()
   {
     return (this->running);
+  }
+
+
+  template <typename T>
+  void ReinforcementPictures<T>::setRandom(bool r)
+  {
+    random = r;
   }
   
 
@@ -167,13 +176,18 @@ namespace whiteice
 	if(distances.size() >= 150){
 	  
 	  T d150 = T(0.0);
-	  for(const auto& d : distances)
+	  T dev  = T(0.0);
+	  for(const auto& d : distances){
 	    d150 += d;
+	    dev  += d*d;
+	  }
 	  
 	  d150 /= T(distances.size());
+	  dev  /= T(distances.size());
+	  dev = sqrt(abs(dev - d150*d150));
 	  
 	  // reports distance to the target state
-	  printf("DISTANCE-150: %f\n", d150.c[0]);
+	  printf("DISTANCE-150: %f +- %f\n", d150.c[0], dev.c[0]);
 	}
       }
 
@@ -474,7 +488,7 @@ namespace whiteice
       
       
       // waits for a command (picture) to show
-      index = rng.rand() % images.size();
+      index = 0;
       {
 	while(running){
 	  
@@ -491,6 +505,11 @@ namespace whiteice
 
 	if(!running) continue;
       }
+
+      // if we are in random mode we choose random pictures
+      if(random)
+	index = rng.rand() % images.size();
+
       
       {
 	SDL_Surface* surface = SDL_GetWindowSurface(window);
