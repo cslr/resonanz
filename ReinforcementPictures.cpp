@@ -10,6 +10,9 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
+#include <unistd.h>
+
+
 #include "Log.h"
 
 namespace whiteice
@@ -48,7 +51,7 @@ namespace whiteice
     // starts display thread
     {
       running = true;
-      display_thread = new thread(std::bind(&ReinforcementPictures<T>::display_thread,
+      display_thread = new thread(std::bind(&ReinforcementPictures<T>::displayLoop,
 					    this));
     }
   }
@@ -70,6 +73,13 @@ namespace whiteice
   bool ReinforcementPictures<T>::getKeypress()
   {
     return (keypresses > 0);
+  }
+
+
+  template <typename T>
+  bool ReinforcementPictures<T>::getDisplayIsRunning()
+  {
+    return (this->running);
   }
   
 
@@ -94,12 +104,68 @@ namespace whiteice
 					       whiteice::math::vertex<T>& newstate,
 					       T& reinforcement)
   {
-    // TODO IMPLEMENT ME (NOW THIS IS JUST DUMMY STUB)
-    
-    getState(newstate);
-    
-    reinforcement = rng.uniform();
 
+    // adds action to the queue (the next action)
+    {
+      std::lock_guard<std::mutex> lock(actionMutex);
+      actionQueue.push_back(action);
+    }
+    
+    // waits for action execution to start (FIXME use condition varibles for this..)
+    while(1){
+      {
+	std::lock_guard<std::mutex> lock(actionMutex);
+	if(actionQueue.size() == 0)
+	  break;
+      }
+
+      usleep(10);
+    }
+
+    usleep(DISPLAYTIME*1000/2); // we can safely sleep 50% of the display time
+
+    // waits for action to be added to old actions queue and clears it
+    // FIXME: change busy loop to condition variables
+    {
+      while(running){
+	{
+	  std::lock_guard<std::mutex> lock(performedActionsMutex);
+	  if(performedActionsQueue.size() > 0){
+	    performedActionsQueue.pop_front();
+	    break;
+	  }
+	}
+	
+	usleep(10);
+      }
+
+      if(running == false)
+	return false;
+    }
+
+    // gets new state
+    if(getState(newstate) == false) return false;
+
+    // calculates reinforcement signal ~ ||newstate - target||^2
+    {
+      reinforcement = T(0.0);
+
+      for(unsigned int i=0;i<newstate.size();i++){
+	reinforcement +=
+	  (newstate[i].c[0] - target[i])*
+	  (newstate[i].c[0] - target[i])/targetVar[i];
+      }
+
+      T distance = sqrt(reinforcement);
+
+      // reports distance to the target state
+      printf("DISTANCE: %f\n", distance.c[0]);
+
+      // minus: we sought to minimize distance to the target state (maximize -f(x))
+      reinforcement = -abs(reinforcement); 
+    }
+    
+    
     return true;
   }
   
@@ -219,9 +285,14 @@ namespace whiteice
     {
       for(unsigned int i=0;i<pictures.size();i++)
 	images[i] = NULL;
+
+      unsigned int numLoaded = 0;
       
-      for(unsigned int i=0;i<pictures.size() && running;i++)
+#pragma omp parallel for shared(images) shared(numLoaded) schedule(dynamic)
+      for(unsigned int i=0;i<pictures.size();i++)
       {
+	if(running == false) continue;
+	
 	SDL_Surface* image = IMG_Load(pictures[i].c_str());
 	
 
@@ -238,12 +309,8 @@ namespace whiteice
 
 	  if(image == NULL){
 	    logging.error("Creating RGB surface failed");
-	    IMG_Quit();
-	    TTF_Quit();
-	    SDL_Quit();
-
 	    running = false;
-	    return;
+	    continue;
 	  }
 	  
 	  SDL_FillRect(image, NULL, SDL_MapRGB(image->format, 0, 0, 0));
@@ -263,12 +330,8 @@ namespace whiteice
 
 	  if(scaled == NULL){
 	    logging.error("Creating RGB surface failed");
-	    IMG_Quit();
-	    TTF_Quit();
-	    SDL_Quit();
-
 	    running = false;
-	    return;
+	    continue;
 	  }
 
 	  if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
@@ -285,12 +348,8 @@ namespace whiteice
 
 	  if(scaled == NULL){
 	    logging.error("Creating RGB surface failed");
-	    IMG_Quit();
-	    TTF_Quit();
-	    SDL_Quit();
-
 	    running = false;
-	    return;
+	    continue;
 	  }
 	  
 	  if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
@@ -301,7 +360,10 @@ namespace whiteice
 
 	if(image) SDL_FreeSurface(image);
 
+	numLoaded++;
+
 	// displays pictures that are being loaded
+#pragma omp critical
 	{
 	  imageRect.w = scaled->w;
 	  imageRect.h = scaled->h;
@@ -318,7 +380,7 @@ namespace whiteice
 	      SDL_Color white = { 255, 255, 255 };
 	      
 	      char message[80];
-	      snprintf(message, 80, "%d/%d", i+1, pictures.size());
+	      snprintf(message, 80, "%d/%d", numLoaded, pictures.size());
 	      
 	      SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message, white);
 	      
@@ -354,6 +416,11 @@ namespace whiteice
 
     }
     
+
+    long long start_ms =
+      duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+
+    unsigned int index = 0;
     
     
     while(running){
@@ -365,9 +432,49 @@ namespace whiteice
 	  continue;
 	}
       }
+
+      if(dev->connectionOk() == false){
+	running = false;
+	continue;
+      }
+
+      {
+	const long long end_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	long long delta_ms = end_ms - start_ms;
+
+	if(delta_ms < DISPLAYTIME){
+	  usleep((DISPLAYTIME - delta_ms)*1000);
+	}
+      }
+
       
-      // currently just shows pictures randomly
-      const unsigned int index = rng.rand() % images.size();
+      // adds previous action to performedActionsQueue
+      {
+	std::lock_guard<std::mutex> lock(performedActionsMutex);
+	performedActionsQueue.push_back(index);
+      }
+      
+      
+      
+      // waits for a command (picture) to show
+      index = rng.rand() % images.size();
+      {
+	while(running){
+	  
+	  {
+	    std::lock_guard<std::mutex> lock(actionMutex);
+	    if(actionQueue.size() > 0){
+	      index = actionQueue.front();
+	      actionQueue.pop_front();
+	      break;
+	    }
+	  }
+	  usleep(10);
+	}
+
+	if(!running) continue;
+      }
       
       {
 	SDL_Surface* surface = SDL_GetWindowSurface(window);
@@ -387,9 +494,10 @@ namespace whiteice
 	  SDL_ShowWindow(window);
 	  SDL_FreeSurface(surface);
 	}
-	
       }
-      
+
+      start_ms =
+	duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
       
     }
 

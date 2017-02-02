@@ -31,6 +31,8 @@ namespace whiteice
     ~ReinforcementPictures();
 
     bool getKeypress();
+
+    bool getDisplayIsRunning();
     
   protected:
     const DataSource* dev;
@@ -52,6 +54,12 @@ namespace whiteice
     virtual bool performAction(const unsigned int action,
 			       whiteice::math::vertex<T>& newstate,
 			       T& reinforcement);
+
+    std::list<unsigned int> actionQueue;
+    std::mutex actionMutex;
+
+    std::list<unsigned int> performedActionsQueue;
+    std::mutex performedActionsMutex;
     
     volatile bool running;
     std::thread* display_thread;
