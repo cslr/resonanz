@@ -150,16 +150,32 @@ namespace whiteice
     {
       reinforcement = T(0.0);
 
-      for(unsigned int i=0;i<newstate.size();i++){
+      for(unsigned int i=0;i<target.size();i++){
 	reinforcement +=
 	  (newstate[i].c[0] - target[i])*
 	  (newstate[i].c[0] - target[i])/targetVar[i];
       }
 
-      T distance = sqrt(reinforcement);
-
-      // reports distance to the target state
-      printf("DISTANCE: %f\n", distance.c[0]);
+      // reports average distance to target during latest 150 rounds
+      {
+	T distance = sqrt(reinforcement);
+	distances.push_back(distance);
+	
+	while(distances.size() > 150)
+	  distances.pop_front();
+	
+	if(distances.size() >= 150){
+	  
+	  T d150 = T(0.0);
+	  for(const auto& d : distances)
+	    d150 += d;
+	  
+	  d150 /= T(distances.size());
+	  
+	  // reports distance to the target state
+	  printf("DISTANCE-150: %f\n", d150.c[0]);
+	}
+      }
 
       // minus: we sought to minimize distance to the target state (maximize -f(x))
       reinforcement = -abs(reinforcement); 

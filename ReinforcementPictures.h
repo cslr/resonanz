@@ -55,6 +55,8 @@ namespace whiteice
 			       whiteice::math::vertex<T>& newstate,
 			       T& reinforcement);
 
+    std::list<T> distances;
+
     std::list<unsigned int> actionQueue;
     std::mutex actionMutex;
 
