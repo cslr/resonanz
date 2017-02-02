@@ -94,6 +94,7 @@ ResonanzEngine::ResonanzEngine()
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
 		nn = new whiteice::nnetwork<>(nnArchitecture);
+		nn->setNonlinearity(nn->getLayers()-1, whiteice::nnetwork<>::pureLinear);
 		
 		// creates dummy synth neural network
 		const int synth_number_of_parameters = 3;
@@ -105,6 +106,7 @@ ResonanzEngine::ResonanzEngine()
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
 		nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+		nnsynth->setNonlinearity(nnsynth->getLayers()-1, whiteice::nnetwork<>::pureLinear);
 	}
 	
 	
@@ -457,6 +459,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+			nn->setNonlinearity(nn->getLayers()-1,
+					    whiteice::nnetwork<>::pureLinear);
 						
 			
 			nnArchitecture.clear();
@@ -477,6 +481,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  if(nnsynth != nullptr) delete nnsynth;
 		
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+						   whiteice::nnetwork<>::pureLinear);
 			}
 			else{
 			  const int synth_number_of_parameters = 6;
@@ -494,6 +500,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  if(nnsynth != nullptr) delete nnsynth;
 			  
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+						   whiteice::nnetwork<>::pureLinear);
 			}
 		}
 
@@ -520,6 +528,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+			nn->setNonlinearity(nn->getLayers()-1,
+					    whiteice::nnetwork<>::pureLinear);
 			
 			nnArchitecture.clear();
 			
@@ -537,6 +547,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  if(nnsynth != nullptr) delete nnsynth;
 		
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+						   whiteice::nnetwork<>::pureLinear);
 			}
 			else{
 			  const int synth_number_of_parameters = 6;
@@ -554,6 +566,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  if(nnsynth != nullptr) delete nnsynth;
 			  
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+						   whiteice::nnetwork<>::pureLinear);
 			}
 		}
 		
@@ -3959,7 +3973,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 			if(image != 0){
 			        if((image->w) > (image->h)){
-					double wscale = ((double)SCREEN_WIDTH)/((double)image->w);
+				  double wscale = ((double)SCREEN_WIDTH)/((double)image->w);
 					// scaled = zoomSurface(image, wscale, wscale, SMOOTHING_ON);
 
 					scaled = SDL_CreateRGBSurface(0, (int)(image->w*wscale), (int)(image->h*wscale), 32,
@@ -4230,7 +4244,7 @@ bool ResonanzEngine::engine_showScreen(const std::string& message, unsigned int 
 
 void ResonanzEngine::engine_pollEvents()
 {
-	SDL_Event event;
+       SDL_Event event;
 
 	while(SDL_PollEvent(&event)){
 		// currently ignores all incoming events
@@ -4358,6 +4372,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	    if(nnsynth != nullptr) delete nnsynth;
 	    
 	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+				     whiteice::nnetwork<>::pureLinear);
 	  }
 	  else{
 	    const int synth_number_of_parameters = 6;
@@ -4375,6 +4391,8 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	    if(nnsynth != nullptr) delete nnsynth;
 	    
 	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
+				     whiteice::nnetwork<>::pureLinear);
 	  }
 	}
 	

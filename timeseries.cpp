@@ -25,6 +25,7 @@
 #include "MuseOSC.h"
 
 #include "ts_measure.h"
+#include "ReinforcementPictures.h"
 
 void print_usage();
 
@@ -579,6 +580,81 @@ int main(int argc, char** argv)
     }
     
   }
+  else if(cmd == "--reinforcement"){
+    
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
+      printf("ERROR: No proper target vector for stimulation\n");
+      
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
+    const unsigned int HIDDEN_STATES   = 5;
+
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    // reinforcement learning
+    {
+      whiteice::ReinforcementPictures< whiteice::math::blas_real<double> >
+	system(dev, hmm, timeseries, pictures, DISPLAYTIME,
+	       targetVector, targetVar);
+
+      system.setLearningMode(true);
+      system.setEpsilon(0.33);
+      
+      system.start();
+      unsigned int counter = 0;
+
+      while(system.isRunning()){
+	sleep(1);
+	if(system.getKeypress()){
+	  system.stop();
+	}
+
+	if(counter >= 180){
+	  system.save("rifl.dat");
+	  counter = 0; // saves model data every 3 minutes
+	}
+
+	counter++;
+      }
+      
+    }
+
+  }
+  
 
   
   

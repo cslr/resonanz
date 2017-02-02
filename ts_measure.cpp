@@ -762,6 +762,8 @@ namespace whiteice{
 
       net.setArchitecture(arch,
 			  whiteice::nnetwork< whiteice::math::blas_real<double> >::halfLinear);
+      net.setNonlinearity(net.getLayers()-1,
+			  whiteice::nnetwork< whiteice::math::blas_real<double> >::pureLinear);
 
       printf("NNETWORK: ");
       for(unsigned int i=1;i<arch.size();i++){
