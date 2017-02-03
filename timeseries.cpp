@@ -74,13 +74,20 @@ int main(int argc, char** argv)
     random = true;
   }
 
-  char buffer[128];
-
-  sprintf(buffer, "%s/%s-measurements.dat", dir.c_str(), device.c_str());
+  // model filenames
+  char buffer[256];
+  
+  snprintf(buffer, 256, "%s/%s-measurements.dat", dir.c_str(), device.c_str());
   const std::string timeseriesFile = buffer;
   
-  sprintf(buffer, "%s/%s-hmm.model", dir.c_str(), device.c_str());
+  snprintf(buffer, 256, "%s/%s-hmm.model", dir.c_str(), device.c_str());
   const std::string hmmFile     = buffer;
+  
+  snprintf(buffer, 256, "%s/%s-clusters.model", dir.c_str(), device.c_str());
+  const std::string clusterModelFile = buffer;
+
+  snprintf(buffer, 256, "%s/%s-reinforcement.model", dir.c_str(), device.c_str());
+  const std::string reinforcementModelFile = buffer;
 
   //////////////////////////////////////////////////////////////////////
 
@@ -158,70 +165,43 @@ int main(int argc, char** argv)
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
     std::vector<unsigned int> observations;
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    // discretizes observations
-    std::vector<double> m, s;
+    // calculates discretization 
+    {
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
+      if(timeseries.getData(0, data) == false){
+	printf("ERROR: bad time series data\n");
+	IMG_Quit();
+	SDL_Quit();
 
-    // calculates parameters (mean and standard deviation)
+	delete dev;
 
-    m.resize(dev->getNumberOfSignals());
-    s.resize(dev->getNumberOfSignals());
+	return -1;
+      }
 
-    for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-      m[i] = 0.0;
-      s[i] = 0.0;
-    }
-    
-    for(unsigned int i=0;i<timeseries.size(0);i++){
-      auto& v = timeseries[i];
+      printf("Calculating K-Means clusters (timeseries data)..\n");
+
+      if(clusters.learn(VISIBLE_SYMBOLS, data) == false){
+	printf("ERROR: calculating k-means clusters failed\n");
+      }
+
+      for(unsigned int i=0;i<data.size();i++){
+	observations.push_back(clusters.getClusterIndex(data[i]));
+      }
+
+      if(clusters.save(clusterModelFile) == false){
+	printf("ERROR: saving clusters model failed.\n");
+
+	delete dev;
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
       
-      for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
-	m[k] += v[k].c[0];
-	s[k] += v[k].c[0]*v[k].c[0];
-      }
-    }
-    
-    for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-      m[i] /= ((double)timeseries.size(0));
-      s[i] /= ((double)timeseries.size(0));
-
-      s[i] = m[i]*m[i];
-      s[i] = sqrt(fabs(s[i]));
     }
 
-    // DISCRETIZATION
-    
-    for(unsigned int i=0;i<timeseries.size(0);i++){
-      auto& v = timeseries[i];
-
-      unsigned int state = 0;
-
-      std::vector<unsigned int> o;
-
-      for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
-	const auto& x = v[k].c[0];
-
-	if(fabs(x - m[k]) <= 0.5*s[k]){ // within 34% of the mean
-	  o.push_back(0);
-	}
-	else if(x - m[k] <= -0.5*s[k]){
-	  o.push_back(1);
-	}
-	else{ // (x - m[k] >= +0.5*s[k])
-	  o.push_back(2);
-	}
-      }
-
-      unsigned int base = 1;
-
-      for(unsigned int k=0;k<o.size();k++){
-	state += o[k]*base;
-	base = base*3;
-      }
-
-      observations.push_back(state);
-    }
-      
     // learns from data
     try{
       double logp = hmm.train(observations);
@@ -255,17 +235,17 @@ int main(int argc, char** argv)
     return 0;
   }
   else if(cmd == "--predict"){
-    
-    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
-    if(timeseries.load(timeseriesFile) == false){
-      printf("ERROR: loading time series measurements from file failed\n");
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
+
+    if(clusters.load(clusterModelFile) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
 
       return -1;
     }
-
+    
     DataSource* dev = nullptr;
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
@@ -287,7 +267,7 @@ int main(int argc, char** argv)
     }
 
     if(predictHiddenState(dev, hmm, pictures,
-			  DISPLAYTIME, timeseries) == false)
+			  DISPLAYTIME, clusters) == false)
     {
       printf("ERROR: measuring time series failed\n");
 
@@ -332,21 +312,19 @@ int main(int argc, char** argv)
       return -1;
     }
     
-    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(timeseries.load(timeseriesFile) == false){
-      printf("ERROR: loading time series measurements from file failed\n");
-
-      delete dev;
+    if(clusters.load(clusterModelFile) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
 
       return -1;
     }
-
+    
     
     if(measureRandomPictures(dev, hmm, pictures, DISPLAYTIME,
-			     timeseries,
+			     clusters,
 			     picmeasurements) == false)
     {
       printf("ERROR: measuring picture-wise responses failed\n");
@@ -539,19 +517,17 @@ int main(int argc, char** argv)
 
       return -1;
     }
-    
-    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
-    if(timeseries.load(timeseriesFile) == false){
-      printf("ERROR: loading time series measurements from file failed\n");
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-      delete dev;
+    if(clusters.load(clusterModelFile) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
 
       return -1;
     }
-
+    
 
     std::vector< whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > > nets;
     nets.resize(pictures.size());
@@ -573,7 +549,7 @@ int main(int argc, char** argv)
     }
     
     if(stimulateUsingModel(dev, hmm, nets, pictures, DISPLAYTIME,
-			   timeseries, targetVector, targetVar, random) == false)
+			   clusters, targetVector, targetVar, random) == false)
     {
       printf("ERROR: stimulating cns using pictures failed\n");
 
@@ -617,26 +593,24 @@ int main(int argc, char** argv)
 
       return -1;
     }
-    
-    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
-    if(timeseries.load(timeseriesFile) == false){
-      printf("ERROR: loading time series measurements from file failed\n");
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-      delete dev;
+    if(clusters.load(clusterModelFile) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
 
       return -1;
     }
-
+    
     printf("Starting reinforcement learning..\n");
     fflush(stdout);
 
     // reinforcement learning
     {
       whiteice::ReinforcementPictures< whiteice::math::blas_real<double> >
-	system(dev, hmm, timeseries, pictures, DISPLAYTIME,
+	system(dev, hmm, clusters, pictures, DISPLAYTIME,
 	       targetVector, targetVar);
 
       system.setRandom(random);
@@ -654,7 +628,7 @@ int main(int argc, char** argv)
 	}
 
 	if(counter >= 180){
-	  system.save("rifl.dat");
+	  system.save(reinforcementModelFile);
 	  counter = 0; // saves model data every 3 minutes
 	}
 

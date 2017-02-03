@@ -24,14 +24,16 @@ namespace whiteice
   ReinforcementPictures<T>::ReinforcementPictures
   (const DataSource* dev,
    const whiteice::HMM& hmm,
-   const whiteice::dataset<T>& timeseries,
+   const whiteice::KMeans< T >& clusters,
    const std::vector<std::string>& pictures,
    const unsigned int DISPLAYTIME,
    const std::vector<double>& target,
-   const std::vector<double>& targetVar) : RIFL_abstract<T>(pictures.size(),
-							    dev->getNumberOfSignals())
+   const std::vector<double>& targetVar) :
+    RIFL_abstract<T>(pictures.size(),
+		     dev->getNumberOfSignals() + clusters.size())
   {
-    if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0){
+    if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
+    {
       throw std::invalid_argument("ReinforcementPictures ctor: bad arguments");
     }
     
@@ -40,11 +42,13 @@ namespace whiteice
 
     this->dev = dev;
     this->hmm = hmm;
-    this->timeseries = timeseries;
+    this->clusters = clusters;
     this->pictures = pictures;
     this->DISPLAYTIME = DISPLAYTIME;
     this->target = target;
     this->targetVar = targetVar;
+
+    this->currentHMMstate = 0;
 
     this->fontname = "Vera.ttf";
 
@@ -95,15 +99,18 @@ namespace whiteice
   template <typename T>
   bool ReinforcementPictures<T>::getState(whiteice::math::vertex<T>& state)
   {
-    state.resize(dev->getNumberOfSignals());
+    state.resize(dev->getNumberOfSignals() + clusters.size());
+    state.zero();
 
     std::vector<float> v;
 
     if(dev->data(v) == false) return false;
     
-    for(unsigned int i=0;i<state.size();i++){
+    for(unsigned int i=0;i<v.size();i++){
       state[i] = v[i];
     }
+
+    state[v.size() + currentHMMstate] = T(1.0);
 
     return true;
   }
@@ -451,6 +458,10 @@ namespace whiteice
       duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
 
     unsigned int index = 0;
+
+    // selects HMM initial state randomly according to starting state probabilities
+    auto pi = hmm.getPI();
+    currentHMMstate = hmm.sample(pi);
     
     
     while(running){
@@ -468,6 +479,7 @@ namespace whiteice
 	continue;
       }
 
+      // waits for full picture show time
       {
 	const long long end_ms =
 	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
@@ -476,6 +488,31 @@ namespace whiteice
 	if(delta_ms < DISPLAYTIME){
 	  usleep((DISPLAYTIME - delta_ms)*1000);
 	}
+      }
+
+      // updates HMM hidden state after action
+      {
+	std::vector<float> after;
+	std::vector<T> state;
+
+	after.resize(dev->getNumberOfSignals());
+	for(auto& a : after) a = 0.0f;
+	
+	dev->data(after);
+
+	state.resize(after.size());
+
+	for(unsigned int i=0;i<state.size();i++){
+	  state[i] = after[i];
+	}
+
+	const unsigned int o = clusters.getClusterIndex(state);
+
+	unsigned int nextState = currentHMMstate;
+
+	const double p = hmm.next_state(currentHMMstate, nextState, o);
+
+	currentHMMstate = nextState;
       }
 
       

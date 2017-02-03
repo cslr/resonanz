@@ -223,51 +223,15 @@ namespace whiteice{
 			    const whiteice::HMM& hmm, 
 			    std::vector<std::string>& pictures,
 			    const unsigned int DISPLAYTIME,
-			    whiteice::dataset< whiteice::math::blas_real<double> >& timeseries)
+			    whiteice::KMeans<  whiteice::math::blas_real<double> >& clusters)
     {
-      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
-	 timeseries.getNumberOfClusters() != 1)
+      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
 	return false;
       
 
       // initial distribution of states
       auto pi = hmm.getPI();
       unsigned int currentState = hmm.sample(pi);
-
-      
-      // discretizes observations
-      std::vector<double> m, s;
-
-      // calculates parameters (mean and standard deviation)
-      {
-	
-	
-	m.resize(dev->getNumberOfSignals());
-	s.resize(dev->getNumberOfSignals());
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] = 0.0;
-	  s[i] = 0.0;
-	}
-	
-	for(unsigned int i=0;i<timeseries.size(0);i++){
-	  auto& v = timeseries[i];
-	  
-	  for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
-	    m[k] += v[k].c[0];
-	    s[k] += v[k].c[0]*v[k].c[0];
-	  }
-	}
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] /= ((double)timeseries.size(0));
-	  s[i] /= ((double)timeseries.size(0));
-	  
-	  s[i] = m[i]*m[i];
-	  s[i] = sqrt(fabs(s[i]));
-	}
-	
-      }
 
       
       // open window (SDL)
@@ -415,13 +379,13 @@ namespace whiteice{
 
 
 	{
-	  std::vector<double> afterd(after.size());
+	  std::vector< math::blas_real<double> > afterd(after.size());
 
 	  for(unsigned int i=0;i<afterd.size();i++)
 	    afterd[i] = after[i];
-	  
-	  const unsigned int o = discretize(afterd, m, s);
 
+	  const unsigned int o = clusters.getClusterIndex(afterd);
+	  
 	  unsigned int nextState = currentState;
 	  
 	  double p = hmm.next_state(currentState, nextState, o);
@@ -443,88 +407,20 @@ namespace whiteice{
 
     
     
-    unsigned int discretize(const std::vector<double>& data,
-			    const std::vector<double>& m,
-			    const std::vector<double>& s)
-    {
-      std::vector<double> o;
-      
-      for(unsigned int k=0;k<data.size();k++){
-	const auto& x = data[k];
-
-	if(fabs(x - m[k]) <= 0.5*s[k]){ // within 34% of the mean
-	  o.push_back(0);
-	}
-	else if(x - m[k] <= -0.5*s[k]){
-	  o.push_back(1);
-	}
-	else{ // (x - m[k] >= +0.5*s[k])
-	  o.push_back(2);
-	}
-      }
-
-      unsigned int state = 0; // observation
-      unsigned int base = 1;
-
-      for(unsigned int k=0;k<o.size();k++){
-	state += o[k]*base;
-	base = base*3;
-      }
-
-      return state;
-    }
-    
-    
     bool measureRandomPictures(DataSource* dev,
 			       const whiteice::HMM& hmm, 
 			       std::vector<std::string>& pictures,
 			       const unsigned int DISPLAYTIME,
-			       whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
+			       whiteice::KMeans< whiteice::math::blas_real<double> >& clusters, 
 			       std::vector< whiteice::dataset< whiteice::math::blas_real<double> > >& data)
     {
-      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
-	 timeseries.getNumberOfClusters() != 1)
+      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
 	return false;
       
 
       // initial distribution of states
       auto pi = hmm.getPI();
       unsigned int currentState = hmm.sample(pi);
-
-      
-      // discretizes observations
-      std::vector<double> m, s;
-
-      // calculates parameters (mean and standard deviation)
-      {
-	
-	
-	m.resize(dev->getNumberOfSignals());
-	s.resize(dev->getNumberOfSignals());
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] = 0.0;
-	  s[i] = 0.0;
-	}
-	
-	for(unsigned int i=0;i<timeseries.size(0);i++){
-	  auto& v = timeseries[i];
-	  
-	  for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
-	    m[k] += v[k].c[0];
-	    s[k] += v[k].c[0]*v[k].c[0];
-	  }
-	}
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] /= ((double)timeseries.size(0));
-	  s[i] /= ((double)timeseries.size(0));
-	  
-	  s[i] = m[i]*m[i];
-	  s[i] = sqrt(fabs(s[i]));
-	}
-	
-      }
 
       
       // open window (SDL)
@@ -711,12 +607,12 @@ namespace whiteice{
 
 	// updates hidden state
 	{
-	  std::vector<double> afterd(after.size());
+	  std::vector< whiteice::math::blas_real<double> > afterd(after.size());
 
 	  for(unsigned int i=0;i<afterd.size();i++)
 	    afterd[i] = after[i];
 	  
-	  const unsigned int o = discretize(afterd, m, s);
+	  const unsigned int o = clusters.getClusterIndex(afterd);
 
 	  unsigned int nextState = currentState;
 	  
@@ -817,14 +713,13 @@ namespace whiteice{
 			     const std::vector< whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > >& nets,
 			     const std::vector<std::string>& pictures,
 			     const unsigned int DISPLAYTIME,
-			     const whiteice::dataset< whiteice::math::blas_real<double> >& timeseries,
+			     whiteice::KMeans< whiteice::math::blas_real<double> >& clusters, 
 			     const std::vector<double>& target,
 			     const std::vector<double>& targetVar,
 			     bool random)
     {
 
-      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || 
-	 timeseries.getNumberOfClusters() != 1)
+      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
 	return false;
 
       std::vector<double> targetErrors; // error (distance) to target for each step
@@ -834,42 +729,6 @@ namespace whiteice{
       auto pi = hmm.getPI();
       unsigned int currentState = hmm.sample(pi);
 
-      
-      // discretizes observations
-      std::vector<double> m, s;
-
-      // calculates parameters (mean and standard deviation)
-      {
-	
-	
-	m.resize(dev->getNumberOfSignals());
-	s.resize(dev->getNumberOfSignals());
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] = 0.0;
-	  s[i] = 0.0;
-	}
-	
-	for(unsigned int i=0;i<timeseries.size(0);i++){
-	  auto& v = timeseries[i];
-	  
-	  for(unsigned int k=0;k<dev->getNumberOfSignals();k++){
-	    m[k] += v[k].c[0];
-	    s[k] += v[k].c[0]*v[k].c[0];
-	  }
-	}
-	
-	for(unsigned int i=0;i<dev->getNumberOfSignals();i++){
-	  m[i] /= ((double)timeseries.size(0));
-	  s[i] /= ((double)timeseries.size(0));
-	  
-	  s[i] = m[i]*m[i];
-	  s[i] = sqrt(fabs(s[i]));
-	}
-	
-      }
-
-      
       // open window (SDL)
 
       SDL_Window* window = NULL;
@@ -1157,12 +1016,12 @@ namespace whiteice{
 	
 	// updates hidden state
 	{
-	  std::vector<double> stated(before.size());
+	  std::vector< whiteice::math::blas_real<double> > stated(before.size());
 
 	  for(unsigned int i=0;i<stated.size();i++)
 	    stated[i] = before[i];
-	  
-	  const unsigned int o = discretize(stated, m, s);
+
+	  const unsigned int o = clusters.getClusterIndex(stated);
 
 	  unsigned int nextState = currentState;
 	  

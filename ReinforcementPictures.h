@@ -21,8 +21,9 @@ namespace whiteice
   class ReinforcementPictures : public whiteice::RIFL_abstract<T>
   {
   public:
-    ReinforcementPictures(const DataSource* dev, const whiteice::HMM& hmm,
-			  const whiteice::dataset<T>& timeseries,
+    ReinforcementPictures(const DataSource* dev,
+			  const whiteice::HMM& hmm,
+			  const whiteice::KMeans< T >& clusters,
 			  const std::vector<std::string>& pictures,
 			  const unsigned int DISPLAYTIME,
 			  const std::vector<double>& target,
@@ -41,9 +42,11 @@ namespace whiteice
   protected:
     const DataSource* dev;
     whiteice::HMM hmm;
-    whiteice::dataset<T> timeseries;
+    whiteice::KMeans< T > clusters;
     std::vector<std::string> pictures;
     unsigned int DISPLAYTIME;
+
+    unsigned int currentHMMstate;
     
     std::vector<double> target;
     std::vector<double> targetVar;
