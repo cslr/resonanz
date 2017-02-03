@@ -57,6 +57,13 @@ int main(int argc, char** argv)
   std::vector<double> targetVector;
   std::vector<double> targetVar;
 
+  // Hidden Markov Model parameters
+  // assumes 100 different clusterized discrete brain EEG states
+  const unsigned int VISIBLE_SYMBOLS = 100; 
+  const unsigned int HIDDEN_STATES   = 5;   // HMM hidden states
+
+
+
   if(!parse_parameters(argc, argv, cmd, device, dir, targetVector, targetVar, pictures)){
     print_usage();
     return -1;
@@ -111,6 +118,17 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
     timeseries.load(timeseriesFile); // attempts to load previously measured time-series
@@ -158,9 +176,6 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
-    
-    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
-    const unsigned int HIDDEN_STATES   = 5;
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
@@ -229,7 +244,7 @@ int main(int argc, char** argv)
       return -1;
     }
     else{
-      printf("Saving HMM model file succeed.\n");
+      printf("Saving HMM model file successful.\n");
     }
 
     return 0;
@@ -251,9 +266,18 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
-    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
-    const unsigned int HIDDEN_STATES   = 5;
-    
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
     if(hmm.load(hmmFile) == false){
@@ -286,6 +310,17 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
     std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
 
     {
@@ -295,9 +330,6 @@ int main(int argc, char** argv)
 	picmeasurements[i].load(file); // attempts to load the previous measurements
       }
     }
-
-    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
-    const unsigned int HIDDEN_STATES   = 5;
 
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
@@ -482,6 +514,17 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
     if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
       printf("ERROR: No proper target vector for stimulation\n");
       
@@ -501,9 +544,6 @@ int main(int argc, char** argv)
 	picmeasurements[i].load(file); // attempts to load the previous measurements
       }
     }
-
-    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
-    const unsigned int HIDDEN_STATES   = 5;
 
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
@@ -568,9 +608,10 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
-    if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
-      printf("ERROR: No proper target vector for stimulation\n");
-      
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
       delete dev;
       IMG_Quit();
       SDL_Quit();
@@ -578,8 +619,15 @@ int main(int argc, char** argv)
       return -1;
     }
 
-    const unsigned int VISIBLE_SYMBOLS = pow(3, dev->getNumberOfSignals());
-    const unsigned int HIDDEN_STATES   = 5;
+    if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
+      printf("ERROR: No proper target vector for stimulation.\n");
+      
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
 
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);

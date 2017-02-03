@@ -30,7 +30,7 @@ namespace whiteice
    const std::vector<double>& target,
    const std::vector<double>& targetVar) :
     RIFL_abstract<T>(pictures.size(),
-		     dev->getNumberOfSignals() + clusters.size())
+		     dev->getNumberOfSignals() + hmm.getNumHiddenStates())
   {
     if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
     {
@@ -99,7 +99,7 @@ namespace whiteice
   template <typename T>
   bool ReinforcementPictures<T>::getState(whiteice::math::vertex<T>& state)
   {
-    state.resize(dev->getNumberOfSignals() + clusters.size());
+    state.resize(dev->getNumberOfSignals() + hmm.getNumHiddenStates());
     state.zero();
 
     std::vector<float> v;
@@ -128,14 +128,19 @@ namespace whiteice
     }
     
     // waits for action execution to start (FIXME use condition varibles for this..)
-    while(1){
-      {
-	std::lock_guard<std::mutex> lock(actionMutex);
-	if(actionQueue.size() == 0)
-	  break;
+    {
+      while(running){
+	{
+	  std::lock_guard<std::mutex> lock(actionMutex);
+	  if(actionQueue.size() == 0)
+	    break;
+	}
+	
+	usleep(10);
       }
 
-      usleep(10);
+      if(running == false)
+	return false;
     }
 
     usleep(DISPLAYTIME*1000/2); // we can safely sleep 50% of the display time
