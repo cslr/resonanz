@@ -118,6 +118,8 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    sleep(1);
+
     if(dev->connectionOk() == false)
     {
       printf("ERROR: No connection to device.\n");
@@ -266,6 +268,8 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    sleep(1);
+
     if(dev->connectionOk() == false)
     {
       printf("ERROR: No connection to device.\n");
@@ -309,6 +313,8 @@ int main(int argc, char** argv)
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(1);
 
     if(dev->connectionOk() == false)
     {
@@ -514,6 +520,8 @@ int main(int argc, char** argv)
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
 
+    sleep(1);
+
     if(dev->connectionOk() == false)
     {
       printf("ERROR: No connection to device.\n");
@@ -607,6 +615,8 @@ int main(int argc, char** argv)
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(1);
 
     if(dev->connectionOk() == false)
     {
@@ -817,7 +827,7 @@ bool parse_parameters(int argc, char** argv,
       const char* filename = ent->d_name;
       const int L = strlen(filename);
       
-      if(/*strcmp((const char*)(filename+L-4), ".jpg") == 0 ||*/ 
+      if(/*strcmp((const char*)(filename+L-4), ".jpg") == 0 || */
 	 strcmp((const char*)(filename+L-4), ".png") == 0){
 	
 	std::string f = path;

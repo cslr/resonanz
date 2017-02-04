@@ -334,8 +334,15 @@ namespace whiteice
       for(unsigned int i=0;i<pictures.size();i++)
       {
 	if(running == false) continue;
-	
-	SDL_Surface* image = IMG_Load(pictures[i].c_str());
+
+	SDL_Surface* image = NULL;
+
+#pragma omp critical
+	{
+	  // IMG_loader functions ARE NOT thread-safe so
+	  // we cannot load files parallel
+	  image = IMG_Load(pictures[i].c_str());
+	}
 	
 
 	if(image == NULL){
