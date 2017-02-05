@@ -1,7 +1,9 @@
 
 #include "ts_measure.h"
 
-#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <chrono>
 
 #include "pictureAutoencoder.h"
@@ -405,6 +407,292 @@ namespace whiteice{
       
     }
 
+
+    bool measureResponsePictures(DataSource* dev,
+				 const whiteice::HMM& hmm, 
+				 std::vector<std::string>& pictures,
+				 const unsigned int DISPLAYTIME,
+				 whiteice::KMeans< whiteice::math::blas_real<double> >& clusters, 
+				 whiteice::dataset< whiteice::math::blas_real<double> >& data)
+    {
+      if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
+	return false;
+
+      double response = 0.0;
+
+      // initial distribution of states
+      auto pi = hmm.getPI();
+      unsigned int currentState = hmm.sample(pi);
+
+      
+      // open window (SDL)
+
+      SDL_Window* window = NULL;
+      
+      int W = 640;
+      int H = 480;
+      
+      
+      SDL_DisplayMode mode;
+      
+      if(SDL_GetCurrentDisplayMode(0, &mode) == 0){
+	// W = (3*mode.w)/4;
+	// H = (3*mode.h)/4;
+	W = mode.w;
+	H = mode.h;
+      }
+      else return false;
+
+      if(W > H) W = H;
+      else if(H > W) H = W;
+
+
+      window = SDL_CreateWindow("Response measurement (use keys 1-0)",
+				SDL_WINDOWPOS_CENTERED,
+				SDL_WINDOWPOS_CENTERED,
+				W, H,
+				SDL_WINDOW_ALWAYS_ON_TOP |
+				SDL_WINDOW_INPUT_FOCUS);
+
+      if(window == NULL)
+	return false;
+      
+      SDL_RaiseWindow(window);
+      SDL_UpdateWindowSurface(window);
+      SDL_RaiseWindow(window);
+
+      unsigned int picsize = H;
+      if(W < H) picsize = W;
+
+      // loads font
+      std::string fontname = "Vera.ttf";
+      
+      TTF_Font* font = NULL;
+      
+      {
+	double fontSize = 100.0*sqrt(((float)(W*H))/(640.0*480.0));
+	unsigned int fs = (unsigned int)fontSize;
+	if(fs <= 0) fs = 10;
+	
+	font = TTF_OpenFont(fontname.c_str(), fs);
+      }
+      
+      // loads pictures
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > v;
+      v.resize(pictures.size());
+
+      SDL_Event event;
+      bool exit = false;
+
+      
+      for(unsigned int i=0;i<v.size() && !exit;i++){
+	if(picToVector(pictures[i], picsize, v[i], false) == false){
+	  return false;
+	}
+
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+	    exit = true;
+	    continue;
+	  }
+	}
+      }
+
+      
+      while(!exit){
+
+	response -= 0.05;
+	if(response <= 0.0) response = 0.0;
+	
+	while(SDL_PollEvent(&event)){
+	  if(event.type == SDL_KEYDOWN){
+
+	    if(event.key.keysym.sym == SDLK_UP){
+	      response += 0.1;
+	      if(response > 1.0) response = 1.0;
+	    }
+	    else if(event.key.keysym.sym == SDLK_DOWN){
+	      response -= 0.1;
+	      if(response < 0.0) response = 0.0;
+	    }
+	    
+	    continue;
+	  }
+	  if(event.type == SDL_QUIT){
+	    exit = true;
+	    continue;
+	  }
+	}
+	
+	
+	SDL_Surface* win = SDL_GetWindowSurface(window);
+
+	SDL_FillRect(win, NULL, 
+		     SDL_MapRGB(win->format, 0, 0, 0));
+	
+	SDL_Surface* scaled = NULL;
+
+	const unsigned int r = rand() % pictures.size();
+	
+	{ // displays picture from disk (downscaled to picsize) [75%]
+
+	  // printf("Load: %s (%d)\n", pictures[r].c_str(), picsize);
+	  
+	  if(vectorToSurface(v[r], picsize, scaled, false) == false){
+	    continue;
+	  }
+	  
+	}
+
+	SDL_Rect imageRect;
+	
+	if(win->w < win->h){
+	  imageRect.w = win->w;
+	  imageRect.h = win->w;
+	  imageRect.x = 0;
+	  imageRect.y = (H - win->w)/2;
+	}
+	else{
+	  imageRect.w = win->h;
+	  imageRect.h = win->h;
+	  imageRect.x = (W - win->h)/2;
+	  imageRect.y = 0;
+	  
+	}
+
+	SDL_BlitScaled(scaled, NULL, win, &imageRect);
+
+	SDL_FreeSurface(scaled);
+
+	// prints current response variable
+	if(font){
+	  SDL_Color white = { 255, 255, 255 };
+	  
+	  char message[80];
+	  snprintf(message, 80, "%.1f", response);
+	      
+	  SDL_Surface* msg = TTF_RenderUTF8_Blended(font, message, white);
+	  
+	  if(msg != NULL){
+	    SDL_Rect messageRect;
+	    
+	    messageRect.x = (W - msg->w)/2;
+	    messageRect.y = (H - msg->h)/2;
+	    messageRect.w = msg->w;
+	    messageRect.h = msg->h;
+	    
+	    SDL_BlitSurface(msg, NULL, win, &messageRect);
+	    
+	    SDL_FreeSurface(msg);
+	  }
+	}
+	
+
+	SDL_UpdateWindowSurface(window);
+	SDL_ShowWindow(window);
+	SDL_FreeSurface(win);
+
+	unsigned int start_ms =
+	  duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	
+	std::vector<float> before, after;
+	
+	if(dev->connectionOk() == false){
+	  printf("ERROR: dev->connectionOk() returned false\n");
+	  return true;
+	}
+
+	if(dev->data(before) == false){
+	  printf("ERROR: dev->data(before) returned false\n");
+	  return false;
+	}
+
+	
+	{
+	  const unsigned int end_ms = duration_cast< milliseconds >(system_clock::now().time_since_epoch()).count();
+	  
+	  unsigned int delta_ms = end_ms - start_ms;
+	  if(delta_ms < DISPLAYTIME){
+	    usleep((DISPLAYTIME - delta_ms)*1000);
+	  }
+	  
+	}
+
+	if(dev->data(after) == false){
+	  printf("ERROR: dev->data(after) returned false\n");
+	  return false;
+	}
+
+	// adds measurement data
+	{
+	  auto& store = data;
+
+	  if(store.getNumberOfClusters() != 2){
+	    store.clear();
+
+	    if(store.createCluster("measurement",
+				   before.size() + hmm.getNumHiddenStates()) == false)
+	      return false;
+	    
+	    if(store.createCluster("response", 1) == false)
+	      return false;
+	  }
+
+	  whiteice::math::vertex< whiteice::math::blas_real<double> > dat;
+	  dat.resize(after.size() + hmm.getNumHiddenStates());
+	  dat.zero();
+
+	  float epsilon = 0.01f;
+
+	  for(unsigned int i=0;i<before.size();i++){
+	    dat[i] = before[i];
+	  }
+
+	  // sets indicator variable for hidden state
+	  dat[before.size() + currentState] = 1.0;
+
+	  if(store.add(0, dat) == false) return false;
+	  
+	  dat.resize(1);
+	  dat[0] = response;
+	  
+	  if(store.add(1, dat) == false) return false;
+
+	  printf("%d recordings\n", store.size(0));
+	}
+
+	
+
+	// updates hidden state
+	{
+	  std::vector< whiteice::math::blas_real<double> > afterd(after.size());
+
+	  for(unsigned int i=0;i<afterd.size();i++)
+	    afterd[i] = after[i];
+	  
+	  const unsigned int o = clusters.getClusterIndex(afterd);
+
+	  unsigned int nextState = currentState;
+	  
+	  double p = hmm.next_state(currentState, nextState, o);
+	  
+	  currentState = nextState;
+	}
+	
+	
+      }
+      
+      SDL_DestroyWindow(window);
+
+      if(font){
+	TTF_CloseFont(font);
+	font = NULL;
+      }
+
+      return true;
+    }
+
+    
     
     
     bool measureRandomPictures(DataSource* dev,
@@ -637,17 +925,15 @@ namespace whiteice{
       netError = 0.0;
       
       if(data.getNumberOfClusters() != 2) return false;
-      if(data.size(0) <= 0 || data.size(1) <= 1) return false;
+      if(data.size(0) <= 0 || data.size(1) <= 0) return false;
       
       const unsigned int inputDimension  = data.dimension(0);
       const unsigned int outputDimension = data.dimension(1);
 
       std::vector<unsigned int> arch;
 
-      // creates deep 5-layer neural network
+      // creates deep 3-layer neural network
       arch.push_back(inputDimension);
-      arch.push_back(inputDimension*10);
-      arch.push_back(inputDimension*10);
       arch.push_back(inputDimension*10);
       arch.push_back(inputDimension*10);
       arch.push_back(outputDimension);
@@ -689,8 +975,8 @@ namespace whiteice{
 	  printf("OPTIMIZATION ERROR: %e (%d iters)\n", error.c[0], iterations);
 	  fflush(stdout);
 	}
-	
-	sleep(1); // checks status every 1 sec
+
+	sleep(1); // checks status every 1 seconds
       }
       while(iterations < 1000);
 

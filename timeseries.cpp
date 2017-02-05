@@ -13,7 +13,9 @@
 #include <math.h>
 
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 
 #include <dinrhiw/dinrhiw.h>
 
@@ -93,6 +95,12 @@ int main(int argc, char** argv)
   snprintf(buffer, 256, "%s/%s-clusters.model", dir.c_str(), device.c_str());
   const std::string clusterModelFile = buffer;
 
+  snprintf(buffer, 256, "%s/%s-state-measurements.dat", dir.c_str(), device.c_str());
+  const std::string stateDataFile = buffer;
+
+  snprintf(buffer, 256, "%s/%s-state.model", dir.c_str(), device.c_str());
+  const std::string stateModelFile = buffer;
+
   snprintf(buffer, 256, "%s/%s-reinforcement.model", dir.c_str(), device.c_str());
   const std::string reinforcementModelFile = buffer;
 
@@ -107,6 +115,11 @@ int main(int argc, char** argv)
     
   if(IMG_Init(img_flags) != img_flags){
     printf("ERROR: SDL IMAGE initialization failed\n");
+    return -1;
+  }
+
+  if(TTF_Init() != 0){
+    printf("Truetype font system initialization failed\n");
     return -1;
   }
   
@@ -307,6 +320,124 @@ int main(int argc, char** argv)
     }
     
     return 0;
+  }
+  else if(cmd == "--record-state"){
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(1);
+
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+
+    whiteice::dataset< whiteice::math::blas_real<double> > stateMeasurements;
+
+    if(stateMeasurements.load(stateDataFile)){
+      if(stateMeasurements.getNumberOfClusters() == 2)
+	printf("Loaded %d old response recordings..\n", stateMeasurements.size(1));
+    }
+
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
+
+    if(clusters.load(clusterModelFile) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    // measures user reported responses to pictures
+    if(measureResponsePictures(dev, hmm, pictures, DISPLAYTIME,
+			       clusters,
+			       stateMeasurements) == false)
+    {
+      printf("ERROR: measuring responses failed\n");
+    }
+
+    if(stateMeasurements.getNumberOfClusters() == 2){
+      if(stateMeasurements.save(stateDataFile)){
+	printf("Saved %d responses to pictures..\n", stateMeasurements.size(1));
+      }
+    }
+    
+  }
+  else if(cmd == "--learn-state"){
+
+    whiteice::dataset< whiteice::math::blas_real<double> > stateMeasurements;
+    bool loadOK = false;
+
+    if(stateMeasurements.load(stateDataFile)){
+      if(stateMeasurements.getNumberOfClusters() == 2){
+	printf("Loaded %d response recordings..\n", stateMeasurements.size(1));
+	loadOK = true;
+      }
+    }
+
+    if(loadOK == false){
+      printf("Loading response recordings file FAILED.\n");
+
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    
+    whiteice::nnetwork< whiteice::math::blas_real<double> > net;
+    double error = 0.0;
+
+    printf("Optimizing response model..\n");
+    fflush(stdout);
+
+    if(optimizeNeuralnetworkModel(stateMeasurements, net, error) == false){
+      printf("Optimizing neural network response model FAILED\n");
+	
+      IMG_Quit();
+      SDL_Quit();
+	
+      return -1;
+    }
+
+    printf("State response model error: %f\n", error);
+    fflush(stdout);
+
+    whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > bnet;
+    bnet.importNetwork(net);
+
+    if(bnet.save(stateModelFile) == false){
+      printf("ERROR: saving state response model failed\n");
+      
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+    
   }
   else if(cmd == "--measure2"){
     DataSource* dev = nullptr;
@@ -609,6 +740,45 @@ int main(int argc, char** argv)
     }
     
   }
+  else if(cmd == "--device-values"){
+    DataSource* dev = nullptr;
+
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(2);
+
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    while(dev->connectionOk()){
+      std::vector<float> values;
+      std::vector<std::string> signals;
+
+      if(dev->data(values) && dev->getSignalNames(signals)){
+	for(unsigned int i=0;i<values.size();i++){
+	  printf("%.2f ", values[i]);
+	}
+	printf("\n");
+	
+	// printf("%s %f\n", signals[2].c_str(), values[2]);
+	
+	fflush(stdout);
+      }
+
+      sleep(1);
+    }
+
+    delete dev;
+  }
   else if(cmd == "--reinforcement"){
     
     DataSource* dev = nullptr;
@@ -656,6 +826,21 @@ int main(int argc, char** argv)
 
     if(clusters.load(clusterModelFile) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    // reinforcement model r(state) -> reinforcement
+    whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > rmodel;
+
+    if(rmodel.load(stateModelFile) == false){
+      printf("ERROR: loading reinforcement model file failed.\n");
+
+      delete dev;
       IMG_Quit();
       SDL_Quit();
 
@@ -668,7 +853,7 @@ int main(int argc, char** argv)
     // reinforcement learning
     {
       whiteice::ReinforcementPictures< whiteice::math::blas_real<double> >
-	system(dev, hmm, clusters, pictures, DISPLAYTIME,
+	system(dev, hmm, clusters, rmodel, pictures, DISPLAYTIME,
 	       targetVector, targetVar);
 
       system.setRandom(random);
@@ -713,6 +898,8 @@ void print_usage()
   printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0] [--target-var=1.0,1.0,1.0,1.0,1.0,1.0\n");
   printf("       <cmd> = \"--measure1\"       stimulates cns randomly and collects time-series measurements\n");
   printf("       <cmd> = \"--learn1\"         optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
+  printf("       <cmd> = \"--record-state\"   shows stimuli and collects use specified inputs in range of 1-10 about how high user is in the target state\n");
+  printf("       <cmd> = \"--learn-state\"    calculates model file for user response state\n");
   printf("       <cmd> = \"--predict\"        predicts and outputs currently predicted hidden state\n");
   printf("       <cmd> = \"--measure2\"       stimulates cns randomly and collects picture-wise information (incl. hidden states)\n");
   printf("       <cmd> = \"--learn2\"         optimizes neural network model per picture using input and additional hidden states\n");
@@ -721,6 +908,7 @@ void print_usage()
   printf("       <cmd> = \"--list\"           lists collected data (output cluster)\n");
   printf("       <cmd> = \"--reinforcement\"  reinforcement learning (requires --measure1 and --learn1)\n");
   printf("       <cmd> = \"--reinforcementr\" reinforcement learning: random mode [for compaing effectiveness] (requires --measure1 and --learn1)\n");
+  printf("       <cmd> = \"--device-values\"  prints device values (delta, theta, alpha, beta, gamma, total)\n");
   printf("       <device>                   'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>                path to directory (png and model files)\n");
   printf("       --target=<vector>          optimization target [0,1]^6 vector. (?) value means value can be anything\n");
@@ -745,15 +933,19 @@ bool parse_parameters(int argc, char** argv,
   dir = argv[3];
   pictures.clear();
   targets.clear();
+  targetVar.clear();
 
   if(cmd != "--measure1" &&
      cmd != "--learn1" &&
+     cmd != "--record-state" &&
+     cmd != "--learn-state" && 
      cmd != "--predict" &&
      cmd != "--measure2" &&
      cmd != "--learn2" && 
      cmd != "--stimulate" && 
      cmd != "--list" &&
      cmd != "--stimulater" &&
+     cmd != "--device-values" && 
      cmd != "--reinforcement" && 
      cmd != "--reinforcementr")
     return false;

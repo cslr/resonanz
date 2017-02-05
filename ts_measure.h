@@ -24,6 +24,13 @@ namespace whiteice{
 				const unsigned int DISPLAYTIME,
 				whiteice::KMeans< whiteice::math::blas_real<double> >& clusters);
 
+	bool measureResponsePictures(DataSource* dev,
+				     const whiteice::HMM& hmm, 
+				     std::vector<std::string>& pictures,
+				     const unsigned int DISPLAYTIME,
+				     whiteice::KMeans< whiteice::math::blas_real<double> >& clusters, 
+				     whiteice::dataset< whiteice::math::blas_real<double> >& data);
+
 	bool measureRandomPictures(DataSource* dev,
 				   const whiteice::HMM& hmm, 
 				   std::vector<std::string>& pictures,

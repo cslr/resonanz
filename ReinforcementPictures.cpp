@@ -25,6 +25,7 @@ namespace whiteice
   (const DataSource* dev,
    const whiteice::HMM& hmm,
    const whiteice::KMeans< T >& clusters,
+   const whiteice::bayesian_nnetwork<T>& rmodel,
    const std::vector<std::string>& pictures,
    const unsigned int DISPLAYTIME,
    const std::vector<double>& target,
@@ -43,6 +44,7 @@ namespace whiteice
     this->dev = dev;
     this->hmm = hmm;
     this->clusters = clusters;
+    this->rmodel = rmodel;
     this->pictures = pictures;
     this->DISPLAYTIME = DISPLAYTIME;
     this->target = target;
@@ -171,15 +173,27 @@ namespace whiteice
     {
       reinforcement = T(0.0);
 
+      whiteice::math::vertex<T> m;
+      whiteice::math::matrix<T> c;
+      m.resize(1);
+      m.zero();
+
+      if(rmodel.calculate(newstate, m, c, 1, 0)){
+	reinforcement = m[0];
+      }
+
+#if 0
       for(unsigned int i=0;i<target.size();i++){
 	reinforcement +=
 	  (newstate[i].c[0] - target[i])*
 	  (newstate[i].c[0] - target[i])/targetVar[i];
       }
+#endif
 
       // reports average distance to target during latest 150 rounds
       {
-	T distance = sqrt(reinforcement);
+	// T distance = sqrt(reinforcement);
+	T distance = reinforcement;
 	distances.push_back(distance);
 	
 	while(distances.size() > 150)
@@ -199,12 +213,12 @@ namespace whiteice
 	  dev = sqrt(abs(dev - d150*d150));
 	  
 	  // reports distance to the target state
-	  printf("DISTANCE-150: %f +- %f\n", d150.c[0], dev.c[0]);
+	  printf("GOODNESS-150: %f +- %f\n", d150.c[0], dev.c[0]);
 	}
       }
 
       // minus: we sought to minimize distance to the target state (maximize -f(x))
-      reinforcement = -abs(reinforcement); 
+      // reinforcement = -abs(reinforcement); 
     }
     
     

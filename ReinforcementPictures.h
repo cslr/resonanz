@@ -24,6 +24,7 @@ namespace whiteice
     ReinforcementPictures(const DataSource* dev,
 			  const whiteice::HMM& hmm,
 			  const whiteice::KMeans< T >& clusters,
+			  const whiteice::bayesian_nnetwork<T>& rmodel,
 			  const std::vector<std::string>& pictures,
 			  const unsigned int DISPLAYTIME,
 			  const std::vector<double>& target,
@@ -43,6 +44,7 @@ namespace whiteice
     const DataSource* dev;
     whiteice::HMM hmm;
     whiteice::KMeans< T > clusters;
+    whiteice::bayesian_nnetwork<T> rmodel;
     std::vector<std::string> pictures;
     unsigned int DISPLAYTIME;
 

@@ -19,7 +19,7 @@ CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp cp_main.cpp
 
 
 
@@ -58,6 +58,10 @@ TS_TARGET=timeseries
 TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
 TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o
 
+CARTPOLE_TARGET=cartpole
+CARTPOLE_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
+CARTPOLE_OBJECTS=cp_main.o SDLCartPole.o
+
 
 ############################################################
 
@@ -73,6 +77,9 @@ renaissance: $(R9E_OBJECTS)
 
 timeseries: $(TS_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TS_TARGET) $(TS_OBJECTS) $(TS_LIBS) $(LIBS)
+
+cartpole: $(CARTPOLE_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(CARTPOLE_TARGET) $(CARTPOLE_OBJECTS) $(CARTPOLE_LIBS) $(LIBS)
 
 jnilib: $(JNILIB_OBJECTS)
 	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o lib$(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)
