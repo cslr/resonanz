@@ -12,8 +12,15 @@
 
 #include <unistd.h>
 
-
 #include "Log.h"
+
+
+// defines size of feature vector square picture (mini picture)
+// that is calculated from actual pictures
+// FEATURE_PICSIZE x FEATURE_PICSIZE * 3 (RGB) sized vector
+#define FEATURE_PICSIZE 32
+
+
 
 namespace whiteice
 {
@@ -31,7 +38,8 @@ namespace whiteice
    const std::vector<double>& target,
    const std::vector<double>& targetVar) :
     RIFL_abstract<T>(pictures.size(),
-		     dev->getNumberOfSignals() + hmm.getNumHiddenStates())
+		     dev->getNumberOfSignals() + hmm.getNumHiddenStates(),
+		     FEATURE_PICSIZE*FEATURE_PICSIZE*3)
   {
     if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
     {
@@ -55,6 +63,8 @@ namespace whiteice
     this->fontname = "Vera.ttf";
 
     this->random = false;
+
+    this->useReinforcementModel = false;
 
     // starts display thread
     {
@@ -96,6 +106,13 @@ namespace whiteice
   {
     random = r;
   }
+
+
+  template <typename T>
+  void ReinforcementPictures<T>::setReinforcementModel(bool useModel)
+  {
+    useReinforcementModel = useModel;
+  }
   
 
   template <typename T>
@@ -113,6 +130,24 @@ namespace whiteice
     }
 
     state[v.size() + currentHMMstate] = T(1.0);
+
+    return true;
+  }
+
+  
+  template <typename T>
+  bool ReinforcementPictures<T>::getActionFeature(const unsigned int action,
+						  whiteice::math::vertex<T>& feature)
+  {
+    feature.resize(this->dimActionFeatures);
+    feature.zero();
+    
+    if(action >= actionFeatures.size()) return false;
+
+    if(actionFeatures[action].size() == this->dimActionFeatures)
+      feature = actionFeatures[action];
+    else
+      return false;
 
     return true;
   }
@@ -173,27 +208,35 @@ namespace whiteice
     {
       reinforcement = T(0.0);
 
-      whiteice::math::vertex<T> m;
-      whiteice::math::matrix<T> c;
-      m.resize(1);
-      m.zero();
-
-      if(rmodel.calculate(newstate, m, c, 1, 0)){
-	reinforcement = m[0];
+      if(useReinforcementModel){
+	
+	whiteice::math::vertex<T> m;
+	whiteice::math::matrix<T> c;
+	m.resize(1);
+	m.zero();
+	
+	if(rmodel.calculate(newstate, m, c, 1, 0)){
+	  reinforcement = m[0];
+	}
+	
       }
+      else{
 
-#if 0
-      for(unsigned int i=0;i<target.size();i++){
-	reinforcement +=
-	  (newstate[i].c[0] - target[i])*
-	  (newstate[i].c[0] - target[i])/targetVar[i];
+	for(unsigned int i=0;i<target.size();i++){
+	  reinforcement +=
+	    (newstate[i].c[0] - target[i])*
+	    (newstate[i].c[0] - target[i])/targetVar[i];
+	}
+
+	// minus: we sought to minimize distance to the target state (maximize -f(x))
+	reinforcement = -reinforcement; 
+	
       }
-#endif
 
       // reports average distance to target during latest 150 rounds
       {
 	// T distance = sqrt(reinforcement);
-	T distance = reinforcement;
+	T distance = abs(reinforcement);
 	distances.push_back(distance);
 	
 	while(distances.size() > 150)
@@ -217,12 +260,75 @@ namespace whiteice
 	}
       }
 
-      // minus: we sought to minimize distance to the target state (maximize -f(x))
-      // reinforcement = -abs(reinforcement); 
     }
     
     
     return true;
+  }
+
+
+
+  /*
+   * calculates mini feature vectors (mini pictures)
+   * from images
+   */
+  template <typename T>
+  void ReinforcementPictures<T>::calculateFeatureVector(SDL_Surface* pic,
+							whiteice::math::vertex<T>& f) const
+  {
+    if(pic == NULL){
+      f.resize(FEATURE_PICSIZE*FEATURE_PICSIZE*3);
+      f.zero();
+
+      return;
+    }
+    
+    SDL_Surface* scaled = NULL;
+    
+    scaled = SDL_CreateRGBSurface(0, FEATURE_PICSIZE, FEATURE_PICSIZE, 32,
+				  0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    if(scaled == NULL) return;
+
+    SDL_Rect srcrect;
+    
+    if(pic->w < pic->h){
+      srcrect.w = pic->w;
+      srcrect.x = 0;
+      srcrect.h = pic->w;
+      srcrect.y = (pic->h - pic->w)/2;
+    }
+    else{
+      srcrect.h = pic->h;
+      srcrect.y = 0;
+      srcrect.w = pic->h;
+      srcrect.x = (pic->w - pic->h)/2;
+      }
+    
+    if(SDL_BlitScaled(pic, &srcrect, scaled, NULL) != 0){
+      SDL_FreeSurface(scaled);
+      return;
+    }
+
+    unsigned int index = 0;
+    
+    for(int j=0;j<scaled->h;j++){
+      for(int i=0;i<scaled->w;i++){
+
+	unsigned int pixel = ((unsigned int*)(((char*)scaled->pixels) + j*scaled->pitch))[i];
+	unsigned int r = (0x00FF0000 & pixel) >> 16;
+	unsigned int g = (0x0000FF00 & pixel) >>  8;
+	unsigned int b = (0x000000FF & pixel);
+	
+	f[index] = (double)r/255.0; index++;
+	f[index] = (double)g/255.0; index++;
+	f[index] = (double)b/255.0; index++;
+	
+      }
+    }
+
+    SDL_FreeSurface(scaled);
+
+    return; // everything OK
   }
   
 
@@ -337,6 +443,8 @@ namespace whiteice
     // loads all pictures
     std::vector<SDL_Surface*> images;
     images.resize(pictures.size());
+
+    actionFeatures.resize(pictures.size());
     
     {
       for(unsigned int i=0;i<pictures.size();i++)
@@ -422,6 +530,12 @@ namespace whiteice
 	images[i] = scaled;
 
 	if(image) SDL_FreeSurface(image);
+
+	// creates feature vector (mini picture) of the image
+	{
+	  actionFeatures[i].resize(this->dimActionFeatures);
+	  calculateFeatureVector(images[i], actionFeatures[i]);
+	}
 
 	numLoaded++;
 

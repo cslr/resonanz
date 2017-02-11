@@ -58,11 +58,6 @@ TS_TARGET=timeseries
 TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
 TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o
 
-CARTPOLE_TARGET=cartpole
-CARTPOLE_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
-CARTPOLE_OBJECTS=cp_main.o SDLCartPole.o
-
-
 ############################################################
 
 all: $(OBJECTS) resonanz 
@@ -77,9 +72,6 @@ renaissance: $(R9E_OBJECTS)
 
 timeseries: $(TS_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TS_TARGET) $(TS_OBJECTS) $(TS_LIBS) $(LIBS)
-
-cartpole: $(CARTPOLE_OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(CARTPOLE_TARGET) $(CARTPOLE_OBJECTS) $(CARTPOLE_LIBS) $(LIBS)
 
 jnilib: $(JNILIB_OBJECTS)
 	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o lib$(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)

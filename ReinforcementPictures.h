@@ -13,6 +13,11 @@
 #include <thread>
 #include <mutex>
 
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
+
 
 namespace whiteice
 {
@@ -36,6 +41,9 @@ namespace whiteice
 
     bool getDisplayIsRunning();
 
+    // if set true use reinforcement model (nnetwork<T>) as reinforcement values..
+    void setReinforcementModel(bool useModel);
+
     // sets random mode (if true) instead of showing the best pic,
     // displays randomly chosen pic while doing all the calculations etc.
     void setRandom(bool r);
@@ -49,6 +57,9 @@ namespace whiteice
     unsigned int DISPLAYTIME;
 
     unsigned int currentHMMstate;
+
+    // if true use rmodel, otherwise minimize distance ~ ||newstate - target||^2
+    bool useReinforcementModel;
     
     std::vector<double> target;
     std::vector<double> targetVar;
@@ -65,6 +76,15 @@ namespace whiteice
     virtual bool performAction(const unsigned int action,
 			       whiteice::math::vertex<T>& newstate,
 			       T& reinforcement);
+
+    virtual bool getActionFeature(const unsigned int action,
+				  whiteice::math::vertex<T>& feature);
+
+    // helper function to create feature vector f (mini pic) from image
+    void calculateFeatureVector(SDL_Surface* pic,
+				whiteice::math::vertex<T>& f) const;
+
+    std::vector< whiteice::math::vertex<T> > actionFeatures;
 
     std::list<T> distances;
 

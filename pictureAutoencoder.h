@@ -13,7 +13,7 @@ namespace whiteice
 {
   namespace resonanz {
     
-    // opens and converts (RGB) picture to picsize*picsize sized (grayscale) vector
+    // opens and converts (RGB) picture to picsize*picsize*3 sized vector
     bool picToVector(const std::string& picture, const unsigned int picsize,
 		     whiteice::math::vertex< whiteice::math::blas_real<double> >& v, bool hsv=true);
 

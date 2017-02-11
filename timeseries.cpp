@@ -71,7 +71,11 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  bool random = false; // shows random pictures instead of ones computed to be most effective
+  // shows random pictures instead of ones computed to be most effective
+  bool random = false;
+
+  // uses nnetwork as state to reinforcement model instead of distance to target
+  bool useRmodel = false;
   
   if(cmd == "--stimulater"){
     cmd = "--stimulate";
@@ -835,17 +839,21 @@ int main(int argc, char** argv)
     }
 
     // reinforcement model r(state) -> reinforcement
+
     whiteice::bayesian_nnetwork< whiteice::math::blas_real<double> > rmodel;
 
-    if(rmodel.load(stateModelFile) == false){
-      printf("ERROR: loading reinforcement model file failed.\n");
-
-      delete dev;
-      IMG_Quit();
-      SDL_Quit();
-
-      return -1;
+    if(useRmodel){
+      if(rmodel.load(stateModelFile) == false){
+	printf("ERROR: loading reinforcement model file failed.\n");
+	
+	delete dev;
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
     }
+
     
     printf("Starting reinforcement learning..\n");
     fflush(stdout);
@@ -856,10 +864,15 @@ int main(int argc, char** argv)
 	system(dev, hmm, clusters, rmodel, pictures, DISPLAYTIME,
 	       targetVector, targetVar);
 
+      if(useRmodel)
+	system.setReinforcementModel(true);
+      else
+	system.setReinforcementModel(false);
+
       system.setRandom(random);
 
       system.setLearningMode(true);
-      system.setEpsilon(0.90);
+      system.setEpsilon(0.60);
       
       system.start();
       unsigned int counter = 0;
