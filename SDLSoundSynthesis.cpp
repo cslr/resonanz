@@ -2,7 +2,7 @@
  * SDLSoundSynthesis.cpp
  *
  *  Created on: 15.2.2013
- *      Author: omistaja
+ *      Author: Tomas Ukkonen
  */
 
 #include "SDLSoundSynthesis.h"
@@ -35,7 +35,8 @@ SDLSoundSynthesis::~SDLSoundSynthesis() {
 bool SDLSoundSynthesis::play()
 {
   if(dev == 0){
-    dev = SDL_OpenAudioDevice(NULL, 0, &desired, &snd, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+    dev = SDL_OpenAudioDevice(NULL, 0, &desired, &snd,
+			      SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
   }
   
   if(dev == 0){

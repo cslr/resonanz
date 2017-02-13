@@ -19,7 +19,7 @@ CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp cp_main.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp
 
 
 
@@ -56,7 +56,7 @@ R9E_OBJECTS=renaissance.o pictureAutoencoder.o measurements.o optimizeResponse.o
 
 TS_TARGET=timeseries
 TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
-TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o
+TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o
 
 ############################################################
 

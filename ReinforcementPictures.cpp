@@ -38,6 +38,7 @@ namespace whiteice
    const std::vector<double>& target,
    const std::vector<double>& targetVar) :
     RIFL_abstract<T>(pictures.size(),
+		     dev == NULL ? 0 :
 		     dev->getNumberOfSignals() + hmm.getNumHiddenStates(),
 		     FEATURE_PICSIZE*FEATURE_PICSIZE*3)
   {
