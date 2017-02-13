@@ -312,14 +312,14 @@ namespace whiteice
 	    auto now = std::chrono::system_clock::now();
 	    actionQueue_cond.wait_until(lock, now + 10*100ms);
 	  }
+
+	  if(running == false) continue;
 	  
 	  action = actionQueue.front();
 	  actionQueue.pop_front();
 	  actionQueue_cond.notify_all();
 	  
 	  hasAction = true;
-
-	  if(running == false) continue;
 	}
       
 
@@ -329,17 +329,21 @@ namespace whiteice
 	}
 	
 	// starts playing new sound
+	std::cout << "!!!!!!!!!!!!!!!!!!!!!! PLAYING SOUND: "
+		  << action << std::endl;
 	{
 	  std::vector<float> params(synth->getNumberOfParameters());
 	  
 	  for(auto& p : params)
 	    p = 0.0f;
-	  
+
 	  for(unsigned int i=0;i<params.size()&&i<action.size();i++){
 	    params[i] = action[i].c[0];
 	    
 	    if(params[i] < 0.0f) params[i] = 0.0f;
 	    else if(params[i] > 1.0f) params[i] = 1.0f;
+
+	    // params[i] = ((float)rand())/((float)RAND_MAX); // for debugging test
 	  }
 
 	  synth->setParameters(params);

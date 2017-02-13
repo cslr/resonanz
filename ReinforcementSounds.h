@@ -25,6 +25,7 @@ namespace whiteice
     template <typename T>
       class ReinforcementSounds : public whiteice::RIFL_abstract2<T>
       {
+      public:
 	ReinforcementSounds(const DataSource* dev,
 			    const whiteice::HMM& hmm,
 			    const whiteice::KMeans< T >& clusters,

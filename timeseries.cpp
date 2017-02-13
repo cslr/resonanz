@@ -26,8 +26,12 @@
 #include "RandomEEG.h"
 #include "MuseOSC.h"
 
+#include "FMSoundSynthesis.h"
+
 #include "ts_measure.h"
 #include "ReinforcementPictures.h"
+#include "ReinforcementSounds.h"
+
 
 void print_usage();
 
@@ -854,6 +858,8 @@ int main(int argc, char** argv)
       }
     }
 
+    SDLSoundSynthesis* synth = new FMSoundSynthesis();
+
     
     printf("Starting reinforcement learning..\n");
     fflush(stdout);
@@ -861,30 +867,48 @@ int main(int argc, char** argv)
     // reinforcement learning
     {
       whiteice::ReinforcementPictures< whiteice::math::blas_real<double> >
-	system(dev, hmm, clusters, rmodel, pictures, DISPLAYTIME,
+	pics(dev, hmm, clusters, rmodel, pictures, DISPLAYTIME,
+	     targetVector, targetVar);
+      
+      sleep(1); // waits for 1 sec for SDL to initialize (FIXME this is buggy)
+
+      whiteice::resonanz::ReinforcementSounds< whiteice::math::blas_real<double> >
+	sounds(dev, hmm, clusters, rmodel, synth, 4*DISPLAYTIME,
 	       targetVector, targetVar);
 
-      if(useRmodel)
-	system.setReinforcementModel(true);
-      else
-	system.setReinforcementModel(false);
+      if(useRmodel){
+	pics.setReinforcementModel(true);
+	sounds.setReinforcementModel(true);
+      }
+      else{
+	pics.setReinforcementModel(false);
+	sounds.setReinforcementModel(false);
+      }
 
-      system.setRandom(random);
+      pics.setRandom(random);
+      sounds.setRandom(random);
 
-      system.setLearningMode(true);
-      system.setEpsilon(0.60);
+      pics.setLearningMode(true);
+      sounds.setLearningMode(true);
+      pics.setEpsilon(0.60);
+      sounds.setEpsilon(0.60);
       
-      system.start();
+      pics.start();
+      sounds.start();
+      
+      
       unsigned int counter = 0;
 
-      while(system.isRunning()){
+      while(pics.isRunning() && sounds.isRunning()){
 	sleep(1);
-	if(system.getKeypress() || system.getDisplayIsRunning() == false){
-	  system.stop();
+	if(pics.getKeypress() || pics.getDisplayIsRunning() == false ||
+	   sounds.getSoundIsActive() == false){
+	  pics.stop();
+	  sounds.stop();
 	}
 
 	if(counter >= 180){
-	  system.save(reinforcementModelFile);
+	  // pics.save(reinforcementModelFile);
 	  counter = 0; // saves model data every 3 minutes
 	}
 
