@@ -14,12 +14,12 @@ CP = cp
 
 
 
-CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
-CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
+CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` `pkg-config fluidsynth --cflags` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
+CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `/usr/local/bin/sdl2-config --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` `pkg-config fluidsynth --cflags` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
 
-OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o
+OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o SoundSynthesis.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp SoundSynthesis.cpp
 
 
 
@@ -46,17 +46,17 @@ MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs
 MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
 MAXIMPACT_TARGET=maximpact
 
-SOUND_LIBS=`/usr/local/bin/sdl2-config --libs`
+SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config fluidsynth --libs`
 SOUND_TEST_TARGET=fmsound
-SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o
+SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o FluidSynthSynthesis.o
 
 R9E_TARGET=renaissance
 R9E_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
 R9E_OBJECTS=renaissance.o pictureAutoencoder.o measurements.o optimizeResponse.o stimulation.o MuseOSC.o NoEEGDevice.o RandomEEG.o hsv.o
 
 TS_TARGET=timeseries
-TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
-TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o
+TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs` `pkg-config fluidsynth --libs`
+TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o FluidSynthSynthesis.o
 
 ############################################################
 

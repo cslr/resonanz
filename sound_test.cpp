@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "FMSoundSynthesis.h"
+#include "FluidSynthSynthesis.h"
 #include "SDLMicrophoneListener.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -11,29 +12,42 @@
 
 int main(int argc, char**argv)
 {
-  printf("Mini FM sound synthesis and capture test\n");
-  
-  SDL_Init(SDL_INIT_AUDIO);
-  atexit(SDL_Quit);
-  
+  printf("Mini sound synthesis and capture test\n");
+
+  bool useSDL = false;
   srand(time(0));
+
+  // if(rand()&1) useSDL = true;
+
+  SoundSynthesis* snd = NULL;
+  SDLMicListener* mic = NULL;
+
+  if(useSDL){
+    SDL_Init(SDL_INIT_AUDIO);
+    atexit(SDL_Quit);
+    snd = new FMSoundSynthesis();
+    mic = new SDLMicListener();
+  }
+  else{
+    snd = new FluidSynthSynthesis("/usr/share/sounds/sf2/FluidR3_GM.sf2");
+  }
   
-  FMSoundSynthesis snd;
-  SDLMicListener mic;
   
-  if(snd.play() == false){
+  if(snd->play() == false){
     printf("Cannot start playback.\n");
     return -1;
   }
 
-  if(mic.listen() == false){
-    printf("Cannot start audio capture.\n");
-    return -1;
+  if(mic){
+    if(mic->listen() == false){
+      printf("Cannot start audio capture.\n");
+      return -1;
+    }
   }
 			   
   
   std::vector<float> p;
-  p.resize(snd.getNumberOfParameters());
+  p.resize(snd->getNumberOfParameters());
   
   for(unsigned int i=0;i<p.size();i++)
     p[i] = ((float)rand()) / ((float)RAND_MAX);
@@ -52,17 +66,22 @@ int main(int argc, char**argv)
       while(p[i] <= 0.0f);
     }
 
-    p[0] = 0.8;
+    // if(p.size() > 0) p[0] = 0.8;
+      
     
-    if(snd.setParameters(p) == false)
+    if(snd->setParameters(p) == false)
       std::cout << "set parameters failed." << std::endl;
 
-    std::cout << "SIGNAL POWER: " << mic.getInputPower() << std::endl;
+    if(mic)
+      std::cout << "SIGNAL POWER: " << mic->getInputPower() << std::endl;
     
-    // snd.reset();
+    // snd->reset();
     
     SDL_Delay(1000);
   }
+
+  delete snd;
+  delete mic;
   
   SDL_Quit();
   

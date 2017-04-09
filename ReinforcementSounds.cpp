@@ -24,7 +24,7 @@ namespace whiteice
      const whiteice::HMM& hmm,
      const whiteice::KMeans< T >& clusters,
      const whiteice::bayesian_nnetwork<T>& rmodel,
-     SDLSoundSynthesis* synth,
+     SoundSynthesis* synth,
      const unsigned int PLAYTIME,
      const std::vector<double>& target,
      const std::vector<double>& targetVar) :
@@ -272,6 +272,8 @@ namespace whiteice
 	  }
 	}
 
+	// synth->pause();
+
 	// updates HMM hidden state after action
 	{
 	  std::vector<float> after;
@@ -347,6 +349,7 @@ namespace whiteice
 	  }
 
 	  synth->setParameters(params);
+	  // synth->play();
 	}
 
 	start_ms =

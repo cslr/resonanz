@@ -2,7 +2,7 @@
  * SDLSoundSynthesis.h
  *
  *  Created on: 15.2.2013
- *      Author: omistaja
+ *      Author: Tomas Ukkonen
  */
 
 #ifndef SDLSOUNDSYNTHESIS_H_
@@ -13,23 +13,28 @@
 #include <stdint.h>
 #include <SDL.h>
 
-class SDLSoundSynthesis {
+#include "SoundSynthesis.h"
+
+class SDLSoundSynthesis : public SoundSynthesis
+{
 public:
   SDLSoundSynthesis();
   virtual ~SDLSoundSynthesis();
   
-  bool play();
-  bool pause();
-  
-  virtual std::string getSynthesizerName() = 0;
-  
-  virtual bool reset() = 0;
-  
-  virtual bool getParameters(std::vector<float>& p) = 0;
-  
-  virtual bool setParameters(const std::vector<float>& p) = 0;
-  
-  virtual int getNumberOfParameters() = 0;
+  virtual bool play();
+  virtual bool pause();
+
+  /*
+    virtual std::string getSynthesizerName() = 0;
+    
+    virtual bool reset() = 0;
+    
+    virtual bool getParameters(std::vector<float>& p) = 0;
+    
+    virtual bool setParameters(const std::vector<float>& p) = 0;
+    
+    virtual int getNumberOfParameters() = 0;
+  */
   
   // recommended time it takes to synthesize sound: 
   // it is not good idea to change parameters faster than this

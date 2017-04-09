@@ -14,8 +14,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <SDL.h>
-#include <SDL_mixer.h>
 
 namespace whiteice
 {
@@ -30,7 +28,7 @@ namespace whiteice
 			    const whiteice::HMM& hmm,
 			    const whiteice::KMeans< T >& clusters,
 			    const whiteice::bayesian_nnetwork<T>& rmodel,
-			    SDLSoundSynthesis* synth, 
+			    SoundSynthesis* synth, 
 			    const unsigned int PLAYTIME,
 			    const std::vector<double>& target,
 			    const std::vector<double>& targetVar);
@@ -75,7 +73,7 @@ namespace whiteice
 				   whiteice::math::vertex<T>& newstate,
 				   T& reinforcement);
 
-	SDLSoundSynthesis* synth;
+	SoundSynthesis* synth;
 	
 	
 	std::list<T> distances;

@@ -93,16 +93,31 @@ int main(int argc, char** argv)
 
   // model filenames
   char buffer[256];
+
+  // picture stimulation HMM model (DISPLAYTIME msecs between state changes)
   
   snprintf(buffer, 256, "%s/%s-measurements.dat", dir.c_str(), device.c_str());
-  const std::string timeseriesFile = buffer;
-  
+  const std::string timeseriesFile1 = buffer;
+    
   snprintf(buffer, 256, "%s/%s-hmm.model", dir.c_str(), device.c_str());
-  const std::string hmmFile     = buffer;
-  
+  const std::string hmmFile1     = buffer;
+    
   snprintf(buffer, 256, "%s/%s-clusters.model", dir.c_str(), device.c_str());
-  const std::string clusterModelFile = buffer;
+  const std::string clusterModelFile1 = buffer;
 
+  // picture stimulation HMM model (4*DISPLAYTIME msecs between state changes)
+
+  snprintf(buffer, 256, "%s/%s-measurements2.dat", dir.c_str(), device.c_str());
+  const std::string timeseriesFile2 = buffer;
+    
+  snprintf(buffer, 256, "%s/%s-hmm2.model", dir.c_str(), device.c_str());
+  const std::string hmmFile2     = buffer;
+    
+  snprintf(buffer, 256, "%s/%s-clusters2.model", dir.c_str(), device.c_str());
+  const std::string clusterModelFile2 = buffer;
+
+  
+  
   snprintf(buffer, 256, "%s/%s-state-measurements.dat", dir.c_str(), device.c_str());
   const std::string stateDataFile = buffer;
 
@@ -154,7 +169,7 @@ int main(int argc, char** argv)
 
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
-    timeseries.load(timeseriesFile); // attempts to load previously measured time-series
+    timeseries.load(timeseriesFile1); // attempts to load previously measured time-series
     
     if(measureRandomPicturesAndTimeSeries(dev, pictures,
 					  DISPLAYTIME, timeseries) == false)
@@ -168,7 +183,7 @@ int main(int argc, char** argv)
       return -1;
     }
 
-    if(timeseries.save(timeseriesFile) == false){
+    if(timeseries.save(timeseriesFile1) == false){
       printf("ERROR: saving time series measurements to file failed\n");
       
       delete dev;
@@ -186,7 +201,7 @@ int main(int argc, char** argv)
 
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
-    if(timeseries.load(timeseriesFile) == false){
+    if(timeseries.load(timeseriesFile1) == false){
       printf("ERROR: loading time series measurements from file failed\n");
       IMG_Quit();
       SDL_Quit();
@@ -228,7 +243,7 @@ int main(int argc, char** argv)
 	observations.push_back(clusters.getClusterIndex(data[i]));
       }
 
-      if(clusters.save(clusterModelFile) == false){
+      if(clusters.save(clusterModelFile1) == false){
 	printf("ERROR: saving clusters model failed.\n");
 
 	delete dev;
@@ -257,7 +272,7 @@ int main(int argc, char** argv)
       return -1;
     }
 
-    if(hmm.save(hmmFile) == false){
+    if(hmm.save(hmmFile1) == false){
       printf("ERROR: saving HMM model failed.\n");
 
       delete dev;
@@ -272,11 +287,11 @@ int main(int argc, char** argv)
 
     return 0;
   }
-  else if(cmd == "--predict"){
+  else if(cmd == "--predict1"){
 
     whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(clusters.load(clusterModelFile) == false){
+    if(clusters.load(clusterModelFile1) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
@@ -305,7 +320,7 @@ int main(int argc, char** argv)
 
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
-    if(hmm.load(hmmFile) == false){
+    if(hmm.load(hmmFile1) == false){
       printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
 
       delete dev;
@@ -329,6 +344,208 @@ int main(int argc, char** argv)
     
     return 0;
   }
+
+
+  else if(cmd == "--measure2"){
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(1);
+
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    timeseries.load(timeseriesFile2); // attempts to load previously measured time-series
+    
+    if(measureRandomPicturesAndTimeSeries(dev, pictures,
+					  4*DISPLAYTIME, timeseries) == false)
+    {
+      printf("ERROR: measuring time series failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    if(timeseries.save(timeseriesFile2) == false){
+      printf("ERROR: saving time series measurements to file failed\n");
+      
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    printf("Saving %d step length time series observation..\n", timeseries.size(0));
+
+    delete dev;
+  }
+  else if(cmd == "--learn2"){
+
+    whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
+
+    if(timeseries.load(timeseriesFile2) == false){
+      printf("ERROR: loading time series measurements from file failed\n");
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    std::vector<unsigned int> observations;
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
+
+    // calculates discretization 
+    {
+      std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > data;
+      if(timeseries.getData(0, data) == false){
+	printf("ERROR: bad time series data\n");
+	IMG_Quit();
+	SDL_Quit();
+
+	delete dev;
+
+	return -1;
+      }
+
+      printf("Calculating K-Means clusters (timeseries data)..\n");
+
+      if(clusters.learn(VISIBLE_SYMBOLS, data) == false){
+	printf("ERROR: calculating k-means clusters failed\n");
+      }
+
+      for(unsigned int i=0;i<data.size();i++){
+	observations.push_back(clusters.getClusterIndex(data[i]));
+      }
+
+      if(clusters.save(clusterModelFile2) == false){
+	printf("ERROR: saving clusters model failed.\n");
+
+	delete dev;
+	IMG_Quit();
+	SDL_Quit();
+	
+	return -1;
+      }
+      
+    }
+
+    // learns from data
+    try{
+      double logp = hmm.train(observations);
+
+      printf("DATA LIKELIHOOD: %f\n", logp);
+      
+    }
+    catch(std::invalid_argument& e){
+      printf("ERROR: learning from HMM data failed: %s\n", e.what());
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    if(hmm.save(hmmFile2) == false){
+      printf("ERROR: saving HMM model failed.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    else{
+      printf("Saving HMM model file successful.\n");
+    }
+
+    return 0;
+  }
+  else if(cmd == "--predict2"){
+
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
+
+    if(clusters.load(clusterModelFile2) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    DataSource* dev = nullptr;
+    
+    if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
+    else if(device == "random") dev = new whiteice::resonanz::RandomEEG();
+
+    sleep(1);
+
+    if(dev->connectionOk() == false)
+    {
+      printf("ERROR: No connection to device.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+      
+      return -1;
+    }
+
+
+    whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm.load(hmmFile2) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    if(predictHiddenState(dev, hmm, pictures,
+			  4*DISPLAYTIME, clusters) == false)
+    {
+      printf("ERROR: measuring time series failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+    
+    return 0;
+  }
+
+
+
+  
   else if(cmd == "--record-state"){
     DataSource* dev = nullptr;
     
@@ -359,7 +576,7 @@ int main(int argc, char** argv)
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
-    if(hmm.load(hmmFile) == false){
+    if(hmm.load(hmmFile1) == false){
       printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
 
       delete dev;
@@ -371,7 +588,7 @@ int main(int argc, char** argv)
     
     whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(clusters.load(clusterModelFile) == false){
+    if(clusters.load(clusterModelFile1) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
@@ -447,7 +664,7 @@ int main(int argc, char** argv)
     }
     
   }
-  else if(cmd == "--measure2"){
+  else if(cmd == "--measure3"){
     DataSource* dev = nullptr;
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
@@ -479,7 +696,7 @@ int main(int argc, char** argv)
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
-    if(hmm.load(hmmFile) == false){
+    if(hmm.load(hmmFile1) == false){
       printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
 
       delete dev;
@@ -491,7 +708,7 @@ int main(int argc, char** argv)
     
     whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(clusters.load(clusterModelFile) == false){
+    if(clusters.load(clusterModelFile1) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
@@ -577,7 +794,7 @@ int main(int argc, char** argv)
 
     
   }
-  else if(cmd == "--learn2"){
+  else if(cmd == "--learn3"){
 
     std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
 
@@ -695,7 +912,7 @@ int main(int argc, char** argv)
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
-    if(hmm.load(hmmFile) == false){
+    if(hmm.load(hmmFile1) == false){
       printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
 
       delete dev;
@@ -707,7 +924,7 @@ int main(int argc, char** argv)
 
     whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(clusters.load(clusterModelFile) == false){
+    if(clusters.load(clusterModelFile1) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
       IMG_Quit();
       SDL_Quit();
@@ -820,7 +1037,7 @@ int main(int argc, char** argv)
     
     whiteice::HMM hmm(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
-    if(hmm.load(hmmFile) == false){
+    if(hmm.load(hmmFile1) == false){
       printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
 
       delete dev;
@@ -832,7 +1049,31 @@ int main(int argc, char** argv)
 
     whiteice::KMeans< whiteice::math::blas_real<double> > clusters;
 
-    if(clusters.load(clusterModelFile) == false){
+    if(clusters.load(clusterModelFile1) == false){
+      printf("ERROR: loading measurements cluster model file failed.\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    whiteice::HMM hmm2(VISIBLE_SYMBOLS, HIDDEN_STATES);
+
+    if(hmm2.load(hmmFile2) == false){
+      printf("ERROR: loading Hidden Markov Model (HMM) failed\n");
+
+      delete dev;
+      IMG_Quit();
+      SDL_Quit();
+
+      return -1;
+    }
+
+    whiteice::KMeans< whiteice::math::blas_real<double> > clusters2;
+
+    if(clusters2.load(clusterModelFile2) == false){
       printf("ERROR: loading measurements cluster model file failed.\n");
 
       delete dev;
@@ -858,7 +1099,7 @@ int main(int argc, char** argv)
       }
     }
 
-    SDLSoundSynthesis* synth = new FMSoundSynthesis();
+    SoundSynthesis* synth = new FMSoundSynthesis();
 
     
     printf("Starting reinforcement learning..\n");
@@ -873,7 +1114,7 @@ int main(int argc, char** argv)
       sleep(1); // waits for 1 sec for SDL to initialize (FIXME this is buggy)
 
       whiteice::resonanz::ReinforcementSounds< whiteice::math::blas_real<double> >
-	sounds(dev, hmm, clusters, rmodel, synth, 4*DISPLAYTIME,
+	sounds(dev, hmm2, clusters2, rmodel, synth, 4*DISPLAYTIME,
 	       targetVector, targetVar);
 
       if(useRmodel){
@@ -916,6 +1157,13 @@ int main(int argc, char** argv)
       }
       
     }
+
+
+    delete synth;
+    delete dev;
+    
+    IMG_Quit();
+    SDL_Quit();
 
   }
   
