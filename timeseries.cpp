@@ -17,7 +17,7 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include <vector>
 #include <string>
@@ -52,7 +52,7 @@ using namespace whiteice::resonanz;
 
 int main(int argc, char** argv)
 {
-  printf("Time Series Analysis (HMM) 0.01 (C) Copyright Tomas Ukkonen\n");
+  printf("Time Series Analysis (HMM) 0.9 (C) Copyright Tomas Ukkonen\n");
 
   srand(time(0));
   
@@ -170,9 +170,16 @@ int main(int argc, char** argv)
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
     timeseries.load(timeseriesFile1); // attempts to load previously measured time-series
+
+    const unsigned int initial_length = timeseries.size(0);
     
-    if(measureRandomPicturesAndTimeSeries(dev, pictures,
-					  DISPLAYTIME, timeseries) == false)
+    measureRandomPicturesAndTimeSeries(dev, pictures,
+					  DISPLAYTIME, timeseries);
+
+    const unsigned int after_length = timeseries.size(0);
+
+    
+    if(initial_length == after_length)
     {
       printf("ERROR: measuring time series failed\n");
 
@@ -193,7 +200,7 @@ int main(int argc, char** argv)
       return -1;
     }
 
-    printf("Saving %d step length time series observation..\n", timeseries.size(0));
+    printf("Saving %d step length time series observation (%s)..\n", timeseries.size(0), timeseriesFile1.c_str());
 
     delete dev;
   }
@@ -234,6 +241,7 @@ int main(int argc, char** argv)
       }
 
       printf("Calculating K-Means clusters (timeseries data)..\n");
+      fflush(stdout);
 
       if(clusters.learn(VISIBLE_SYMBOLS, data) == false){
 	printf("ERROR: calculating k-means clusters failed\n");
@@ -260,7 +268,7 @@ int main(int argc, char** argv)
       double logp = hmm.train(observations);
 
       printf("DATA LIKELIHOOD: %f\n", logp);
-      
+      fflush(stdout);
     }
     catch(std::invalid_argument& e){
       printf("ERROR: learning from HMM data failed: %s\n", e.what());
@@ -368,9 +376,16 @@ int main(int argc, char** argv)
     whiteice::dataset< whiteice::math::blas_real<double> > timeseries;
 
     timeseries.load(timeseriesFile2); // attempts to load previously measured time-series
+
+    const unsigned int initial_length = timeseries.size(0);
     
-    if(measureRandomPicturesAndTimeSeries(dev, pictures,
-					  4*DISPLAYTIME, timeseries) == false)
+    measureRandomPicturesAndTimeSeries(dev, pictures,
+				       4*DISPLAYTIME, timeseries);
+
+    const unsigned int after_length = timeseries.size(0);
+
+
+    if(initial_length == after_length)
     {
       printf("ERROR: measuring time series failed\n");
 
@@ -391,7 +406,7 @@ int main(int argc, char** argv)
       return -1;
     }
 
-    printf("Saving %d step length time series observation..\n", timeseries.size(0));
+    printf("Saving %d step length time series observation (%s)..\n", timeseries.size(0), timeseriesFile2.c_str());
 
     delete dev;
   }
@@ -545,7 +560,7 @@ int main(int argc, char** argv)
 
 
 
-  
+#if 0
   else if(cmd == "--record-state"){
     DataSource* dev = nullptr;
     
@@ -611,6 +626,9 @@ int main(int argc, char** argv)
     }
     
   }
+#endif
+
+#if 0
   else if(cmd == "--learn-state"){
 
     whiteice::dataset< whiteice::math::blas_real<double> > stateMeasurements;
@@ -664,6 +682,9 @@ int main(int argc, char** argv)
     }
     
   }
+#endif
+
+#if 0
   else if(cmd == "--measure3"){
     DataSource* dev = nullptr;
     
@@ -770,6 +791,8 @@ int main(int argc, char** argv)
     delete dev;
     
   }
+#endif
+  
   else if(cmd == "--list"){
 
     std::vector< whiteice::dataset< whiteice::math::blas_real<double> > > picmeasurements(pictures.size());
@@ -1183,16 +1206,15 @@ void print_usage()
   printf("Usage: timeseries <cmd> <device> <directory> [--target=0.0,0.0,0.0,0.0,0.0,0.0] [--target-var=1.0,1.0,1.0,1.0,1.0,1.0\n");
   printf("       <cmd> = \"--measure1\"       stimulates cns randomly and collects time-series measurements\n");
   printf("       <cmd> = \"--learn1\"         optimizes HMM model using measurements and optimizes neural network models using input and additional hidden states\n");
-  printf("       <cmd> = \"--record-state\"   shows stimuli and collects use specified inputs in range of 1-10 about how high user is in the target state\n");
-  printf("       <cmd> = \"--learn-state\"    calculates model file for user response state\n");
-  printf("       <cmd> = \"--predict\"        predicts and outputs currently predicted hidden state\n");
+  printf("       <cmd> = \"--predict1\"       predicts and outputs currently predicted hidden state\n");
   printf("       <cmd> = \"--measure2\"       stimulates cns randomly and collects picture-wise information (incl. hidden states)\n");
   printf("       <cmd> = \"--learn2\"         optimizes neural network model per picture using input and additional hidden states\n");
+  printf("       <cmd> = \"--predict2\"       predicts and outputs currently predicted hidden state\n");
   printf("       <cmd> = \"--stimulate\"      uses model, pictures in directory and neural network models to push brain towards target state\n");
   printf("       <cmd> = \"--stimulater\"     stimulates cns using random pictures [for comparing effectiveness]\n");
   printf("       <cmd> = \"--list\"           lists collected data (output cluster)\n");
-  printf("       <cmd> = \"--reinforcement\"  reinforcement learning (requires --measure1 and --learn1)\n");
-  printf("       <cmd> = \"--reinforcementr\" reinforcement learning: random mode [for compaing effectiveness] (requires --measure1 and --learn1)\n");
+  printf("       <cmd> = \"--reinforcement\"  reinforcement learning (requires --measure1, --learn1, --measure2, --learn2)\n");
+  printf("       <cmd> = \"--reinforcementr\" reinforcement learning: random mode [for compaing effectiveness]\n");
   printf("       <cmd> = \"--device-values\"  prints device values (delta, theta, alpha, beta, gamma, total)\n");
   printf("       <device>                   'muse' (interaxon muse osc.udp://localhost:4545) or 'random' pseudorandom measurements\n");
   printf("       <directory>                path to directory (png and model files)\n");

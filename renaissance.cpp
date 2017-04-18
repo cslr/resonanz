@@ -18,7 +18,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 #include "pictureAutoencoder.h"
 #include "measurements.h"
 #include "optimizeResponse.h"

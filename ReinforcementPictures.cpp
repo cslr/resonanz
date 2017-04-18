@@ -181,7 +181,8 @@ namespace whiteice
 	return false;
     }
 
-    usleep(DISPLAYTIME*1000/2); // we can safely sleep 50% of the display time
+    std::this_thread::sleep_for(std::chrono::milliseconds(DISPLAYTIME/2));
+    // usleep(DISPLAYTIME*1000/2); // we can safely sleep 50% of the display time
 
     // waits for action to be added to old actions queue and clears it
     // FIXME: change busy loop to condition variables
@@ -627,7 +628,8 @@ namespace whiteice
 	long long delta_ms = end_ms - start_ms;
 
 	if(delta_ms < DISPLAYTIME){
-	  usleep((DISPLAYTIME - delta_ms)*1000);
+	  std::this_thread::sleep_for(std::chrono::milliseconds(DISPLAYTIME - delta_ms));
+	  // usleep((DISPLAYTIME - delta_ms)*1000);
 	}
       }
 

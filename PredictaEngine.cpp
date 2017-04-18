@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include <vector>
 

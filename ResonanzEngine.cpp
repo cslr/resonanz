@@ -18,7 +18,7 @@
 #include <time.h>
 #include <libgen.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include "Log.h"
 #include "NMCFile.h"

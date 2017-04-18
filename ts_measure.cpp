@@ -162,7 +162,8 @@ namespace whiteice{
 	  // printf("delta ms: %d (display ms: %d)\n", delta_ms, DISPLAYTIME);
 	  
 	  if(delta_ms < DISPLAYTIME){
-	    usleep((DISPLAYTIME - delta_ms)*1000);
+	    std::this_thread::sleep_for(std::chrono::milliseconds(DISPLAYTIME - delta_ms));
+	    // usleep((DISPLAYTIME - delta_ms)*1000);
 	  }
 	  
 	}

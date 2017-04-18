@@ -30,7 +30,7 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include "DataSource.h"
 

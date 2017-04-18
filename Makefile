@@ -46,17 +46,23 @@ MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs
 MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
 MAXIMPACT_TARGET=maximpact
 
-SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config fluidsynth --libs`
+SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config dinrhiw --libs`  -lws2_32 `pkg-config SDL2_ttf --libs` `pkg-config SDL2_image --libs`
+
 SOUND_TEST_TARGET=fmsound
-SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o FluidSynthSynthesis.o
+SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o Log.o hsv.o ts_measure.o pictureAutoencoder.o
+
+# Adding these to SOUND leads to cygheap read copy failed..
+# ts_measure.o pictureAutoencoder.o hsv.o
 
 R9E_TARGET=renaissance
-R9E_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs`
+R9E_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` 
 R9E_OBJECTS=renaissance.o pictureAutoencoder.o measurements.o optimizeResponse.o stimulation.o MuseOSC.o NoEEGDevice.o RandomEEG.o hsv.o
 
 TS_TARGET=timeseries
-TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config dinrhiw --libs` `pkg-config fluidsynth --libs`
-TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o FluidSynthSynthesis.o
+TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` -lws2_32 -mconsole
+TS_OBJECTS=timeseries.o ts_measure.o hsv.o MuseOSC.o RandomEEG.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o
+
+## TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o 
 
 ############################################################
 
@@ -71,7 +77,7 @@ renaissance: $(R9E_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(R9E_TARGET) $(R9E_OBJECTS) $(R9E_LIBS) $(LIBS)
 
 timeseries: $(TS_OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TS_TARGET) $(TS_OBJECTS) $(TS_LIBS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TS_TARGET) $(TS_OBJECTS) $(TS_LIBS)
 
 jnilib: $(JNILIB_OBJECTS)
 	$(CXX) -shared -Wl,-soname,$(JNITARGET) -o lib$(JNITARGET) $(JNILIB_OBJECTS) $(LIBS)

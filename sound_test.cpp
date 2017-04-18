@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "FMSoundSynthesis.h"
-#include "FluidSynthSynthesis.h"
+// #include "FluidSynthSynthesis.h"
 #include "SDLMicrophoneListener.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@ int main(int argc, char**argv)
 {
   printf("Mini sound synthesis and capture test\n");
 
-  bool useSDL = false;
+  bool useSDL = true;
   srand(time(0));
 
   // if(rand()&1) useSDL = true;
@@ -26,10 +26,10 @@ int main(int argc, char**argv)
     SDL_Init(SDL_INIT_AUDIO);
     atexit(SDL_Quit);
     snd = new FMSoundSynthesis();
-    mic = new SDLMicListener();
+    // mic = new SDLMicListener();
   }
   else{
-    snd = new FluidSynthSynthesis("/usr/share/sounds/sf2/FluidR3_GM.sf2");
+    // snd = new FluidSynthSynthesis("/usr/share/sounds/sf2/FluidR3_GM.sf2");
   }
   
   
@@ -80,8 +80,8 @@ int main(int argc, char**argv)
     SDL_Delay(1000);
   }
 
-  delete snd;
-  delete mic;
+  if(snd) delete snd;
+  if(mic) delete mic;
   
   SDL_Quit();
   

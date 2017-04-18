@@ -2,7 +2,7 @@
 #ifndef __resonanz_optimizeResponse_h
 #define __resonanz_optimizeResponse_h
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 namespace whiteice
 {

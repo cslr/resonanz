@@ -141,8 +141,8 @@ namespace whiteice
       }
 
 
-      usleep(PLAYTIME*1000/2); // we can safely sleep 50% of the play time
-
+      // usleep(PLAYTIME*1000/2); // we can safely sleep 50% of the play time
+      std::this_thread::sleep_for(std::chrono::milliseconds(PLAYTIME/2));
       
 
       // waits for action to be added to old actions queue and clears it
@@ -268,7 +268,8 @@ namespace whiteice
 	  long long delta_ms = end_ms - start_ms;
 	  
 	  if(delta_ms < PLAYTIME){
-	    usleep((PLAYTIME - delta_ms)*1000);
+	    std::this_thread::sleep_for(std::chrono::milliseconds(PLAYTIME - delta_ms));
+	    // usleep((PLAYTIME - delta_ms)*1000);
 	  }
 	}
 

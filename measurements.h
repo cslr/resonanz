@@ -3,7 +3,7 @@
 #define __neuralnetwork_measurements_h
 
 #include "DataSource.h"
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 #include <vector>
 #include <string>
 #include "pictureAutoencoder.h"

@@ -1,6 +1,6 @@
 
 #include "hermitecurve.h"
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 #include <vector>
 
 using namespace whiteice;;

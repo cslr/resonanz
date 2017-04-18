@@ -5,7 +5,7 @@
 
 #include "DataSource.h"
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include "SDLSoundSynthesis.h"
 

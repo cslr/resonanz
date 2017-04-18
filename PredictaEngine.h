@@ -7,7 +7,7 @@
 #include <string>
 #include <mutex>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 
 namespace whiteice

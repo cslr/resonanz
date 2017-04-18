@@ -2,7 +2,7 @@
 #define __hermitecurve_h
 
 #include <vector>
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 void createHermiteCurve(std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >& samples,
 			std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > points,

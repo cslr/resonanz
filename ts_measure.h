@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include "DataSource.h"
 

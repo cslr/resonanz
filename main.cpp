@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include <dinrhiw/dinrhiw.h>
+#include <dinrhiw.h>
 
 #include "ResonanzEngine.h"
 #include "NMCFile.h"
