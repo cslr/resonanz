@@ -23,7 +23,7 @@ int main(int argc, char**argv)
   SDLMicListener* mic = NULL;
 
   if(useSDL){
-    SDL_Init(SDL_INIT_AUDIO);
+    SDL_Init(SDL_INIT_EVERYTHING);
     atexit(SDL_Quit);
     snd = new FMSoundSynthesis();
     // mic = new SDLMicListener();

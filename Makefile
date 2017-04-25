@@ -46,7 +46,7 @@ MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs
 MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
 MAXIMPACT_TARGET=maximpact
 
-SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config dinrhiw --libs`  -lws2_32 `pkg-config SDL2_ttf --libs` `pkg-config SDL2_image --libs`
+SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` -lws2_32 -mconsole
 
 SOUND_TEST_TARGET=fmsound
 SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o Log.o hsv.o ts_measure.o pictureAutoencoder.o

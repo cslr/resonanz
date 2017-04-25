@@ -67,6 +67,8 @@ namespace whiteice
 
     this->useReinforcementModel = false;
 
+    this->initialized = false;
+
     // starts display thread
     {
       running = true;
@@ -99,6 +101,12 @@ namespace whiteice
   bool ReinforcementPictures<T>::getDisplayIsRunning()
   {
     return (this->running);
+  }
+
+  template <typename T>
+  bool ReinforcementPictures<T>::getInitialized()
+  {  // return true when we are in main display loop and all things are set properly
+    return initialized;
   }
 
 
@@ -258,7 +266,8 @@ namespace whiteice
 	  dev = sqrt(abs(dev - d150*d150));
 	  
 	  // reports distance to the target state
-	  printf("GOODNESS-150: %f +- %f\n", d150.c[0], dev.c[0]);
+	  printf("PIC GOODNESS-150: %f +- %f (HAS MODEL: %d)\n",
+		 d150.c[0], dev.c[0], this->getHasModel());
 	}
       }
 
@@ -278,10 +287,10 @@ namespace whiteice
   void ReinforcementPictures<T>::calculateFeatureVector(SDL_Surface* pic,
 							whiteice::math::vertex<T>& f) const
   {
+    f.resize(FEATURE_PICSIZE*FEATURE_PICSIZE*3);
+    f.zero();
+    
     if(pic == NULL){
-      f.resize(FEATURE_PICSIZE*FEATURE_PICSIZE*3);
-      f.zero();
-
       return;
     }
     
@@ -337,6 +346,7 @@ namespace whiteice
   template <typename T>
   void ReinforcementPictures<T>::displayLoop()
   {
+#if 0
     // initialization
     logging.info("Starting SDL init (0)..");
 
@@ -366,7 +376,7 @@ namespace whiteice
     }
 
     logging.info("SDL_Init() events, video, audio successful.");
-
+#endif
     
     // opens SDL display
 
@@ -388,6 +398,7 @@ namespace whiteice
       return;
     }
 
+#if 0
     if(TTF_Init() != 0){
       char buffer[80];
       snprintf(buffer, 80, "TTF_Init failed: %s\n", TTF_GetError());
@@ -412,8 +423,9 @@ namespace whiteice
       running = false;
       return;
     }
+#endif
 
-    window = SDL_CreateWindow("Reinforcement Learning",
+    window = SDL_CreateWindow("Tranquility",
 			      SDL_WINDOWPOS_CENTERED,
 			      SDL_WINDOWPOS_CENTERED,
 			      W, H,
@@ -607,6 +619,8 @@ namespace whiteice
     
     
     while(running){
+      initialized = true;
+      
       SDL_Event event;
 
       while(SDL_PollEvent(&event)){
@@ -724,12 +738,13 @@ namespace whiteice
       font = NULL;
     }
 
+#if 0
     logging.info("SDL deinitialization started");
     IMG_Quit();
     TTF_Quit();
     SDL_Quit();
     logging.info("SDL deinitialization.. DONE");
-    
+#endif
     
   }
   

@@ -41,6 +41,8 @@ namespace whiteice
 
     bool getDisplayIsRunning();
 
+    bool getInitialized(); // return true when we are in main display loop and all things are set properly
+
     // if set true use reinforcement model (nnetwork<T>) as reinforcement values..
     void setReinforcementModel(bool useModel);
 
@@ -99,6 +101,8 @@ namespace whiteice
     std::mutex display_mutex;
     
     unsigned int keypresses;
+
+    bool initialized;
     
     void displayLoop();
   };

@@ -209,7 +209,7 @@ bool FMSoundSynthesis::synthesize(int16_t* buffer, int samples)
       value  = value  + r*r*r*r*oldvalue;
     }
     
-    // delay
+    // delay effect
     {
       std::vector<double> delay;
       std::vector<double> delayA;

@@ -53,22 +53,25 @@ bool SDLSoundSynthesis::play()
     // prints audio devices
     const int numDevices = SDL_GetNumAudioDevices(0);
     if(numDevices >= 0)
-      printf("Number of audio devices: %ḍ\n", numDevices);
+      printf("Number of audio devices: %d\n", numDevices);
     
     for(int i=0;i<numDevices;i++){
       printf("Audio device %d: %s\n", i, SDL_GetAudioDeviceName(i, 0));
     }
+
+    fflush(stdout);
     
     return false;
   }
   
   if(snd.format != AUDIO_S16SYS || snd.channels != 1){
-    SDL_CloseAudioDevice(dev);
+    if(dev != 0) SDL_CloseAudioDevice(dev);
     dev = 0;
     return false;
   }
-  
-  SDL_PauseAudioDevice(dev, 0);
+
+  if(dev != 0)
+    SDL_PauseAudioDevice(dev, 0);
   
   return true;
 }

@@ -215,7 +215,8 @@ namespace whiteice
 	    dev = sqrt(abs(dev - d150*d150));
 	    
 	    // reports distance to the target state
-	    printf("GOODNESS-150: %f +- %f\n", d150.c[0], dev.c[0]);
+	    printf("SND GOODNESS-150: %f +- %f (HAS MODEL: %d)\n",
+		   d150.c[0], dev.c[0], this->getHasModel());
 	  }
 	}
 
@@ -332,8 +333,8 @@ namespace whiteice
 	}
 	
 	// starts playing new sound
-	std::cout << "!!!!!!!!!!!!!!!!!!!!!! PLAYING SOUND: "
-		  << action << std::endl;
+	// std::cout << "!!!!!!!!!!!!!!!!!!!!!! PLAYING SOUND: " << action << std::endl;
+		  
 	{
 	  std::vector<float> params(synth->getNumberOfParameters());
 	  
