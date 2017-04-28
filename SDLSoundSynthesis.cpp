@@ -7,12 +7,20 @@
 
 #include "SDLSoundSynthesis.h"
 
+#ifdef WINOS
+#include <windows.h>
+#endif
+
+#include <pthread.h>
+#include <sched.h>
+
 SDLSoundSynthesis::SDLSoundSynthesis()
 {
   SDL_zero(desired);
   SDL_zero(snd);
   
-  desired.freq = 44100;
+  // desired.freq = 44100;
+  desired.freq = 22050;
   desired.format = AUDIO_S16SYS;
   desired.channels = 1; // use mono sound for now
   desired.samples = 4096;
@@ -87,10 +95,36 @@ bool SDLSoundSynthesis::pause()
   return true;
 }
 
+static bool __sdl__soundsynth_setpriority = false;
 
 void __sdl_soundsynthesis_mixaudio(void* unused, 
 				   Uint8* stream, int len)
 {
+#if 0
+  if(!__sdl__soundsynth_setpriority){
+    sched_param sch_params;
+    int policy = SCHED_FIFO; // SCHED_RR
+    
+    pthread_getschedparam(pthread_self(), &policy, &sch_params);
+    
+    policy = SCHED_FIFO;
+    sch_params.sched_priority = sched_get_priority_max(policy);
+    
+    if(pthread_setschedparam(pthread_self(),
+			     policy, &sch_params) != 0){
+    }
+    
+#ifdef WINOS
+    SetThreadPriority(GetCurrentThread(),
+		      THREAD_PRIORITY_HIGHEST);
+    SetThreadPriority(GetCurrentThread(),
+		      THREAD_PRIORITY_TIME_CRITICAL);
+#endif
+
+    __sdl__soundsynth_setpriority = true;
+  }
+#endif
+  
   SDLSoundSynthesis* s = (SDLSoundSynthesis*)unused;
   
   if(s == NULL) return;

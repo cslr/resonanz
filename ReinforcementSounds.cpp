@@ -258,6 +258,7 @@ namespace whiteice
       while(running){
 
 	if(dev->connectionOk() == false){
+	  whiteice::logging.info("ReinforcementSounds: Device connection failed");
 	  running = false;
 	  continue;
 	}

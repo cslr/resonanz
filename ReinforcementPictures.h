@@ -49,6 +49,9 @@ namespace whiteice
     // sets random mode (if true) instead of showing the best pic,
     // displays randomly chosen pic while doing all the calculations etc.
     void setRandom(bool r);
+
+    // sets message that will be shown on the screen
+    void setMessage(const std::string& msg);
     
   protected:
     const DataSource* dev;
@@ -71,7 +74,8 @@ namespace whiteice
     whiteice::RNG<T> rng;
 
     std::string fontname;
-    
+
+    std::string message;
     
     virtual bool getState(whiteice::math::vertex<T>& state);
     

@@ -62,7 +62,6 @@ TS_TARGET=timeseries
 TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` -lws2_32 -mconsole
 TS_OBJECTS=timeseries.o ts_measure.o hsv.o MuseOSC.o RandomEEG.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o
 
-## TS_OBJECTS=timeseries.o ts_measure.o MuseOSC.o RandomEEG.o pictureAutoencoder.o hsv.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o 
 
 ############################################################
 

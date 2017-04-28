@@ -31,11 +31,13 @@ Log::Log(std::string logFilename)
 	  handle = nullptr;
 	  handle = fopen(logFilename.c_str(), "wt");
 	  
-	  if(handle == 0) fprintf(stderr, "F: Starting logging mechanism failed: %s\n", logFilename.c_str());
-	  // assert(handle != 0);
+	  if(handle == 0)
+	    fprintf(stderr,
+		    "F: Starting logging mechanism failed: %s\n",
+		    logFilename.c_str());
 	}
 
-	info("Logging facilities started..");
+	info("Logging system started..");
 }
 
 Log::~Log() {

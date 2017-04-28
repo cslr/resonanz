@@ -12,8 +12,6 @@
 
 #include <unistd.h>
 
-#include "Log.h"
-
 
 // defines size of feature vector square picture (mini picture)
 // that is calculated from actual pictures
@@ -117,6 +115,14 @@ namespace whiteice
   }
 
 
+  // sets message that will be shown on the screen
+  template <typename T>
+  void ReinforcementPictures<T>::setMessage(const std::string& msg)
+  {
+    message = msg;
+  }
+
+
   template <typename T>
   void ReinforcementPictures<T>::setReinforcementModel(bool useModel)
   {
@@ -153,10 +159,20 @@ namespace whiteice
     
     if(action >= actionFeatures.size()) return false;
 
-    if(actionFeatures[action].size() == this->dimActionFeatures)
-      feature = actionFeatures[action];
-    else
+    if(actionFeatures[action].size() == this->dimActionFeatures){
+      // adds random noise to feature vectors (less overfitting)
+      rng.uniform(feature);
+      for(unsigned int i=0;i<feature.size();i++){
+	feature[i] = (T(4.0/255.0)*feature[i] - T(2.0/255.0)) +
+	  actionFeatures[action][i];
+
+	if(feature[i] < T(0.0)) feature[i] = T(0.0);
+	else if(feature[i] > T(1.0)) feature[i] = T(1.0);
+      }
+    }
+    else{
       return false;
+    }
 
     return true;
   }
@@ -392,7 +408,7 @@ namespace whiteice
       H = (3*mode.h)/4;
     }
     else{
-      logging.error("SDL_GetCurrentDisplayMode() failed");
+      whiteice::logging.error("SDL_GetCurrentDisplayMode() failed");
       running = false;
       SDL_Quit();
       return;
@@ -433,7 +449,7 @@ namespace whiteice
 			      SDL_WINDOW_INPUT_FOCUS);
 
     if(window == NULL){
-      logging.error("SDL_CreateWindow() failed\n");
+      whiteice::logging.error("SDL_CreateWindow() failed\n");
       running = false;
       return;
     }
@@ -443,7 +459,8 @@ namespace whiteice
     SDL_RaiseWindow(window);
 
     // loads font
-    TTF_Font* font = NULL;
+    TTF_Font* font  = NULL;
+    TTF_Font* font2 = NULL;
 
     {
       double fontSize = 100.0*sqrt(((float)(W*H))/(640.0*480.0));
@@ -451,6 +468,12 @@ namespace whiteice
       if(fs <= 0) fs = 10;
       
       font = TTF_OpenFont(fontname.c_str(), fs);
+      
+      fontSize = 25.0*sqrt(((float)(W*H))/(640.0*480.0));
+      fs = (unsigned int)fontSize;
+      if(fs <= 0) fs = 10;
+
+      font2 = TTF_OpenFont(fontname.c_str(), fs);
     }
 
 
@@ -485,7 +508,7 @@ namespace whiteice
 	  char buffer[120];
 	  snprintf(buffer, 120, "Loading image FAILED (%s): %s",
 		   SDL_GetError(), pictures[i].c_str());
-	  logging.warn(buffer);
+	  whiteice::logging.warn(buffer);
 	  printf("ERROR: %s\n", buffer);
 
 	  image = SDL_CreateRGBSurface(0, W, H, 32,
@@ -493,7 +516,7 @@ namespace whiteice
 				       0xFF000000);
 
 	  if(image == NULL){
-	    logging.error("Creating RGB surface failed");
+	    whiteice::logging.error("Creating RGB surface failed");
 	    running = false;
 	    continue;
 	  }
@@ -514,13 +537,13 @@ namespace whiteice
 					0xFF000000);
 
 	  if(scaled == NULL){
-	    logging.error("Creating RGB surface failed");
+	    whiteice::logging.error("Creating RGB surface failed");
 	    running = false;
 	    continue;
 	  }
 
 	  if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
-	    logging.warn("SDL_BlitScaled fails");
+	    whiteice::logging.warn("SDL_BlitScaled fails");
 	}
 	else{
 	  double hscale = ((double)H)/((double)image->h);
@@ -532,13 +555,13 @@ namespace whiteice
 					0xFF000000);
 
 	  if(scaled == NULL){
-	    logging.error("Creating RGB surface failed");
+	    whiteice::logging.error("Creating RGB surface failed");
 	    running = false;
 	    continue;
 	  }
 	  
 	  if(SDL_BlitScaled(image, NULL, scaled, NULL) != 0)
-	    logging.warn("SDL_BlitScaled fails");
+	    whiteice::logging.warn("SDL_BlitScaled fails");
 	}
 
 	images[i] = scaled;
@@ -631,6 +654,7 @@ namespace whiteice
       }
 
       if(dev->connectionOk() == false){
+	whiteice::logging.info("ReinforcementPictures: Device connection failed");
 	running = false;
 	continue;
       }
@@ -719,6 +743,27 @@ namespace whiteice
 	  
 	  SDL_BlitSurface(images[index], NULL, surface, &imageRect);
 
+	  if(font2 && message.size() > 0){
+	    SDL_Color white = { 255, 255, 255 };
+	    
+	    SDL_Surface* msg = TTF_RenderUTF8_Blended(font2,
+						      message.c_str(),
+						      white);
+	    
+	    if(msg != NULL){
+	      SDL_Rect messageRect;
+	      
+	      messageRect.x = (W - msg->w)/2;
+	      messageRect.y = (H - msg->h)/2;
+	      messageRect.w = msg->w;
+	      messageRect.h = msg->h;
+	      
+	      SDL_BlitSurface(msg, NULL, surface, &messageRect);
+	      
+	      SDL_FreeSurface(msg);
+	    }
+	  }
+
 	  SDL_UpdateWindowSurface(window);
 	  SDL_ShowWindow(window);
 	  SDL_FreeSurface(surface);
@@ -736,6 +781,11 @@ namespace whiteice
     if(font){
       TTF_CloseFont(font);
       font = NULL;
+    }
+
+    if(font2){
+      TTF_CloseFont(font2);
+      font2 = NULL;
     }
 
 #if 0

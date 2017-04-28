@@ -61,6 +61,8 @@ int main(int argc, char** argv)
   openblas_set_num_threads(1);
 #endif
 #endif
+
+  whiteice::logging.setOutputFile("dinrhiw.log");
   
   std::string cmd;
   std::string device;
@@ -1047,8 +1049,14 @@ int main(int argc, char** argv)
     
     if(device == "muse") dev = new whiteice::resonanz::MuseOSC(4545);
     else if(device == "random") dev = new whiteice::resonanz::RandomEEG();    
-
+    
+    printf("Debugging message.. 1A\n");
+    fflush(stdout);
+    
     sleep(1);
+
+    printf("Debugging message.. 1B\n");
+    fflush(stdout);
 
     if(dev->connectionOk() == false)
     {
@@ -1061,6 +1069,9 @@ int main(int argc, char** argv)
       
       return -1;
     }
+
+    printf("Debugging message.. 1C\n");
+    fflush(stdout);
 
     if(targetVector.size() != targetVar.size() || targetVector.size() != dev->getNumberOfSignals()){
       printf("ERROR: No proper target vector for stimulation.\n");
@@ -1205,9 +1216,25 @@ int main(int argc, char** argv)
       unsigned int counter = 0;
 
       while(pics.isRunning() && sounds.isRunning()){
+
+	if(pics.getHasModel() == 0 || sounds.getHasModel() == 0)
+	  pics.setMessage("[measuring]");
+	else
+	  pics.setMessage("");
+	
 	sleep(1);
 	if(pics.getKeypress() || pics.getDisplayIsRunning() == false || 
 	   sounds.getSoundIsActive() == false){
+	  
+	  char buffer[128];
+
+	  snprintf(buffer, 128, "timeseries.cpp: stop event %d %d %d",
+		   (int)pics.getKeypress(),
+		   (int)pics.getDisplayIsRunning(),
+		   (int)sounds.getSoundIsActive());
+	  
+	  whiteice::logging.info(buffer);
+	  
 	  pics.stop();
 	  sounds.stop();
 	}
@@ -1221,6 +1248,8 @@ int main(int argc, char** argv)
       }
       
     }
+
+    printf("Stopping execution normally.\n");
 
 
     if(synth){ delete synth; synth = NULL; }
