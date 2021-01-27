@@ -9,3 +9,6 @@ SDL2_ttf: libfreetype6-dev
 SDL2_mixer: SMPEG (svn co), libflac-dev, libvorbis-dev, libfluidsynth-dev (MIDI)
 
 
+Software is Copyright Tomas Ukkonen and requires permission from Tomas Ukkonen to use.
+
+You can only read the source code.
