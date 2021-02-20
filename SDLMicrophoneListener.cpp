@@ -75,6 +75,8 @@ bool SDLMicListener::listener(int16_t* buffer, int samples)
   }
 
   currentPower = power;
+  
+  return true;
 }
 
 

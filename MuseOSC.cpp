@@ -20,7 +20,7 @@ using namespace std::chrono;
 namespace whiteice {
 namespace resonanz {
 
-MuseOSC::MuseOSC(unsigned int portNum) throw(std::runtime_error) :
+MuseOSC::MuseOSC(unsigned int portNum) : 
 		port(portNum)
 {
   worker_thread = nullptr;
