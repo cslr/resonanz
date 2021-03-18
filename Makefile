@@ -27,7 +27,7 @@ SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp Ra
 
 TARGET = resonanz
 
-LIBS = `pkg-config sdl2 --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -fopenmp -ltheoraenc -ltheoradec -logg 
+LIBS = `pkg-config sdl2 --libs` `pkg-config --libs SDL2_ttf` `pkg-config --libs SDL2_image` `pkg-config --libs SDL2_mixer` `pkg-config --libs dinrhiw` -fopenmp -ltheoraenc -ltheoradec -logg -lws2_32
 
 RESONANZ_OBJECTS=$(OBJECTS) main.o
 

@@ -9,6 +9,9 @@
 #include <math.h>
 #include <vector>
 
+#ifndef M_PI
+#define M_PI 3.141592653
+#endif
 
 FMSoundSynthesis::FMSoundSynthesis() {
   
