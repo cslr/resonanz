@@ -312,7 +312,7 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getStatusLi
 
 		return result;
 	}
-	catch(std::exception& e){ return (jboolean)false; }
+	catch(std::exception& e){ return (jstring)NULL; }
 }
 
 /*
@@ -337,7 +337,7 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getAnalyzeM
   (JNIEnv * env, jobject obj, jstring modelDir)
 {
 	try{
-		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+		if(env->IsSameObject(modelDir, NULL)) return (jstring)NULL;
 
 		const char *mod = env->GetStringUTFChars(modelDir, 0);
 
@@ -368,9 +368,9 @@ JNIEXPORT jstring JNICALL Java_fi_iki_nop_neuromancer_ResonanzEngine_getDeltaSta
   (JNIEnv * env, jobject obj, jstring pictureDir, jstring keywordsFile, jstring modelDir)
 {
 	try{
-		if(env->IsSameObject(pictureDir, NULL)) return (jboolean)false;
-		if(env->IsSameObject(keywordsFile, NULL)) return (jboolean)false;
-		if(env->IsSameObject(modelDir, NULL)) return (jboolean)false;
+		if(env->IsSameObject(pictureDir, NULL)) return (jstring)NULL;
+		if(env->IsSameObject(keywordsFile, NULL)) return (jstring)NULL;
+		if(env->IsSameObject(modelDir, NULL)) return (jstring)NULL;
 
 		const char *pic   = env->GetStringUTFChars(pictureDir, 0);
 		const char *key   = env->GetStringUTFChars(keywordsFile, 0);

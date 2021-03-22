@@ -214,12 +214,33 @@ int main(int argc, char** argv)
 	    // sets measurement device
 	    if(device == "muse"){
 	      // listens UDP traffic at localhost:4545 (from muse-io)
+	      // osc.udp://localhost:4545
 	      if(engine.setEEGDeviceType(whiteice::resonanz::ResonanzEngine::RE_EEG_IA_MUSE_DEVICE))
-		printf("Hardware: IA Muse EEG\n");
+		printf("Hardware: Interaxon Muse EEG\n");
+	      else{
+		printf("Cannot connect to Interaxon Muse EEG device\n");
+		exit(-1);
+	      }
+	    }
+	    else if(device == "insight"){
+	      if(engine.setEEGDeviceType(whiteice::resonanz::ResonanzEngine::RE_EEG_EMOTIV_INSIGHT_DEVICE))
+		printf("Hardware: Emotiv Insight EEG\n");
+	      else{
+		printf("Cannot connect to Emotiv Insight EEG device\n");
+		exit(-1);
+	      }
 	    }
 	    else if(device == "random"){
 	      if(engine.setEEGDeviceType(whiteice::resonanz::ResonanzEngine::RE_EEG_RANDOM_DEVICE))
-		printf("Hardware: Random pseudodevice\n");
+		printf("Hardware: Random EEG pseudodevice\n");
+	      else{
+		printf("Cannot connect to Random EEG pseudodevice\n");
+		exit(-1);
+	      }
+	    }
+	    else{
+	      printf("Hardware: unknown device (ERROR!)\n");
+	      exit(-1);
 	    }
 	    
 	    engine.setParameter("use-bayesian-nnetwork", "true");
@@ -355,15 +376,22 @@ int main(int argc, char** argv)
 		}
 		
 	}
-
+	
+	sleep(1);
 
 	while(!engine.keypress() && engine.isBusy()){
-		if(verbose)
-			std::cout << "Resonanz status: " << engine.getEngineStatus() << std::endl;
-
-		fflush(stdout);
-		sleep(1); // resonanz-engine thread is doing all the heavy work
+	  if(verbose)
+	    std::cout << "Resonanz status: " << engine.getEngineStatus() << std::endl;
+	  
+	  fflush(stdout);
+	  sleep(1); // resonanz-engine thread is doing all the heavy work
 	}
+	
+	if(verbose){
+	  std::cout << "Resonanz status: " << engine.getEngineStatus() << std::endl;
+	  fflush(stdout);
+	}
+	  
 
 	engine.cmdStopCommand();
 	sleep(1);

@@ -26,13 +26,19 @@
 #include "NoEEGDevice.h"
 #include "RandomEEG.h"
 
+#ifndef EMOTIV_INSIGHT
+// Enables experimental Emotiv Insight code
+#define EMOTIV_INSIGHT
+#endif
+
 #ifdef LIGHTSTONE
 #include "LightstoneDevice.h"
 #endif
 
 #ifdef EMOTIV_INSIGHT
-#include "EmotivInsightStub.h"
-#include "EmotivInsightPipeServer.h"
+//#include "EmotivInsightStub.h"
+//#include "EmotivInsightPipeServer.h"
+#include "EmotivInsight.h"
 #endif
 
 #include "MuseOSC.h"
@@ -431,7 +437,8 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 #ifdef EMOTIV_INSIGHT
 		else if(deviceNumber == ResonanzEngine::RE_EEG_EMOTIV_INSIGHT_DEVICE){
 			if(eeg != nullptr) delete eeg;
-			eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
+			//eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
+			eeg = new EmotivInsight();
 		}
 #endif
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
