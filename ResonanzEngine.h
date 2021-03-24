@@ -272,16 +272,21 @@ private:
 				   unsigned int& currentKeywordModel, 
 				   bool& soundModelCalculated);
 	
-	whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
+	// whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
+	whiteice::math::NNGradDescent<>* optimizer = nullptr;
+	
 	const unsigned int NUM_OPTIMIZER_THREADS = 1;
-	const unsigned int NUM_OPTIMIZER_ITERATIONS = 150;
+	const unsigned int NUM_OPTIMIZER_ITERATIONS = 500; // was: 150
 	bool optimizeSynthOnly = false;
 	
 	whiteice::nnetwork<>* nn = nullptr;
 	whiteice::nnetwork<>* nnsynth = nullptr; // synth data neural network
 	whiteice::bayesian_nnetwork<>* bnn = nullptr;
 	whiteice::UHMC<>* bayes_optimizer = nullptr;
-	int neuralnetwork_complexity = 25; // values above 10 seem to make sense
+
+	const int NEURALNETWORK_COMPLEXITY = 10; // values above 10 seem to make sense (was: 25, 10)
+	const int NEURALNETWORK_DEPTH = 6; // how many layers neural network have (was: 3, 6)
+	
 	bool use_bayesian_nnetwork = false;
 	const unsigned int BAYES_NUM_SAMPLES = 500; // number of samples collected from "bayesian posterior" (what we really sample is MLE likelihood thought..) [reduced from 1000 to 500 because HMC now don't add samples until epsilon is properly learnt]
 
@@ -333,6 +338,8 @@ private:
 	double curveParameter = 1.0;
 	long long latestTickCurveDrawn = -100000000;
 	std::list<double> historyPower;
+
+	bool randomPrograms = false;
 
 	
 	whiteice::RNG<> rng;

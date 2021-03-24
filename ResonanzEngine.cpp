@@ -94,12 +94,14 @@ ResonanzEngine::ResonanzEngine()
 	        eegDeviceType = ResonanzEngine::RE_EEG_NO_DEVICE;
 		
 		std::vector<unsigned int> nnArchitecture;
+
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
-		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-		nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+		for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+		  nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*eeg->getNumberOfSignals());
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
 		nn = new whiteice::nnetwork<>(nnArchitecture);
+		nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 		nn->setNonlinearity(nn->getLayers()-1, whiteice::nnetwork<>::pureLinear);
 		
 		// creates dummy synth neural network
@@ -107,11 +109,12 @@ ResonanzEngine::ResonanzEngine()
 		
 		nnArchitecture.clear();
 		nnArchitecture.push_back(eeg->getNumberOfSignals() + 2*synth_number_of_parameters);
-		nnArchitecture.push_back(neuralnetwork_complexity*(eeg->getNumberOfSignals() + 2*synth_number_of_parameters));
-		nnArchitecture.push_back(neuralnetwork_complexity*(eeg->getNumberOfSignals() + 2*synth_number_of_parameters));
+		for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+		  nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*(eeg->getNumberOfSignals() + 2*synth_number_of_parameters));
 		nnArchitecture.push_back(eeg->getNumberOfSignals());
 		
 		nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+		nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 		nnsynth->setNonlinearity(nnsynth->getLayers()-1, whiteice::nnetwork<>::pureLinear);
 	}
 	
@@ -459,13 +462,14 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		{
 			std::vector<unsigned int> nnArchitecture;
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
-			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+			for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			  nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*eeg->getNumberOfSignals());
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
 
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+			nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			nn->setNonlinearity(nn->getLayers()-1,
 					    whiteice::nnetwork<>::pureLinear);
 						
@@ -477,17 +481,18 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  
 			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 						   2*synth->getNumberOfParameters());
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth->getNumberOfParameters()));
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth->getNumberOfParameters()));
+			  
+			  for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			    nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+						     (eeg->getNumberOfSignals() + 
+						      2*synth->getNumberOfParameters()));
+			  
 			  nnArchitecture.push_back(eeg->getNumberOfSignals());
 			  
 			  if(nnsynth != nullptr) delete nnsynth;
 		
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
 			}
@@ -496,17 +501,16 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  
 			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 						   2*synth_number_of_parameters);
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth_number_of_parameters));
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth_number_of_parameters));
+			  for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			    nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+						     (eeg->getNumberOfSignals() + 
+						      2*synth_number_of_parameters));
 			  nnArchitecture.push_back(eeg->getNumberOfSignals());
 			  
 			  if(nnsynth != nullptr) delete nnsynth;
 			  
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
 			}
@@ -528,13 +532,16 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 		{
 			std::vector<unsigned int> nnArchitecture;
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
-			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
-			nnArchitecture.push_back(neuralnetwork_complexity*eeg->getNumberOfSignals());
+			
+			for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			  nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*eeg->getNumberOfSignals());
+			
 			nnArchitecture.push_back(eeg->getNumberOfSignals());
 
 			if(nn != nullptr) delete nn;
 
 			nn = new whiteice::nnetwork<>(nnArchitecture);
+			nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			nn->setNonlinearity(nn->getLayers()-1,
 					    whiteice::nnetwork<>::pureLinear);
 			
@@ -543,17 +550,18 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			if(synth){			  
 			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 						   2*synth->getNumberOfParameters());
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth->getNumberOfParameters()));
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth->getNumberOfParameters()));
+			  
+			  for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			    nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+						     (eeg->getNumberOfSignals() + 
+						      2*synth->getNumberOfParameters()));
+
 			  nnArchitecture.push_back(eeg->getNumberOfSignals());
 			  
 			  if(nnsynth != nullptr) delete nnsynth;
 		
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
 			}
@@ -562,17 +570,18 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  
 			  nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 						   2*synth_number_of_parameters);
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth_number_of_parameters));
-			  nnArchitecture.push_back(neuralnetwork_complexity*
-						   (eeg->getNumberOfSignals() + 
-						    2*synth_number_of_parameters));
+			  
+			  for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+			    nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+						     (eeg->getNumberOfSignals() + 
+						      2*synth_number_of_parameters));
+
 			  nnArchitecture.push_back(eeg->getNumberOfSignals());
 			  
 			  if(nnsynth != nullptr) delete nnsynth;
 			  
 			  nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
 			}
@@ -712,6 +721,22 @@ bool ResonanzEngine::setParameter(const std::string& parameter, const std::strin
 			return true;
 		}
 		else return false;
+	}
+	else if(parameter == "debug-messages"){
+	  if(value == "true"){
+	    whiteice::logging.setPrintOutput(true);
+	  }
+	  else if(value == "false"){
+	    whiteice::logging.setPrintOutput(false);
+	  }
+	}
+	else if(parameter == "random-programs"){
+	  if(value == "true"){
+	    randomPrograms = true;
+	  }
+	  else if(value == "false"){
+	    randomPrograms = false;
+	  }
 	}
 	else{
 		return false;
@@ -1563,7 +1588,7 @@ void ResonanzEngine::engine_loop()
 		  
 		  if(currentSecond > lastProgramSecond && lastProgramSecond >= 0){
 		    eeg->data(eegCurrent);
-
+		    
 		    logging.info("Calculating RMS error");
 		    
 		    // calculates RMS error
@@ -1581,14 +1606,20 @@ void ResonanzEngine::engine_loop()
 		    }
 		    
 		    eeg->data(current);
+
+		    int numElements = 0;
 		    
 		    if(target.size() == current.size()){
 		      float rms = 0.0f;
 		      for(unsigned int i=0;i<target.size();i++){
 			rms += (current[i] - target[i])*(current[i] - target[i])/eegTargetVariance[i];
+			if(eegTargetVariance[i] < 100000.0f)
+			  numElements++; // small enough for taken into account for error term
 		      }
 		      
-		      rms = sqrt(rms);
+		      rms = sqrt(rms); 
+		      if(numElements > 0) 
+			rms /= numElements; // per element error
 		      
 		      // adds current rms to the global RMS
 		      programRMS += rms;
@@ -1596,7 +1627,7 @@ void ResonanzEngine::engine_loop()
 		      
 		      {
 			char buffer[256];
-			snprintf(buffer, 256, "Program current RMS error: %.2f (average RMS error: %.2f)",
+			snprintf(buffer, 256, "Program current RMS (per element) error: %.2f (average RMS error: %.2f)",
 				 rms, programRMS/programRMS_N);
 			logging.info(buffer);
 		      }					
@@ -2095,7 +2126,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		m *= timestep; // corrects delta to given timelength
 		cov *= timestep*timestep;
 
-		// now we have prediction x to the response to the given keyword
+		// now we have prediction x to the response to the given picture
 		// calculates error (weighted distance to the target state)
 		
 		auto delta = target - (original + m);
@@ -2320,8 +2351,15 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 	  float best_error = 10e20;
 	  for(unsigned int i=0;i<errors.size();i++){
 	    if(errors[i].first < best_error){
-	      soundParameters = synthTest;
+	      soundParameters = errors[i].second; // synthTest
 	    }
+	  }
+
+	  if(randomPrograms){
+	    soundParameters = synthTest;
+	    
+	    for(unsigned int i=0;i<soundParameters.size();i++)
+	      soundParameters[i] = rng.uniform().c[0];
 	  }
 	  
 	}
@@ -2357,6 +2395,18 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 				break;
 			}
 			else elem--;
+		}
+
+		if(randomPrograms){
+		  if(keywords.size() > 0)
+		    keyword = rng.rand() % keywords.size();
+		  else
+		    keyword = 0;
+
+		  if(pictures.size() > 0)
+		    picture = rng.rand() % pictures.size();
+		  else
+		    picture = 0;
 		}
 	}
 
@@ -2395,6 +2445,9 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 // executes program blindly based on Monte Carlo sampling and prediction models
 // [only works for low dimensional target signals and well-trained models]
+//
+// FIXME: don't support randomPrograms flag which instead selects model randomly 
+//
 bool ResonanzEngine::engine_executeProgramMonteCarlo(const std::vector<float>& eegTarget,
 						     const std::vector<float>& eegTargetVariance, float timestep_)
 {
@@ -2713,16 +2766,23 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			}
 
 
-			optimizer = new whiteice::pLBFGS_nnetwork<>(*nnsynth, synthData, false, false);
-			optimizer->minimize(NUM_OPTIMIZER_THREADS);
-		}
+			//optimizer = new whiteice::pLBFGS_nnetwork<>(*nnsynth, synthData, false, false);
+			//optimizer->minimize(NUM_OPTIMIZER_THREADS);
+
+			optimizer = new whiteice::math::NNGradDescent<>();
+			optimizer->startOptimize(synthData, *nnsynth, 
+						 NUM_OPTIMIZER_THREADS);
+	
+				}
 		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
 
 			whiteice::math::blas_real<float> error = 1000.0f;
 			whiteice::math::vertex<> w;
+			whiteice::nnetwork<> tmpnn;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
 
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
@@ -2730,7 +2790,9 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			        logging.info("DEBUG: ABOUT TO STOP COMPUTATION");
 
 				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
+				//optimizer->getSolution(w, error, iterations);
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
 				
 				{
 				  char buffer[512];
@@ -2753,12 +2815,15 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				optimizer = nullptr;
 			}
 			else{
-				{
+			        {
+				  whiteice::nnetwork<> tmpnn;
 				  math::vertex< math::blas_real<float> > w;
 				  math::blas_real<float> error;
 				  unsigned int iterations = 0;
 				  
-				  optimizer->getSolution(w, error, iterations);
+				  //optimizer->getSolution(w, error, iterations);
+				  optimizer->getSolution(tmpnn, error, iterations);
+				  tmpnn.exportdata(w);
 				  
 				  char buffer[512];
 				  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d. error: %f",
@@ -2807,18 +2872,23 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			}
 		}
 		else if(optimizer != nullptr){
-			whiteice::math::blas_real<float> error = 1000.0f;
+		        whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::nnetwork<> tmpnn;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
+			tmpnn.exportdata(w);
 
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
-
+				//optimizer->getSolution(w, error, iterations);
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
+				
 				{
 					char buffer[512];
 					snprintf(buffer, 512, "resonanz model optimization stopped. synth model. iterations: %d error: %f",
@@ -2844,11 +2914,14 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			}
 			else{
 			  {
+			    whiteice::nnetwork<> tmpnn;
 			    math::vertex< math::blas_real<float> > w;
 			    math::blas_real<float> error;
 			    unsigned int iterations = 0;
 			    
-			    optimizer->getSolution(w, error, iterations);
+			    //optimizer->getSolution(w, error, iterations);
+			    optimizer->getSolution(tmpnn, error, iterations);
+			    tmpnn.exportdata(w);
 			    
 			    char buffer[512];
 			    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d. error: %f",
@@ -2869,9 +2942,13 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			nn->randomize();
 			nn->exportdata(w);
 			
-			optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-			optimizer->minimize(NUM_OPTIMIZER_THREADS);
-
+			//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+			//optimizer->minimize(NUM_OPTIMIZER_THREADS);
+			
+			optimizer = new whiteice::math::NNGradDescent<>();
+			optimizer->startOptimize(pictureData[currentPictureModel], *nn,
+						 NUM_OPTIMIZER_THREADS);
+			
 			{
 				char buffer[512];
 				snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
@@ -2883,16 +2960,21 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
 
 			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::nnetwork<> tmpnn;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
+			tmpnn.exportdata(w);
 
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
+				//optimizer->getSolution(w, error, iterations);
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
 				
 				{
 				  char buffer[512];
@@ -2915,9 +2997,15 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			else{
 				{
 				  char buffer[512];
-					snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
-						 optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
-					logging.info(buffer);
+				  unsigned int iterations;
+				  whiteice::math::blas_real<float> error;
+				  optimizer->getSolutionStatistics(error, iterations);
+				  
+				  //snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
+				  //   optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
+				  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
+					   iterations, NUM_OPTIMIZER_ITERATIONS);
+				  logging.info(buffer);
 				}
 			}
 
@@ -2961,9 +3049,14 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 
 					nn->randomize();
 					nn->exportdata(w);
+					
+					//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					//optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
-					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-					optimizer->minimize(NUM_OPTIMIZER_THREADS);
+					optimizer = new whiteice::math::NNGradDescent<>();
+					
+					optimizer->startOptimize(pictureData[currentPictureModel], *nn,
+								 NUM_OPTIMIZER_THREADS);
 
 				}
 			}
@@ -2981,16 +3074,22 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 		}
 		else if(optimizer != nullptr){
 			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::nnetwork<> tmpnn;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
-
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
+			tmpnn.exportdata(w);
+			
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
+				//optimizer->getSolution(w, error, iterations);
+
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
 
 				{
 					char buffer[512];
@@ -3025,18 +3124,26 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 						logging.info(buffer);
 					}
 
-					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
-					optimizer->minimize(NUM_OPTIMIZER_THREADS);
+					//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, pictureData[currentPictureModel], false, false);
+					//optimizer->minimize(NUM_OPTIMIZER_THREADS);
+
+					optimizer = new whiteice::math::NNGradDescent<>();
+					
+					optimizer->startOptimize(pictureData[currentPictureModel], *nn,
+								 NUM_OPTIMIZER_THREADS);
 				}
 			}
 		}
 		else{
 		  {
 		    math::vertex< math::blas_real<float> > w;
+		    whiteice::nnetwork<> tmpnn;
 		    math::blas_real<float> error;
 		    unsigned int iterations = 0;
 		    
-		    optimizer->getSolution(w, error, iterations);
+		    //optimizer->getSolution(w, error, iterations);
+		    optimizer->getSolution(tmpnn, error, iterations);
+		    tmpnn.exportdata(w);
 		    
 		    char buffer[512];
 		    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model %d/%d. number of iterations: %d/%d. error: %f",
@@ -3056,9 +3163,14 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			nn->randomize();
 			nn->exportdata(w);
 
-			optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-			optimizer->minimize(NUM_OPTIMIZER_THREADS);
+			//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+			//optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
+			optimizer = new whiteice::math::NNGradDescent<>();
+
+			optimizer->startOptimize(keywordData[currentKeywordModel], *nn,
+						 NUM_OPTIMIZER_THREADS);
+			
 			{
 				char buffer[512];
 				snprintf(buffer, 512, "resonanz model optimization started: keyword %d database size: %d",
@@ -3069,17 +3181,24 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 		}
 		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
 
-			whiteice::math::blas_real<float> error = 1000.0f;
+		        whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::nnetwork<> tmpnn;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
+			tmpnn.exportdata(w);
 
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
-				optimizer->getSolution(w, error, iterations);
+				
+				//optimizer->getSolution(w, error, iterations);
+				
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
 				
 				{
 				  char buffer[512];
@@ -3101,10 +3220,16 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			}
 			else{
 				{
-				        char buffer[512];
-				        snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
-						 optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
-					logging.info(buffer);
+				  char buffer[512];
+				  unsigned int iterations;
+				  whiteice::math::blas_real<float> error;
+				  optimizer->getSolutionStatistics(error, iterations);
+				  
+				  //snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
+				  //	   optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
+				  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
+					   iterations, NUM_OPTIMIZER_ITERATIONS);
+				  logging.info(buffer);
 				}
 			}
 
@@ -3146,9 +3271,13 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 					whiteice::math::vertex<> w;
 					nn->randomize();
 					nn->exportdata(w);
+					
+					//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					//optimizer->minimize(NUM_OPTIMIZER_THREADS);
 
-					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-					optimizer->minimize(NUM_OPTIMIZER_THREADS);
+					optimizer = new whiteice::math::NNGradDescent<>();
+					optimizer->startOptimize(keywordData[currentKeywordModel], *nn, 
+								 NUM_OPTIMIZER_THREADS);
 				}
 			}
 			else{
@@ -3165,17 +3294,22 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 		}
 		else if(optimizer != nullptr){
 			whiteice::math::blas_real<float> error = 1000.0f;
+			whiteice::nnetwork<> tmpnn;
 			whiteice::math::vertex<> w;
 			unsigned int iterations = 0;
 
-			optimizer->getSolution(w, error, iterations);
+			//optimizer->getSolution(w, error, iterations);
+			optimizer->getSolution(tmpnn, error, iterations);
+			tmpnn.exportdata(w);
 
 			if(iterations >= NUM_OPTIMIZER_ITERATIONS){
 				// gets finished solution
 
 				optimizer->stopComputation();
 
-				optimizer->getSolution(w, error, iterations);
+				//optimizer->getSolution(w, error, iterations);
+				optimizer->getSolution(tmpnn, error, iterations);
+				tmpnn.exportdata(w);
 
 
 				{
@@ -3211,18 +3345,25 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 						logging.info(buffer);
 					}
 
-					optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
-					optimizer->minimize(NUM_OPTIMIZER_THREADS);
+					//optimizer = new whiteice::pLBFGS_nnetwork<>(*nn, keywordData[currentKeywordModel], false, false);
+					//optimizer->minimize(NUM_OPTIMIZER_THREADS);
+
+					optimizer = new whiteice::math::NNGradDescent<>();
+					optimizer->startOptimize(keywordData[currentKeywordModel], *nn, 
+								 NUM_OPTIMIZER_THREADS);
 				}
 			}
 		}
 		else{
 		  {
 		    math::vertex< math::blas_real<float> > w;
+		    whiteice::nnetwork<> tmpnn;
 		    math::blas_real<float> error;
 		    unsigned int iterations = 0;
 		    
-		    optimizer->getSolution(w, error, iterations);
+		    //optimizer->getSolution(w, error, iterations);
+		    optimizer->getSolution(tmpnn, error, iterations);
+		    tmpnn.exportdata(w);
 		    
 		    char buffer[512];
 		    snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model %d/%d. number of iterations: %d/%d. error: %f",
@@ -3454,30 +3595,30 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 		{
 			if(pcaPreprocess){
-				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing keyword measurements [input]");
-					keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#if 0
-				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing keyword measurements [output]");
-					keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#endif
-				keywordData[i].convert(1);
+			  if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing keyword measurements [input]");
+			    keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+			  if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing keyword measurements [output]");
+			    keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+			  // keywordData[i].convert(1);
 			}
 			else{
-				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA processing of keyword measurements [input]");
-					keywordData[i].convert(0); // removes all preprocessings from input
-				}
-#if 0
-				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA processing of keyword measurements [output]");
-					keywordData[i].convert(1); // removes all preprocessings from input
-				}
-#endif
-				keywordData[i].convert(1);
+			  if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA processing of keyword measurements [input]");
+			    keywordData[i].convert(0); // removes all preprocessings from input
+			  }
+			  if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA processing of keyword measurements [output]");
+			    keywordData[i].convert(1); // removes all preprocessings from output
+			  }
+
+			  keywordData[i].preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  keywordData[i].preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  
+			  // keywordData[i].convert(1);
 			}
 
 			// keywordData[i].convert(1); // removes all preprocessings from output
@@ -3525,30 +3666,32 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 
 		{
 			if(pcaPreprocess){
-				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing picture measurements [input]");
-					pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#if 0
-				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing picture measurements [output]");
-					pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#endif
-				pictureData[i].convert(1);
+			  if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing picture measurements [input]");
+			    pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+
+			  if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing picture measurements [output]");
+			    pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+
+			  // pictureData[i].convert(1);
 			}
 			else{
-				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA processing of picture measurements [input]");
-					pictureData[i].convert(0); // removes all preprocessings from input
-				}
-#if 0
-				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA processing of picture measurements [output]");
-					pictureData[i].convert(1); // removes all preprocessings from input
-				}
-#endif
-				pictureData[i].convert(1);
+			  if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA processing of picture measurements [input]");
+			    pictureData[i].convert(0); // removes all preprocessings from input
+			  }
+			  if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA processing of picture measurements [output]");
+			    pictureData[i].convert(1); // removes all preprocessings from output
+			  }
+			  
+			  pictureData[i].preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  pictureData[i].preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  
+			  // pictureData[i].convert(1);
 			}
 
 			// pictureData[i].convert(1); // removes all preprocessings from output
@@ -3598,15 +3741,27 @@ bool ResonanzEngine::engine_loadDatabase(const std::string& modelDir)
 		synthData.preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
 	      }
 	      
-	      synthData.convert(1);
+	      if(synthData.hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+		logging.info("PCA preprocessing sound measurements [output]");
+		synthData.preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+	      }
+	      
 	    }
 	    else{
 	      if(synthData.hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
 		logging.info("Removing PCA processing of sound measurements [input]");
 		synthData.convert(0); // removes all preprocessings from input
 	      }
+
+	      if(synthData.hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+		logging.info("Removing PCA processing of sound measurements [output]");
+		synthData.convert(1); // removes all preprocessings from input
+	      }
 	      
-	      synthData.convert(1);
+	      synthData.preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+	      synthData.preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
+	      
+	      // synthData.convert(1);
 	    }
 	  }
 	  
@@ -3785,34 +3940,35 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 		
 		
 		{
-			if(pcaPreprocess){
-				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing keyword measurements data [input]");
-					keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#if 0
-				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing keyword measurements data [output]");
-					keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#endif
-				keywordData[i].convert(1); // removes preprocessigns from output
-			}
-			else{
-				if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA preprocessing from keyword measurements data [input]");
-					keywordData[i].convert(0); // removes all preprocessings from input
-				}
+		  if(pcaPreprocess){
+		    if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+		      logging.info("PCA preprocessing keyword measurements data [input]");
+		      keywordData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+		    }
+		    if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+		      logging.info("PCA preprocessing keyword measurements data [output]");
+		      keywordData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+		    }
+		    
+		    // keywordData[i].convert(1); // removes preprocessigns from output
+		  }
+		  else{
+		    if(keywordData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+		      logging.info("Removing PCA preprocessing from keyword measurements data [input]");
+		      keywordData[i].convert(0); // removes all preprocessings from input
+		    }
 
-#if 0
-				if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA preprocessing from keyword measurements data [output]");
-					keywordData[i].convert(1); // removes all preprocessings from input
-				}
-#endif
-				keywordData[i].convert(1); // removes preprocessigns from output
-			}
+		    if(keywordData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+		      logging.info("Removing PCA preprocessing from keyword measurements data [output]");
+		      keywordData[i].convert(1); // removes all preprocessings from input
+		    }
+		    
+		    keywordData[i].preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+		    keywordData[i].preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
 
+		    // keywordData[i].convert(1); // removes preprocessigns from output
+		  }
+		  
 			// keywordData[i].convert(1); // removes all preprocessings from output
 		}
 
@@ -3832,32 +3988,32 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 		
 		{
 			if(pcaPreprocess){
-				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing picture measurements data [input]");
-					pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#if 0
-				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
-					logging.info("PCA preprocessing picture measurements data [output]");
-					pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
-				}
-#endif
-				pictureData[i].convert(1); // removes preprocessigns from output
+			  if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing picture measurements data [input]");
+			    pictureData[i].preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+			  if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+			    logging.info("PCA preprocessing picture measurements data [output]");
+			    pictureData[i].preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+			  }
+			  // pictureData[i].convert(1); // removes preprocessigns from output
 			}
 			else{
-				if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA preprocessing from picture measurements data [input]");
-					pictureData[i].convert(0); // removes all preprocessings from input
-				}
-#if 0
-				if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
-					logging.info("Removing PCA preprocessing from picture measurements data [output]");
-					pictureData[i].convert(1); // removes all preprocessings from input
-				}
-#endif
-				pictureData[i].convert(1);
+			  if(pictureData[i].hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA preprocessing from picture measurements data [input]");
+			    pictureData[i].convert(0); // removes all preprocessings from input
+			  }
+			  if(pictureData[i].hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+			    logging.info("Removing PCA preprocessing from picture measurements data [output]");
+			    pictureData[i].convert(1); // removes all preprocessings from input
+			  }
+			  
+			  pictureData[i].preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  pictureData[i].preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
+			  
+			  // pictureData[i].convert(1);
 			}
-
+			
 			// pictureData[i].convert(1); // removes all preprocessings from output
 		}
 
@@ -3880,16 +4036,28 @@ bool ResonanzEngine::engine_saveDatabase(const std::string& modelDir)
 		logging.info("PCA preprocessing sound measurements [input]");
 		synthData.preprocess(0, whiteice::dataset<>::dnCorrelationRemoval);
 	      }
-	      
-	      synthData.convert(1);
+
+	      if(synthData.hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == false){
+		logging.info("PCA preprocessing sound measurements [output]");
+		synthData.preprocess(1, whiteice::dataset<>::dnCorrelationRemoval);
+	      }
+	      	      
+	      // synthData.convert(1);
 	    }
 	    else{
 	      if(synthData.hasPreprocess(0, whiteice::dataset<>::dnCorrelationRemoval) == true){
 		logging.info("Removing PCA processing of sound measurements [input]");
 		synthData.convert(0); // removes all preprocessings from input
 	      }
+	      if(synthData.hasPreprocess(1, whiteice::dataset<>::dnCorrelationRemoval) == true){
+		logging.info("Removing PCA processing of sound measurements [output]");
+		synthData.convert(1); // removes all preprocessings from input
+	      }
+
+	      synthData.preprocess(0, whiteice::dataset<>::dnMeanVarianceNormalization);
+	      synthData.preprocess(1, whiteice::dataset<>::dnMeanVarianceNormalization);
 	      
-	      synthData.convert(1);
+	      // synthData.convert(1);
 	    }
 	  }
 	  
@@ -4368,17 +4536,18 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	  if(synth){			  
 	    nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 				     2*synth->getNumberOfParameters());
-	    nnArchitecture.push_back(neuralnetwork_complexity*
-				     (eeg->getNumberOfSignals() + 
-				      2*synth->getNumberOfParameters()));
-	    nnArchitecture.push_back(neuralnetwork_complexity*
-				     (eeg->getNumberOfSignals() + 
-				      2*synth->getNumberOfParameters()));
+
+	    for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+	      nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+				       (eeg->getNumberOfSignals() + 
+					2*synth->getNumberOfParameters()));
+	    
 	    nnArchitecture.push_back(eeg->getNumberOfSignals());
 	    
 	    if(nnsynth != nullptr) delete nnsynth;
 	    
 	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	    nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 				     whiteice::nnetwork<>::pureLinear);
 	  }
@@ -4387,17 +4556,18 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	    
 	    nnArchitecture.push_back(eeg->getNumberOfSignals() + 
 				     2*synth_number_of_parameters);
-	    nnArchitecture.push_back(neuralnetwork_complexity*
-				     (eeg->getNumberOfSignals() + 
-				      2*synth_number_of_parameters));
-	    nnArchitecture.push_back(neuralnetwork_complexity*
-				     (eeg->getNumberOfSignals() + 
-				      2*synth_number_of_parameters));
+
+	    for(int i=0;i<NEURALNETWORK_DEPTH-1;i++)
+	      nnArchitecture.push_back(NEURALNETWORK_COMPLEXITY*
+				       (eeg->getNumberOfSignals() + 
+					2*synth_number_of_parameters));
+	    
 	    nnArchitecture.push_back(eeg->getNumberOfSignals());
 	    
 	    if(nnsynth != nullptr) delete nnsynth;
 	    
 	    nnsynth = new whiteice::nnetwork<>(nnArchitecture);
+	    nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 				     whiteice::nnetwork<>::pureLinear);
 	  }
@@ -4706,44 +4876,46 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir) const
 		whiteice::bayesian_nnetwork<> nnet;
 
 		if(nnet.load(modelFilename)){
-			models++;
+		  models++;
+		  
+		  if(ds.getNumberOfClusters() != 2)
+		    continue;
+		  
+		  if(ds.size(0) != ds.size(1))
+		    continue;
+		  
+		  float error = 0.0f;
+		  float error_N = 0.0f;
+		  
+		  for(unsigned int i=0;i<ds.size(0);i++){
+		    math::vertex<> m;
+		    math::matrix<> cov;
+		    
+		    auto x = ds.access(0, i);
+		    
+		    if(nnet.calculate(x, m, cov, 1, 0) == false)
+		      continue;
+		    
+		    auto y = ds.access(1, i);
 
-			if(ds.getNumberOfClusters() != 2)
-				continue;
+		    // converts data to real output values for meaningful comparision against cases WITHOUT preprocessing
+		    if(ds.invpreprocess(1, m) == false || ds.invpreprocess(1, y) == false)
+		      continue; // skip these datapoints
+		    
+		    auto delta = y - m;
 
-			if(ds.size(0) != ds.size(1))
-				continue;
+		    // calculates per element error for easy comparision of different models
+		    error += delta.norm().c[0] / delta.size();
+		    error_N++;
+		  }
 
-			float error = 0.0f;
-			float error_N = 0.0f;
-
-			for(unsigned int i=0;i<ds.size(0);i++){
-				math::vertex<> m;
-				math::matrix<> cov;
-
-				auto x = ds.access(0, i);
-
-				if(nnet.calculate(x, m, cov, 1, 0) == false)
-					continue;
-
-				auto y = ds.access(1, i);
-
-				// converts data to real output values for meaningful comparision against cases WITHOUT preprocessing
-				if(ds.invpreprocess(1, m) == false || ds.invpreprocess(1, y) == false)
-					continue; // skip this datapoints
-
-				auto delta = y - m;
-				error += delta.norm().c[0];
-				error_N++;
-			}
-
-			if(error_N > 0.0f){
-				error /= error_N; // average error for this stimulation element
-				total_error += error;
-				total_N++;
-			}
+		  if(error_N > 0.0f){
+		    error /= error_N; // average error for this stimulation element
+		    total_error += error;
+		    total_N++;
+		  }
 		}
-
+		
 	}
 
 	if(total_N > 0.0f)
@@ -4755,7 +4927,7 @@ std::string ResonanzEngine::analyzeModel(const std::string& modelDir) const
 		double modelPercentage = 100*models/((double)N);
 
 		char buffer[1024];
-		snprintf(buffer, 1024, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d\nAverage model error: %f\n",
+		snprintf(buffer, 1024, "%d entries (%.0f%% has a model). samples(avg): %.2f, samples(min): %d\nAverage model (per element) error: %f\n",
 				N, modelPercentage, avgDSSamples, minDSSamples, total_error);
 
 		return buffer;
@@ -4817,7 +4989,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	    
 	    auto delta = output - m;
 	    
-	    error += delta.norm().c[0];
+	    error += delta.norm().c[0] / delta.size();
 	    num++;
 	  }
 	}
@@ -4866,7 +5038,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	    
 	    auto delta = output - m;
 	    
-	    error += delta.norm().c[0];
+	    error += delta.norm().c[0] / delta.size();
 	    num++;
 	  }
 	}
@@ -4917,7 +5089,7 @@ std::string ResonanzEngine::analyzeModel2(const std::string& pictureDir,
 	    
 	    auto delta = output - m;
 	    
-	    error += delta.norm().c[0];
+	    error += delta.norm().c[0] / delta.size();
 	    num++;
 	  }
 	}
