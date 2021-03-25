@@ -2010,7 +2010,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		}
 
 
-		if(keywordData[index].invpreprocess(1, m) == false){
+		if(keywordData[index].invpreprocess(1, m, cov) == false){
 			logging.warn("skipping bad keyword prediction model");
 			continue;
 		}
@@ -2021,7 +2021,16 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		// now we have prediction x to the response to the given keyword
 		// calculates error (weighted distance to the target state)
 
-		auto delta = target - (original + m);
+		auto predicted_value = original + m;
+		
+		// no out of range values (clips to [0,1] interval)
+		for(unsigned int i=0;i<predicted_value.size();i++){
+		  if(predicted_value[i] < 0.0f) predicted_value[i] = 0.0f;
+		  else if(predicted_value[i] > 1.0f) predicted_value[i] = 1.0f;
+		}
+
+		auto delta = target - predicted_value;
+#if 1
 		auto stdev = m;
 		
 		for(unsigned int i=0;i<stdev.size();i++){
@@ -2033,9 +2042,13 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		model_error_ratio[index] = ratio.c[0];
 		
 		for(unsigned int i=0;i<delta.size();i++){
-		  delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
-		  delta[i] /= targetVariance[i];
+		  delta[i] = math::abs(delta[i]) + 1.00f*stdev[i];
+		  delta[i] /= math::sqrt(targetVariance[i]);
 		}
+#else
+		for(unsigned int i=0;i<delta.size();i++)
+		  delta[i] /= math::sqrt(targetVariance[i]);
+#endif
 
 		auto error = delta.norm();
 
@@ -2118,7 +2131,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		}
 
-		if(pictureData[index].invpreprocess(1, m) == false){
+		if(pictureData[index].invpreprocess(1, m, cov) == false){
 			logging.warn("skipping bad picture prediction model");
 			continue;
 		}
@@ -2128,8 +2141,17 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
 		// now we have prediction x to the response to the given picture
 		// calculates error (weighted distance to the target state)
+
+		auto predicted_value = original + m;
+
+		// no out of range values (clips to [0,1] interval)
+		for(unsigned int i=0;i<predicted_value.size();i++){
+		  if(predicted_value[i] < 0.0f) predicted_value[i] = 0.0f;
+		  else if(predicted_value[i] > 1.0f) predicted_value[i] = 1.0f;
+		}
 		
-		auto delta = target - (original + m);
+		auto delta = target - predicted_value;
+#if 1
 		auto stdev = m;
 		
 		for(unsigned int i=0;i<stdev.size();i++){
@@ -2141,10 +2163,15 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 		model_error_ratio[index] = ratio.c[0];
 		
 		for(unsigned int i=0;i<delta.size();i++){
-		  delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
-		  delta[i] /= targetVariance[i];
+		  delta[i] = math::abs(delta[i]) + 1.00f*stdev[i];
+		  delta[i] /= math::sqrt(targetVariance[i]);
 		}
-
+#else
+		
+		for(unsigned int i=0;i<delta.size();i++)
+		  delta[i] /= math::sqrt(targetVariance[i]);
+#endif
+		
 		auto error = delta.norm();
 
 		std::pair<float, int> p;
