@@ -276,7 +276,7 @@ private:
 	whiteice::math::NNGradDescent<>* optimizer = nullptr;
 	
 	const unsigned int NUM_OPTIMIZER_THREADS = 1;
-	const unsigned int NUM_OPTIMIZER_ITERATIONS = 500; // was: 150
+	const unsigned int NUM_OPTIMIZER_ITERATIONS = 750; // was: 150
 	bool optimizeSynthOnly = false;
 	
 	whiteice::nnetwork<>* nn = nullptr;

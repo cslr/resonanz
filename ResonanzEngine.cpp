@@ -103,6 +103,7 @@ ResonanzEngine::ResonanzEngine()
 		nn = new whiteice::nnetwork<>(nnArchitecture);
 		nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 		nn->setNonlinearity(nn->getLayers()-1, whiteice::nnetwork<>::pureLinear);
+		nn->setResidual(true);
 		
 		// creates dummy synth neural network
 		const int synth_number_of_parameters = 3;
@@ -116,6 +117,7 @@ ResonanzEngine::ResonanzEngine()
 		nnsynth = new whiteice::nnetwork<>(nnArchitecture);
 		nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 		nnsynth->setNonlinearity(nnsynth->getLayers()-1, whiteice::nnetwork<>::pureLinear);
+		nnsynth->setResidual(true);
 	}
 	
 	
@@ -472,6 +474,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			nn->setNonlinearity(nn->getLayers()-1,
 					    whiteice::nnetwork<>::pureLinear);
+			nn->setResidual(true);
 						
 			
 			nnArchitecture.clear();
@@ -495,6 +498,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
+			  nnsynth->setResidual(true);
 			}
 			else{
 			  const int synth_number_of_parameters = 6;
@@ -513,6 +517,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
+			  nnsynth->setResidual(true);
 			}
 		}
 
@@ -544,6 +549,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			nn->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			nn->setNonlinearity(nn->getLayers()-1,
 					    whiteice::nnetwork<>::pureLinear);
+			nn->setResidual(true);
 			
 			nnArchitecture.clear();
 			
@@ -564,6 +570,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
+			  nnsynth->setResidual(true);
 			}
 			else{
 			  const int synth_number_of_parameters = 6;
@@ -584,6 +591,7 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			  nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 			  nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 						   whiteice::nnetwork<>::pureLinear);
+			  nnsynth->setResidual(true);
 			}
 		}
 		
@@ -2800,7 +2808,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 			optimizer->startOptimize(synthData, *nnsynth, 
 						 NUM_OPTIMIZER_THREADS);
 	
-				}
+		}
 		else if(optimizer != nullptr && use_bayesian_nnetwork){ // pre-optimizer is active
 
 			whiteice::math::blas_real<float> error = 1000.0f;
@@ -3129,9 +3137,9 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentPictureModel,
 				std::string dbFilename = currentCommand.modelDir + "/" +
 						calculateHashName(pictures[currentPictureModel] + eeg->getDataSourceName()) + ".model";
 				nn->importdata(w);
-
+				
 				bnn->importNetwork(*nn);
-
+				
 				if(bnn->save(dbFilename) == false)
 					logging.error("saving nn configuration file failed");
 
@@ -4577,6 +4585,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	    nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 				     whiteice::nnetwork<>::pureLinear);
+	    nnsynth->setResidual(true);
 	  }
 	  else{
 	    const int synth_number_of_parameters = 6;
@@ -4597,6 +4606,7 @@ bool ResonanzEngine::engine_SDL_init(const std::string& fontname)
 	    nnsynth->setNonlinearity(whiteice::nnetwork<>::rectifier);
 	    nnsynth->setNonlinearity(nnsynth->getLayers()-1,
 				     whiteice::nnetwork<>::pureLinear);
+	    nnsynth->setResidual(true);
 	  }
 	}
 	
