@@ -38,7 +38,9 @@
 #ifdef EMOTIV_INSIGHT
 //#include "EmotivInsightStub.h"
 //#include "EmotivInsightPipeServer.h"
+#ifdef _WIN32
 #include "EmotivInsight.h"
+#endif
 #endif
 
 #include "MuseOSC.h"
@@ -440,11 +442,13 @@ bool ResonanzEngine::setEEGDeviceType(int deviceNumber)
 			eeg = new RandomEEG();
 		}
 #ifdef EMOTIV_INSIGHT
+#ifdef _WIN32
 		else if(deviceNumber == ResonanzEngine::RE_EEG_EMOTIV_INSIGHT_DEVICE){
 			if(eeg != nullptr) delete eeg;
 			//eeg = new EmotivInsightPipeServer("\\\\.\\pipe\\emotiv-insight-data");
 			eeg = new EmotivInsight();
 		}
+#endif
 #endif
 		else if(deviceNumber == ResonanzEngine::RE_EEG_IA_MUSE_DEVICE){
 			if(eeg != nullptr) delete eeg;
