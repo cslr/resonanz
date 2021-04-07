@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	srand(time(0));
 
 	if(argc > 1){
-	        printf("Resonanz engine v0.55\n");
+	        printf("Resonanz engine v0.56\n");
 	}
 	else{
 	        print_usage();
