@@ -17,9 +17,9 @@ CP = cp
 CFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config sdl2 --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` `pkg-config fluidsynth --cflags` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
 CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config sdl2 --cflags` `pkg-config --cflags SDL2_ttf` `pkg-config --cflags SDL2_image` `pkg-config --cflags SDL2_mixer` `pkg-config --cflags dinrhiw` `pkg-config fluidsynth --cflags` -I. -Ioscpkt -I/usr/lib/jvm/java-7-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/ -I.
 
-OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o SoundSynthesis.o
+OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o Log.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o SoundSynthesis.o HMMStateUpdator.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp SoundSynthesis.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp SoundSynthesis.cpp HMMStateUpdator.cpp
 
 
 

@@ -192,6 +192,8 @@ int main(int argc, char** argv)
 	    }
 	    else if(strcmp(argv[i],"-v") == 0){
 	    	verbose = true;
+		whiteice::logging.setOutputFile("resonanz-engine.log");
+		whiteice::logging.setPrintOutput(true);
 	    }
 	    else{
 	    	print_usage();
@@ -392,7 +394,7 @@ int main(int argc, char** argv)
 	  fflush(stdout);
 	}
 	  
-
+	
 	engine.cmdStopCommand();
 	sleep(1);
 	

@@ -2,7 +2,7 @@
  * ResonanzEngine.h
  *
  *  Created on: 13.6.2015
- *      Author: Tomas
+ *      Author: Tomas Ukkonen
  */
 
 #ifndef RESONANZENGINE_H_
@@ -39,6 +39,8 @@
 
 #include "SDLTheora.h"
 
+#include "HMMStateUpdator.h"
+
 namespace whiteice {
 namespace resonanz {
 
@@ -48,32 +50,32 @@ namespace resonanz {
 class ResonanzCommand
 {
 public:
-	ResonanzCommand();
-	virtual ~ResonanzCommand();
-
-	static const unsigned int CMD_DO_NOTHING  = 0;
-	static const unsigned int CMD_DO_RANDOM   = 1;
-	static const unsigned int CMD_DO_MEASURE  = 2;
-	static const unsigned int CMD_DO_OPTIMIZE = 3;
-	static const unsigned int CMD_DO_EXECUTE  = 4;
-	static const unsigned int CMD_DO_MEASURE_PROGRAM = 5;
-
-	unsigned int command = CMD_DO_NOTHING;
-
-	bool showScreen = false;
-	std::string pictureDir;
-	std::string keywordsFile;
-	std::string modelDir;
-	std::string audioFile;
-
-	// does execute use EEG values or do Monte Carlo simulation
-	bool blindMonteCarlo = false;
-	bool saveVideo = false;
-
-	std::vector<std::string> signalName;
-	std::vector< std::vector<float> > programValues;
-
-	unsigned int programLengthTicks = 0; // measured program length in ticks
+  ResonanzCommand();
+  virtual ~ResonanzCommand();
+  
+  static const unsigned int CMD_DO_NOTHING  = 0;
+  static const unsigned int CMD_DO_RANDOM   = 1;
+  static const unsigned int CMD_DO_MEASURE  = 2;
+  static const unsigned int CMD_DO_OPTIMIZE = 3;
+  static const unsigned int CMD_DO_EXECUTE  = 4;
+  static const unsigned int CMD_DO_MEASURE_PROGRAM = 5;
+  
+  unsigned int command = CMD_DO_NOTHING;
+  
+  bool showScreen = false;
+  std::string pictureDir;
+  std::string keywordsFile;
+  std::string modelDir;
+  std::string audioFile;
+  
+  // does execute use EEG values or do Monte Carlo simulation
+  bool blindMonteCarlo = false;
+  bool saveVideo = false;
+  
+  std::vector<std::string> signalName;
+  std::vector< std::vector<float> > programValues;
+  
+  unsigned int programLengthTicks = 0; // measured program length in ticks
 };
 
 /**
@@ -256,6 +258,9 @@ private:
 	bool engine_saveDatabase(const std::string& modelDir);
 	std::string calculateHashName(const std::string& filename) const;
 
+        whiteice::dataset<> eegData; // EEG values data for KMeans and HMM brain state detection
+        
+        
 	std::vector< whiteice::dataset<> > keywordData;
 	std::vector< whiteice::dataset<> > pictureData;
 	whiteice::dataset<>                synthData; // sound synthesis data
@@ -268,9 +273,18 @@ private:
 	std::mutex eeg_mutex;
 	int eegDeviceType = RE_EEG_NO_DEVICE;
 	
-	bool engine_optimizeModels(unsigned int& currentPictureModel, 
+        bool engine_optimizeModels(unsigned int& currentHMMModel,
+				   unsigned int& currentPictureModel, 
 				   unsigned int& currentKeywordModel, 
 				   bool& soundModelCalculated);
+
+        whiteice::KMeans<>* kmeans = nullptr;
+        whiteice::HMM* hmm = nullptr;
+        unsigned int HMMstate = 0; // current HMM state
+        HMMStateUpdatorThread* hmmUpdator = nullptr;
+  
+        const unsigned int KMEANS_NUM_CLUSTERS = 50;
+        const unsigned int HMM_NUM_CLUSTERS = 10; // number of HMM hidden brain states
 	
 	// whiteice::pLBFGS_nnetwork<>* optimizer = nullptr;
 	whiteice::math::NNGradDescent<>* optimizer = nullptr;
@@ -278,8 +292,8 @@ private:
 	const unsigned int NUM_OPTIMIZER_THREADS = 1;
 	const unsigned int NUM_OPTIMIZER_ITERATIONS = 750; // was: 150
 	bool optimizeSynthOnly = false;
-	
-	whiteice::nnetwork<>* nn = nullptr;
+
+  	whiteice::nnetwork<>* nn = nullptr;
 	whiteice::nnetwork<>* nnsynth = nullptr; // synth data neural network
 	whiteice::bayesian_nnetwork<>* bnn = nullptr;
 	whiteice::UHMC<>* bayes_optimizer = nullptr;
