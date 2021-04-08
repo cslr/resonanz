@@ -27,7 +27,7 @@ public:
 	
 	/**
 	 * creates program (length_secs seconds longs) 
-	 * which given target values
+	 * which given target values, negative values of target vector are ignored
 	 */
 	bool createProgram(const DataSource& ds, 
 			   const std::vector<float>& target,

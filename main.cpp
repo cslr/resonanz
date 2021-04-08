@@ -334,9 +334,18 @@ int main(int argc, char** argv)
 		signalPrograms.resize(file.getNumberOfPrograms());
 
 		for(unsigned int i=0;i<signalNames.size();i++){
-			file.getProgramSignalName(i, signalNames[i]);
-			file.getRawProgram(i, signalPrograms[i]);
+		  file.getProgramSignalName(i, signalNames[i]);
+		  file.getRawProgram(i, signalPrograms[i]);
 		}
+
+		{
+		  printf("Signals selected:\n");
+		  
+		  for(unsigned int i=0;i<signalNames.size();i++){
+		    printf("%s\n", signalNames[i].c_str());
+		  }
+		}
+		
 		
 		std::string audioFile = "";
 		
@@ -399,7 +408,11 @@ int main(int argc, char** argv)
 	sleep(1);
 	
 	// reports average RMS of executed program
-	if(cmd.command == cmd.CMD_DO_EXECUTE){
+	if(cmd.command == cmd.CMD_DO_OPTIMIZE){
+	  std::string msg = engine.analyzeModel(cmd.modelDir);
+	  std::cout << msg << std::endl;
+	}
+	else if(cmd.command == cmd.CMD_DO_EXECUTE){
 	  std::string msg = engine.executedProgramStatistics();
 	  std::cout << msg << std::endl;
 	}

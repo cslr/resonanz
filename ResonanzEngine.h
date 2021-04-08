@@ -278,6 +278,7 @@ private:
 				   unsigned int& currentKeywordModel, 
 				   bool& soundModelCalculated);
 
+        std::mutex hmm_mutex; // synchronized manipulation of HMM params
         whiteice::KMeans<>* kmeans = nullptr;
         whiteice::HMM* hmm = nullptr;
         unsigned int HMMstate = 0; // current HMM state

@@ -129,6 +129,8 @@ namespace whiteice
 
 	for(const auto& p : norms)
 	  pic.preprocess(0, p);
+
+	pic.preprocess(0); // always do mean-variance normalization
       }
 
       // keywordData
@@ -170,6 +172,8 @@ namespace whiteice
 	
 	for(const auto& p : norms)
 	  key.preprocess(0, p);
+
+	key.preprocess(0); // always do mean-variance normalization
       }
 
       

@@ -836,6 +836,9 @@ void ResonanzEngine::engine_loop()
   programStarted = 0LL; // program has not been started
   long long lastProgramSecond = 0LL;
   unsigned int eegConnectionDownTime = 0;
+
+  long long lastHMMStateUpdateMS = 0; // last time HMM model has been updated
+  HMMstate = 0;
   
   std::vector<float> eegCurrent;
   
@@ -879,6 +882,39 @@ void ResonanzEngine::engine_loop()
       auto t1ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1).count();
       
       auto currentTick = (t1ms - tickStartTime)/TICK_MS;
+
+      // UPDATE HMM STATE
+      {
+	const auto timeSinceLastUpdateMS = ((long long)t1ms) - lastHMMStateUpdateMS;
+	
+	if(timeSinceLastUpdateMS >= MEASUREMODE_DELAY_MS){
+	  // update HMM state here
+	  std::lock_guard<std::mutex> lock(hmm_mutex); // NOT REALLY NEEDED FOR NOW
+
+	  if(hmm != NULL && kmeans != NULL && eeg != NULL){
+	  
+	    math::vertex<> data;
+	  
+	    if(eeg->data(eegCurrent)){
+	      data.resize(eegCurrent.size());
+
+	      for(unsigned int i=0;i<data.size();i++)
+		data[i] = eegCurrent[i];
+	      
+	      unsigned int dataCluster = kmeans->getClusterIndex(data);
+	      unsigned int nextState = 0;
+	      if(HMMstate >= HMM_NUM_CLUSTERS){
+		HMMstate = hmm->sampleInitialHiddenState();
+	      }
+	      hmm->next_state(HMMstate, nextState, dataCluster);
+	      HMMstate = nextState;
+	    }
+	    
+	    lastHMMStateUpdateMS = (long long)t1ms;
+	  }
+	}
+	
+      }
       
       if(tick < currentTick)
 	tick = currentTick;
@@ -1973,15 +2009,19 @@ bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
       return false;
     }
 
-    if(kmeans) delete kmeans;
-    if(hmm) delete hmm;
-
-    kmeans = newkmeans;
-    hmm = newhmm;
-
-    // updates HMM state (choses first randomly according to HMM PI parameter)
-    
-    HMMstate = hmm->sample(hmm->getPI());
+    {
+      std::lock_guard<std::mutex> lock(hmm_mutex);
+      
+      if(kmeans) delete kmeans;
+      if(hmm) delete hmm;
+      
+      kmeans = newkmeans;
+      hmm = newhmm;
+      
+      // updates HMM state (choses first randomly according to HMM PI parameter)
+      
+      HMMstate = hmm->sample(hmm->getPI());
+    }
     
   }
   catch(std::exception& e){
@@ -2113,15 +2153,19 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
 
   // updates HMM brain state according to measurement
   {
+    std::lock_guard<std::mutex> lock(hmm_mutex);
+    
     if(kmeans == NULL || hmm == NULL){
       logging.error("executeProgram(): no K-Means and HMM models loaded");
       return false;
     }
-    
+
+#if 0
     unsigned int dataCluster = kmeans->getClusterIndex(current);
     unsigned int nextState = 0;
     hmm->next_state(HMMstate, nextState, dataCluster);
     HMMstate = nextState;
+#endif
   }
   
   std::vector< std::pair<float, int> > results(keywordData.size());
@@ -3078,6 +3122,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	char buffer[512];
 	snprintf(buffer, 512, "resonanz model optimization started: synth model. database size: %d %d",
 		 synthData.size(0), synthData.size(1));
+	fprintf(stdout, "%s\n", buffer);
 	logging.info(buffer);
       }
 
@@ -3112,7 +3157,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	
 	{
 	  char buffer[512];
-	  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. synth model. iterations: %d error: %f",
+	  snprintf(buffer, 512, "resonanz model NNGradDescent<> optimization stopped. synth model. iterations: %d error: %f",
 		   iterations, error.c[0]);
 	  logging.info(buffer);
 	}
@@ -3142,7 +3187,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  tmpnn.exportdata(w);
 	  
 	  char buffer[512];
-	  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d. error: %f",
+	  snprintf(buffer, 512, "resonanz NNGradDescent<> model optimization running. synth model. number of iterations: %d/%d. error: %f",
 		   iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
 	  logging.info(buffer);
 	}
@@ -3240,8 +3285,9 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  tmpnn.exportdata(w);
 	  
 	  char buffer[512];
-	  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. synth model. number of iterations: %d/%d. error: %f",
+	  snprintf(buffer, 512, "resonanz NNGradDescent<> model optimization running. synth model. number of iterations: %d/%d. error: %f",
 		   iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
+	  
 	  logging.info(buffer);
 	}
       }
@@ -3269,6 +3315,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	char buffer[512];
 	snprintf(buffer, 512, "resonanz model optimization started: picture %d database size: %d",
 		 currentPictureModel, pictureData[currentPictureModel].size(0));
+	fprintf(stdout, "%s\n", buffer);
 	logging.info(buffer);
       }
       
@@ -3294,7 +3341,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	
 	{
 	  char buffer[512];
-	  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. picture model. iterations: %d error: %f",
+	  snprintf(buffer, 512, "resonanz model NNGradDescent<> optimization stopped. picture model. iterations: %d error: %f",
 		   iterations, error.c[0]);
 	  logging.info(buffer);
 	}
@@ -3319,7 +3366,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  
 	  //snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
 	  //   optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
-	  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model. number of iterations: %d/%d",
+	  snprintf(buffer, 512, "resonanz NNGradDescent<> model optimization running. picture model. number of iterations: %d/%d",
 		   iterations, NUM_OPTIMIZER_ITERATIONS);
 	  logging.info(buffer);
 	}
@@ -3357,6 +3404,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	    char buffer[512];
 	    snprintf(buffer, 512, "resonanz bayes model optimization started: picture %d database size: %d",
 		     currentPictureModel, pictureData[currentPictureModel].size(0));
+	    fprintf(stdout, "%s\n", buffer);
 	    logging.info(buffer);
 	  }
 	  
@@ -3411,6 +3459,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  char buffer[512];
 	  snprintf(buffer, 512, "resonanz model optimization stopped. picture: %d iterations: %d error: %f",
 		   currentPictureModel, iterations, error.c[0]);
+	  fprintf(stdout, "%s\n", buffer);
 	  logging.info(buffer);
 	}
 	
@@ -3465,6 +3514,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	snprintf(buffer, 512, "resonanz L-BFGS model optimization running. picture model %d/%d. number of iterations: %d/%d. error: %f",
 		 currentPictureModel, pictures.size(), 
 		 iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
+	fprintf(stdout, "%s\n", buffer);
 	logging.info(buffer);
       }
     }
@@ -3491,6 +3541,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	char buffer[512];
 	snprintf(buffer, 512, "resonanz model optimization started: keyword %d database size: %d",
 		 currentKeywordModel, keywordData[currentKeywordModel].size(0));
+	fprintf(stdout, "%s\n", buffer);
 	logging.info(buffer);
       }
       
@@ -3518,7 +3569,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	
 	{
 	  char buffer[512];
-	  snprintf(buffer, 512, "resonanz model lbfgs optimization stopped. keyword model. iterations: %d error: %f",
+	  snprintf(buffer, 512, "resonanz model NNGradDescent<> optimization stopped. keyword model. iterations: %d error: %f",
 		   iterations, error.c[0]);
 	  logging.info(buffer);
 	}
@@ -3543,7 +3594,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  
 	  //snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
 	  //	   optimizer->getIterations(), NUM_OPTIMIZER_ITERATIONS);
-	  snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model. number of iterations: %d/%d",
+	  snprintf(buffer, 512, "resonanz NNGradDescent<> model optimization running. keyword model. number of iterations: %d/%d",
 		   iterations, NUM_OPTIMIZER_ITERATIONS);
 	  logging.info(buffer);
 	}
@@ -3581,6 +3632,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	    char buffer[512];
 	    snprintf(buffer, 512, "resonanz bayes model optimization started: keyword %d database size: %d",
 		     currentKeywordModel, keywordData[currentKeywordModel].size(0));
+	    fprintf(stdout, "%s\n", buffer);
 	    logging.info(buffer);
 	  }
 	  
@@ -3632,6 +3684,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	  char buffer[512];
 	  snprintf(buffer, 512, "resonanz model optimization stopped. keyword: %d iterations: %d error: %f",
 		   currentKeywordModel, iterations, error.c[0]);
+	  fprintf(stdout, "%s\n", buffer);
 	  logging.info(buffer);
 	}
 	
@@ -3682,7 +3735,7 @@ bool ResonanzEngine::engine_optimizeModels(unsigned int& currentHMMModel,
 	tmpnn.exportdata(w);
 	
 	char buffer[512];
-	snprintf(buffer, 512, "resonanz L-BFGS model optimization running. keyword model %d/%d. number of iterations: %d/%d. error: %f",
+	snprintf(buffer, 512, "resonanz NNGradDescent<> model optimization running. keyword model %d/%d. number of iterations: %d/%d. error: %f",
 		 currentKeywordModel, keywords.size(), 
 		 iterations, NUM_OPTIMIZER_ITERATIONS, error.c[0]);
 	logging.info(buffer);
@@ -4214,16 +4267,21 @@ bool ResonanzEngine::engine_storeMeasurement(unsigned int pic, unsigned int key,
   
   // updates HMM brain state model's state
   {
+    std::lock_guard<std::mutex> lock(hmm_mutex);
+    
     if(kmeans == NULL || hmm == NULL){
       logging.warn("WARN: engine_storeMeasurement(): K-Means or HMM model doesn't exist. Doesn't save HMM brain state with data!");
 
       HMMstate = t1.size(); // DISABLE ADDING BRAINSTATE CLASSIFICATION TO DATA
     }
     else{
+#if 0
+      // HMMstate updated by main loop for now
       unsigned int dataCluster = kmeans->getClusterIndex(t1);
       unsigned int nextState = 0;
       hmm->next_state(HMMstate, nextState, dataCluster);
       HMMstate = nextState;
+#endif
     }
   }
   
