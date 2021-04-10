@@ -79,6 +79,7 @@ int main(int argc, char** argv)
 
 
   if(!parse_parameters(argc, argv, cmd, device, dir, targetVector, targetVar, pictures)){
+    printf("Parsing parameters failed.\n");
     print_usage();
     return -1;
   }
@@ -1116,6 +1117,7 @@ int main(int argc, char** argv)
     printf("Debugging message.. 3\n");
     fflush(stdout);
 
+#if 0
     whiteice::HMM hmm2(VISIBLE_SYMBOLS, HIDDEN_STATES);
 
     printf("Debugging message.. 3A: %s\n", hmmFile2.c_str());
@@ -1147,6 +1149,7 @@ int main(int argc, char** argv)
 
       return -1;
     }
+#endif
 
     // reinforcement model r(state) -> reinforcement
 
@@ -1171,10 +1174,12 @@ int main(int argc, char** argv)
     printf("Debugging message.. 5\n");
     fflush(stdout);
 
-    SoundSynthesis* synth = NULL;
+    //SoundSynthesis* synth = NULL;
 
     printf("Starting reinforcement learning..\n");
     fflush(stdout);
+
+    whiteice::logging.setPrintOutput(true);
 
     // reinforcement learning
     {
@@ -1182,61 +1187,64 @@ int main(int argc, char** argv)
 	pics(dev, hmm, clusters, rmodel, pictures, DISPLAYTIME,
 	     targetVector, targetVar);
       
+      
       // waits for 1 sec for SDL to initialize (FIXME this is buggy)
       while(pics.getInitialized() == false) sleep(1);
       
-      synth = new FMSoundSynthesis();
-      synth->play();
+      //synth = new FMSoundSynthesis();
+      //synth->play();
 
-      whiteice::resonanz::ReinforcementSounds< whiteice::math::blas_real<double> >
-	sounds(dev, hmm2, clusters2, rmodel, synth, 4*DISPLAYTIME,
-	       targetVector, targetVar);
+      //whiteice::resonanz::ReinforcementSounds< whiteice::math::blas_real<double> >
+      //sounds(dev, hmm2, clusters2, rmodel, synth, 4*DISPLAYTIME,
+      //       targetVector, targetVar);
 
       if(useRmodel){
 	pics.setReinforcementModel(true);
-	sounds.setReinforcementModel(true);
+	//sounds.setReinforcementModel(true);
       }
       else{
 	pics.setReinforcementModel(false);
-	sounds.setReinforcementModel(false);
+	//sounds.setReinforcementModel(false);
       }
 
       pics.setRandom(random);
-      sounds.setRandom(random);
+      //sounds.setRandom(random);
 
       pics.setLearningMode(true);
-      sounds.setLearningMode(true);
+      //sounds.setLearningMode(true);
       pics.setEpsilon(0.60);
-      sounds.setEpsilon(0.60);
+      //sounds.setEpsilon(0.60);
+
+      printf("About start Reinforment thread [hit ESC to exit]\n");
       
       pics.start();
-      sounds.start();
+      //sounds.start();
       
       
       unsigned int counter = 0;
 
-      while(pics.isRunning() && sounds.isRunning()){
+      while(pics.isRunning() /*&& sounds.isRunning()*/){
 
-	if(pics.getHasModel() == 0 || sounds.getHasModel() == 0)
+	if(pics.getHasModel() == 0 /*|| sounds.getHasModel() == 0*/)
 	  pics.setMessage("[measuring]");
 	else
 	  pics.setMessage("");
 	
 	sleep(1);
-	if(pics.getKeypress() || pics.getDisplayIsRunning() == false || 
-	   sounds.getSoundIsActive() == false){
+	if(pics.getESCKeypress() || pics.getDisplayIsRunning() == false /*|| 
+	   sounds.getSoundIsActive() == false*/){
 	  
 	  char buffer[128];
 
-	  snprintf(buffer, 128, "timeseries.cpp: stop event %d %d %d",
+	  snprintf(buffer, 128, "timeseries.cpp: stop event %d %d",
 		   (int)pics.getKeypress(),
-		   (int)pics.getDisplayIsRunning(),
-		   (int)sounds.getSoundIsActive());
+		   (int)pics.getDisplayIsRunning());
+		   //(int)sounds.getSoundIsActive());
 	  
 	  whiteice::logging.info(buffer);
 	  
 	  pics.stop();
-	  sounds.stop();
+	  //sounds.stop();
 	}
 
 	if(counter >= 180){
@@ -1252,7 +1260,7 @@ int main(int argc, char** argv)
     printf("Stopping execution normally.\n");
 
 
-    if(synth){ delete synth; synth = NULL; }
+    //if(synth){ delete synth; synth = NULL; }
     if(dev){ delete dev; dev = NULL; }
     
     IMG_Quit();
@@ -1388,7 +1396,7 @@ bool parse_parameters(int argc, char** argv,
       const char* filename = ent->d_name;
       const int L = strlen(filename);
       
-      if(/*strcmp((const char*)(filename+L-4), ".jpg") == 0 || */
+      if(strcmp((const char*)(filename+L-4), ".jpg") == 0 ||
 	 strcmp((const char*)(filename+L-4), ".png") == 0){
 	
 	std::string f = path;

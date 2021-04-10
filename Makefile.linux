@@ -19,7 +19,7 @@ CXXFLAGS = -fPIC -std=c++1y -O3 -g -fopenmp `pkg-config sdl2 --cflags` `pkg-conf
 
 OBJECTS = ResonanzEngine.o MuseOSC.o NMCFile.o NoEEGDevice.o RandomEEG.o SDLTheora.o SDLSoundSynthesis.o FMSoundSynthesis.o hermitecurve.o SDLMicrophoneListener.o SoundSynthesis.o HMMStateUpdator.o
 
-SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp Log.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp SoundSynthesis.cpp HMMStateUpdator.cpp
+SOURCES = main.cpp ResonanzEngine.cpp MuseOSC.cpp NMCFile.cpp NoEEGDevice.cpp RandomEEG.cpp SDLTheora.cpp jni/fi_iki_nop_neuromancer_ResonanzEngine.cpp hermitecurve.cpp SDLMicrophoneListener.cpp LightstoneDevice.cpp measurements.cpp optimizeResponse.cpp pictureAutoencoder.cpp renaissance.cpp stimulation.cpp hsv.cpp timeseries.cpp ts_measure.cpp ReinforcementPictures.cpp ReinforcementSounds.cpp SoundSynthesis.cpp HMMStateUpdator.cpp
 
 
 
@@ -46,10 +46,11 @@ MAXIMPACT_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs
 MAXIMPACT_OBJECTS=maximpact.o MuseOSC.o NoEEGDevice.o RandomEEG.o
 MAXIMPACT_TARGET=maximpact
 
-SOUND_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` -lws2_32 -mconsole
+SOUND_LIBS=`pkg-config sdl2 --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs`
 
 SOUND_TEST_TARGET=fmsound
-SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o Log.o hsv.o ts_measure.o pictureAutoencoder.o
+SOUND_TEST_OBJECTS=sound_test.o SDLSoundSynthesis.o FMSoundSynthesis.o SDLMicrophoneListener.o SoundSynthesis.o hsv.o ts_measure.o
+# pictureAutoencoder.o
 
 # Adding these to SOUND leads to cygheap read copy failed..
 # ts_measure.o pictureAutoencoder.o hsv.o
@@ -59,8 +60,8 @@ R9E_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg
 R9E_OBJECTS=renaissance.o pictureAutoencoder.o measurements.o optimizeResponse.o stimulation.o MuseOSC.o NoEEGDevice.o RandomEEG.o hsv.o
 
 TS_TARGET=timeseries
-TS_LIBS=`/usr/local/bin/sdl2-config --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs` -lws2_32 -mconsole
-TS_OBJECTS=timeseries.o ts_measure.o hsv.o MuseOSC.o RandomEEG.o ReinforcementPictures.o Log.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o
+TS_LIBS=`pkg-config sdl2 --libs` `pkg-config SDL2_image --libs` `pkg-config SDL2_ttf --libs` `pkg-config dinrhiw --libs`
+TS_OBJECTS=timeseries.o ts_measure.o hsv.o MuseOSC.o RandomEEG.o ReinforcementPictures.o ReinforcementSounds.o SDLSoundSynthesis.o FMSoundSynthesis.o SoundSynthesis.o
 
 
 ############################################################
@@ -100,7 +101,9 @@ clean:
 	$(RM) $(MAXIMPACT_OBJECTS)
 	$(RM) $(R9E_OBJECTS)
 	$(RM) $(SPECTRAL_TEST_OBJECTS)
-	$(RM) $(TARGET)
+	$(RM) $(TARGET)	
+	$(RM) $(RESONANZ_OBJECTS) $(JNILIB_OBJECTS) $(SOUND_TEST_OBJECTS)
+	$(RM) $(JNITATGET) $(SOUND_TEST_TARGET) $(SPECTRAL_TEST_TARGET) $(MAXIMPACT_TARGET)
 	$(RM) $(TS_OBJECTS)
 	$(RM) $(TS_TARGET)
 	$(RM) *~

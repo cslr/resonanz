@@ -2,6 +2,8 @@
 
 #include "ReinforcementPictures.h"
 
+#include <thread>
+#include <functional>
 #include <exception>
 #include <chrono>
 
@@ -14,9 +16,9 @@
 
 
 // defines size of feature vector square picture (mini picture)
-// that is calculated from actual pictures
+// that is calculated from actual pictures (was: 32x32)
 // FEATURE_PICSIZE x FEATURE_PICSIZE * 3 (RGB) sized vector
-#define FEATURE_PICSIZE 32
+#define FEATURE_PICSIZE 32 // minimal 4x4 picture
 
 
 
@@ -40,12 +42,16 @@ namespace whiteice
 		     dev->getNumberOfSignals() + hmm.getNumHiddenStates(),
 		     FEATURE_PICSIZE*FEATURE_PICSIZE*3)
   {
+    whiteice::logging.info("RP::ctor() starting..");
+    
     if(dev == NULL || DISPLAYTIME == 0 || pictures.size() == 0 || clusters.size() == 0)
     {
       throw std::invalid_argument("ReinforcementPictures ctor: bad arguments");
     }
-    
+
     keypresses = 0;
+    esc_keypresses = 0;
+    
     display_thread = nullptr;
 
     this->dev = dev;
@@ -69,9 +75,11 @@ namespace whiteice
 
     // starts display thread
     {
+      whiteice::logging.info("Starting display thread..");
+		 
       running = true;
-      display_thread = new thread(std::bind(&ReinforcementPictures<T>::displayLoop,
-					    this));
+      display_thread = new std::thread(std::bind(&ReinforcementPictures<T>::displayLoop,
+						 this));
     }
   }
 
@@ -91,7 +99,18 @@ namespace whiteice
   template <typename T>
   bool ReinforcementPictures<T>::getKeypress()
   {
-    return (keypresses > 0);
+    bool press = (keypresses > 0);
+    keypresses = 0;
+    return press;
+  }
+
+
+  template <typename T>
+  bool ReinforcementPictures<T>::getESCKeypress()
+  {
+    bool press = (esc_keypresses > 0);
+    esc_keypresses = 0;
+    return press;
   }
 
 
@@ -152,7 +171,7 @@ namespace whiteice
   
   template <typename T>
   bool ReinforcementPictures<T>::getActionFeature(const unsigned int action,
-						  whiteice::math::vertex<T>& feature)
+						  whiteice::math::vertex<T>& feature) const
   {
     feature.resize(this->dimActionFeatures);
     feature.zero();
@@ -397,6 +416,9 @@ namespace whiteice
     // opens SDL display
 
     SDL_Window* window = NULL;
+
+    keypresses = 0;
+    esc_keypresses = 0;
     
     int W = 640;
     int H = 480;
@@ -623,9 +645,14 @@ namespace whiteice
 	while(SDL_PollEvent(&event)){
 	  if(event.type == SDL_KEYDOWN){
 	    keypresses++;
+	    
+	    if(event.key.keysym.sym == SDLK_ESCAPE)
+	      esc_keypresses++;
+
 	    continue;
 	  }
 	}
+
       }
 
     }
@@ -649,6 +676,10 @@ namespace whiteice
       while(SDL_PollEvent(&event)){
 	if(event.type == SDL_KEYDOWN){
 	  keypresses++;
+
+	  if(event.key.keysym.sym == SDLK_ESCAPE)
+	    esc_keypresses++;
+	  
 	  continue;
 	}
       }

@@ -39,6 +39,8 @@ namespace whiteice
 
     bool getKeypress();
 
+    bool getESCKeypress();
+
     bool getDisplayIsRunning();
 
     bool getInitialized(); // return true when we are in main display loop and all things are set properly
@@ -84,7 +86,7 @@ namespace whiteice
 			       T& reinforcement);
 
     virtual bool getActionFeature(const unsigned int action,
-				  whiteice::math::vertex<T>& feature);
+				  whiteice::math::vertex<T>& feature) const;
 
     // helper function to create feature vector f (mini pic) from image
     void calculateFeatureVector(SDL_Surface* pic,
@@ -105,6 +107,7 @@ namespace whiteice
     std::mutex display_mutex;
     
     unsigned int keypresses;
+    unsigned int esc_keypresses;
 
     bool initialized;
     

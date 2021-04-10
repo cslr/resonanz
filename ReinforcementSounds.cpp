@@ -5,6 +5,8 @@
 #include <math.h>
 #include <unistd.h>
 
+#include <thread>
+#include <functional>
 #include <chrono>
 
 #include <SDL.h>
@@ -58,8 +60,8 @@ namespace whiteice
       // has been done
       {
 	running = true;
-	audio_thread = new thread(std::bind(&ReinforcementSounds<T>::audioLoop,
-					    this));
+	audio_thread = new std::thread(std::bind(&ReinforcementSounds<T>::audioLoop,
+						 this));
       }
     }
 

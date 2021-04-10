@@ -93,11 +93,12 @@ int main(int argc, char** argv)
 	bool dumpAsciiCommand = false;
 	whiteice::resonanz::ResonanzCommand cmd;	
 	std::string device = "muse";
-	std::string optimizationMethod = "lbfgs";
+	std::string optimizationMethod = "rbf"; // was: lbfgs
 	bool usepca  = false;
 	bool fullscreen = false;
 	bool loop = false;
 	bool optimizeSynthOnly = false;
+	bool randomPrograms = false;
 	bool verbose = false;
 	
 	std::string programFile;
@@ -111,6 +112,7 @@ int main(int argc, char** argv)
 	for(int i=1;i<argc;i++){
 		if(strcmp(argv[i], "--random") == 0){
 			cmd.command = whiteice::resonanz::ResonanzCommand::CMD_DO_RANDOM;
+			randomPrograms = true;
 			hasCommand = true;
 		}
 		else if(strcmp(argv[i], "--measure") == 0){
@@ -260,6 +262,10 @@ int main(int argc, char** argv)
 	      engine.setParameter("use-bayesian-nnetwork", "true");
 	      engine.setParameter("use-data-rbf", "false");	      
 	    }
+
+	    if(randomPrograms){
+	      engine.setParameter("random-programs", "true");
+	    }
 	    
 	    if(usepca){
 	      engine.setParameter("pca-preprocess", "true");
@@ -408,7 +414,13 @@ int main(int argc, char** argv)
 	sleep(1);
 	
 	// reports average RMS of executed program
-	if(cmd.command == cmd.CMD_DO_OPTIMIZE){
+	if(cmd.command == cmd.CMD_DO_MEASURE){
+	  std::string msg = engine.deltaStatistics(cmd.pictureDir,
+						   cmd.keywordsFile,
+						   cmd.modelDir);
+	  std::cout << msg << std::endl;
+	}
+	else if(cmd.command == cmd.CMD_DO_OPTIMIZE){
 	  std::string msg = engine.analyzeModel(cmd.modelDir);
 	  std::cout << msg << std::endl;
 	}

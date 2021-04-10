@@ -265,7 +265,7 @@ private:
 	std::vector< whiteice::dataset<> > pictureData;
 	whiteice::dataset<>                synthData; // sound synthesis data
 	
-	std::mutex database_mutex;  // mutex to synchronize I/O access to dataset files
+        mutable std::mutex database_mutex;  // mutex to synchronize I/O access to dataset files
 	bool pcaPreprocess = false; // should measured data be preprocessed using PCA (no pca preprocessing as the default!)
 
 
@@ -278,7 +278,7 @@ private:
 				   unsigned int& currentKeywordModel, 
 				   bool& soundModelCalculated);
 
-        std::mutex hmm_mutex; // synchronized manipulation of HMM params
+        mutable std::mutex hmm_mutex; // synchronized manipulation of HMM params
         whiteice::KMeans<>* kmeans = nullptr;
         whiteice::HMM* hmm = nullptr;
         unsigned int HMMstate = 0; // current HMM state

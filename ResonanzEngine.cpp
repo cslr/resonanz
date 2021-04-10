@@ -168,12 +168,18 @@ ResonanzEngine::~ResonanzEngine()
     eeg = nullptr;
   }
 
-  if(kmeans){
+  if(hmmUpdator){
+    hmmUpdator->stop();
+    delete hmmUpdator;
+    hmmUpdator = nullptr;
+  }
+
+  if(kmeans && hmmUpdator == nullptr){
     delete kmeans;
     kmeans = nullptr;
   }
 
-  if(hmm){
+  if(hmm && hmmUpdator == nullptr){
     delete hmm;
     hmm = nullptr;
   }
@@ -983,14 +989,20 @@ void ResonanzEngine::engine_loop()
       }
       else if(prevCommand.command == ResonanzCommand::CMD_DO_OPTIMIZE){
 	// stops computation if needed
+
+	if(hmmUpdator != nullptr){
+	  hmmUpdator->stop();
+	  delete hmmUpdator;
+	  hmmUpdator = nullptr;
+	}
 	
-	if(hmm != nullptr){
+	if(hmm != nullptr && hmmUpdator == nullptr){
 	  hmm->stopTrain();
 	  delete hmm;
 	  hmm = nullptr;
 	}
 
-	if(kmeans != nullptr){
+	if(kmeans != nullptr && hmmUpdator == nullptr){
 	  kmeans->stopTrain();
 	  delete kmeans;
 	  kmeans = nullptr;
@@ -1026,6 +1038,12 @@ void ResonanzEngine::engine_loop()
 	if(synth){
 	  synth->pause();
 	  synth->reset();
+	}
+
+	if(hmmUpdator != nullptr){
+	  hmmUpdator->stop();
+	  delete hmmUpdator;
+	  hmmUpdaor = nullptr;
 	}
 
 	if(hmm != nullptr){
@@ -1780,6 +1798,8 @@ void ResonanzEngine::engine_loop()
 	// minimize(picture) ||f(picture,eegCurrent) - eegTarget||/eegTargetVariance
 	
 	const float timedelta = 1.0f/programHz; // current delta between pictures [in seconds]
+
+	// const float timedelta = TICK_MS/1000.0f; // current delta between pictures [length of single tick which the image is shown]
 	
 	
 	if(currentCommand.blindMonteCarlo == false)
@@ -1951,6 +1971,12 @@ void ResonanzEngine::engine_loop()
     nnsynth = nullptr;
   }
 
+  if(hmmUpdator != nullptr){
+    hmmUpdator->stop();
+    delete hmmUpdator;
+    hmmUpdator = nullptr;
+  }
+
   if(kmeans != nullptr){
     delete kmeans;
     kmeans = nullptr;
@@ -1978,6 +2004,8 @@ void ResonanzEngine::engine_loop()
 bool ResonanzEngine::engine_loadModels(const std::string& modelDir)
 {
   try{
+    if(hmmUpdator != nullptr) return  false; // already computing HMM/K-Means models.
+    
     std::string filename = calculateHashName("KMeans" + eeg->getDataSourceName()) + ".kmeans";
     filename = modelDir + "/" + filename;
 
@@ -2250,7 +2278,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
     model_error_ratio[index] = ratio.c[0];
     
     for(unsigned int i=0;i<delta.size();i++){
-      delta[i] = math::abs(delta[i]) + 1.00f*stdev[i];
+      delta[i] = math::abs(delta[i]) + 0.50f*stdev[i]; // FIXME: was 1 (handles uncertainty in weights)
       delta[i] /= math::sqrt(targetVariance[i]);
     }
 #else
@@ -2380,7 +2408,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
     model_error_ratio[index] = ratio.c[0];
     
     for(unsigned int i=0;i<delta.size();i++){
-      delta[i] = math::abs(delta[i]) + 1.00f*stdev[i];
+      delta[i] = math::abs(delta[i]) + 0.50f*stdev[i]; // FIXME: was 1 (handles uncertainty)
       delta[i] /= math::sqrt(targetVariance[i]);
     }
 #else
@@ -2559,7 +2587,7 @@ bool ResonanzEngine::engine_executeProgram(const std::vector<float>& eegCurrent,
       model_error_ratio[param] = ratio.c[0];
 	    
       for(unsigned int i=0;i<delta.size();i++){
-	delta[i] = math::abs(delta[i]) + 0.5f*stdev[i];
+	delta[i] = math::abs(delta[i]) + 0.50f*stdev[i]; // FIXME: was 0.5 (handles uncertainty)
 	delta[i] /= targetVariance[i];
       }
       
@@ -3760,7 +3788,7 @@ bool ResonanzEngine::engine_estimateNN(const whiteice::math::vertex<>& x,
 {
   bool bad_data = false;
   
-  if(data.size(0) <= 1) bad_data = true;
+  if(data.size(0) <= 0) bad_data = true;
   if(data.getNumberOfClusters() != 2) bad_data = true;
   if(bad_data == false){
     if(data.size(0) != data.size(1))
@@ -3774,16 +3802,20 @@ bool ResonanzEngine::engine_estimateNN(const whiteice::math::vertex<>& x,
     
     return true;
   }
+
+  const unsigned int YMAX = data.access(1,0).size();
   
-  m.resize(x.size());
+  m.resize(YMAX);
   m.zero();
-  cov.resize(x.size(),x.size());
+  cov.resize(YMAX,YMAX);
   cov.zero();
-  const float epsilon    = 0.1f;
+  const float epsilon    = 0.01f;
   math::blas_real<float> sumweights = 0.0f;
+
   
   for(unsigned int i=0;i<data.size(0);i++){
     auto delta = x - data.access(0, i);
+    
     auto w = math::blas_real<float>(1.0f / (epsilon + delta.norm().c[0]));
 	  
     auto v = data.access(1, i);
